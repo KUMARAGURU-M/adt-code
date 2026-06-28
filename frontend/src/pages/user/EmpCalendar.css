@@ -1,0 +1,296 @@
+/* src/pages/user/EmpCalendar.css */
+
+.ec-page {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: 'Poppins', sans-serif;
+  color: #333;
+}
+
+.ec-card {
+  width: 100%;
+  max-width: 100%;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  padding: 20px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+/* TOP TAB NAVIGATION */
+.ec-tab-nav {
+  display: flex;
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 20px;
+}
+
+.ec-tab-btn {
+  flex: 1;
+  padding: 8px 0;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.80rem;
+  font-weight: 600;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.ec-tab-btn.active {
+  background: linear-gradient(135deg, #6a74db, #815ac0);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(106, 116, 219, 0.3);
+}
+
+.ec-tab-btn:not(.active):hover {
+  background: rgba(0, 0, 0, 0.03);
+  color: #333;
+}
+
+/* HEADER SECTION */
+.ec-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.ec-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ec-title {
+  font-size: 1.20rem;
+  font-weight: 600;
+  margin: 0;
+  color: #222;
+}
+
+.ec-subtitle {
+  font-size: 0.70rem;
+  color: #666;
+  margin: 0;
+}
+
+.ec-header-right {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.ec-nav-btn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ec-nav-prev,
+.ec-nav-next {
+  background: #f1f3f5;
+  color: #333;
+}
+
+.ec-nav-prev:hover,
+.ec-nav-next:hover {
+  background: #e9ecef;
+}
+
+.ec-nav-current {
+  background: #5b75f0;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(91, 117, 240, 0.3);
+}
+
+.ec-nav-current:hover {
+  background: #4a63db;
+}
+
+/* CONTENT SECTIONS */
+.ec-content {
+  width: 100%;
+}
+
+/* ----- DAILY VIEW ----- */
+.ec-daily-view {
+  display: flex;
+  flex-direction: column;
+}
+
+.ec-grid-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.ec-grid-hd {
+  text-align: center;
+  font-size: 0.70rem;
+  font-weight: 600;
+  color: #555;
+  background: #f8f9fa;
+  padding: 6px 0;
+  border-radius: 4px;
+}
+
+.ec-grid-body {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.ec-cell {
+  background: #f4f5f7;
+  border-radius: 8px;
+  min-height: 80px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.ec-cell-empty {
+  background: transparent;
+  border: none;
+}
+
+.ec-day-number {
+  font-size: 0.80rem;
+  font-weight: 500;
+  color: #444;
+}
+
+.ec-cell-today {
+  background: #eff5ff;
+  border-color: #5b75f0;
+}
+
+.ec-cell-today .ec-day-number {
+  color: #5b75f0;
+  font-weight: 700;
+}
+
+.ec-cell-data {
+  background: #e2f5e8;
+  border-color: #c8e6c9;
+}
+
+.ec-day-details {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.ec-day-hours {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #2e7d32;
+}
+
+.ec-day-pages,
+.ec-day-projects {
+  font-size: 0.55rem;
+  color: #555;
+}
+
+/* ----- WEEKLY & MONTHLY VIEW ----- */
+.ec-summary-view {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.ec-summary-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.ec-summary-card {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.ec-card-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #666;
+}
+
+.ec-card-value {
+  font-size: 1.55rem;
+  font-weight: 700;
+  color: #222;
+  line-height: 1;
+}
+
+/* BREAKDOWNS */
+.ec-breakdown-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ec-section-title {
+  font-size: 0.90rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0;
+}
+
+.ec-breakdown-card {
+  background: #ffffff;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.ec-bd-top {
+  font-size: 0.80rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.ec-bd-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ec-bd-hours {
+  font-size: 0.70rem;
+  color: #555;
+  font-weight: 500;
+}
+
+.ec-bd-pages {
+  font-size: 0.70rem;
+  color: #6a74db;
+  font-weight: 600;
+}

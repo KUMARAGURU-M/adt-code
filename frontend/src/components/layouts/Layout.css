@@ -1,0 +1,23 @@
+/* src/components/layouts/Layout.css
+   NOTE: This file is kept for reference but Layout.js is no longer used.
+   All layout is handled directly in App.js using App.css classes.
+   Do NOT use CSS Modules import (styles.xxx) with this file — it's a plain CSS file.
+*/
+
+.container {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f4f7fe;
+}
+
+.mainContent {
+  flex: 1;
+  margin-left: 190px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.content {
+  padding: 24px 28px;
+}

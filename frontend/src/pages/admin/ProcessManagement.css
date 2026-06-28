@@ -1,0 +1,494 @@
+/* src/pages/admin/ProcessManagement.css */
+
+/* ══════════════════════════════════════════════
+   PAGE SHELL
+══════════════════════════════════════════════ */
+.pm-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Page Header ── */
+.pm-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pm-page-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pm-page-icon { font-size: 22px; }
+
+.pm-page-title h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+/* Top-right "Add Process" button — teal, matches screenshot */
+.pm-add-header-btn {
+  background-color: #13c6df;
+  color: white;
+  border: none;
+  padding: 9px 20px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.18s;
+  white-space: nowrap;
+}
+.pm-add-header-btn:hover { opacity: 0.88; }
+
+/* ══════════════════════════════════════════════
+   ADD NEW PROCESS CARD
+══════════════════════════════════════════════ */
+.pm-add-card {
+  background: white;
+  border-radius: 10px;
+  padding: 24px 26px 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #edf2f7;
+  animation: pm-slide-down 0.22s ease;
+}
+
+@keyframes pm-slide-down {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.pm-add-card-title {
+  margin: 0 0 20px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+/* ── Form elements — shared between card & modal ── */
+.pm-form-group {
+  margin-bottom: 16px;
+}
+
+.pm-form-label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 6px;
+}
+
+.pm-req { color: #e53e3e; }
+
+.pm-form-input {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: #1a202c;
+  outline: none;
+  transition: border-color 0.18s;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+.pm-form-input:focus  { border-color: #13c6df; }
+.pm-form-input.input-error { border-color: #e53e3e; }
+
+.pm-form-textarea {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: #1a202c;
+  outline: none;
+  transition: border-color 0.18s;
+  box-sizing: border-box;
+  resize: vertical;
+  font-family: inherit;
+  line-height: 1.5;
+}
+.pm-form-textarea:focus { border-color: #13c6df; }
+
+.pm-form-error {
+  margin: 4px 0 0;
+  font-size: 0.78rem;
+  color: #e53e3e;
+  font-weight: 600;
+}
+
+.pm-check-group {
+  margin-bottom: 16px;
+}
+
+.pm-check-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #2d3748;
+  cursor: pointer;
+  user-select: none;
+}
+.pm-check-label input {
+  accent-color: #13c6df;
+  cursor: pointer;
+  width: 15px;
+  height: 15px;
+}
+
+/* Create button — teal to match header btn */
+.pm-create-btn {
+  background-color: #13c6df;
+  color: white;
+  border: none;
+  padding: 9px 22px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.18s;
+}
+.pm-create-btn:hover { opacity: 0.88; }
+
+/* ══════════════════════════════════════════════
+   TABLE CARD
+══════════════════════════════════════════════ */
+.pm-table-card {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #edf2f7;
+  overflow: hidden;
+}
+
+.pm-table-header {
+  padding: 14px 20px 12px;
+  border-bottom: 1px solid #edf2f7;
+  background: #f8fafc;
+}
+
+.pm-table-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.pm-table-wrapper {
+  overflow-x: auto;
+}
+
+/* ── Table ── */
+.pm-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  min-width: 580px;
+}
+
+.pm-table thead tr {
+  background: #f8fafc;
+}
+
+.pm-table th {
+  padding: 14px 15px;
+  color: #475569;
+  font-weight: 800;
+  font-size: 14px;
+  text-align: left;
+  border-bottom: 1px solid #edf2f7;
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+}
+
+/* Column widths — matching the screenshot proportions */
+.col-name    { width: 35%; }
+.col-desc    { width: 25%; }
+.col-status  { width: 12%; }
+.col-created { width: 14%; }
+.col-actions {
+  width: 14%;
+  text-align: center;
+}
+
+.pm-table td {
+  padding: 11px 15px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #4a5568;
+  vertical-align: middle;
+}
+
+.pm-table tbody tr:last-child td { border-bottom: none; }
+.pm-table tbody tr:hover          { background: #f8fafc; }
+
+.td-name {
+  font-weight: 600;
+  color: #2d3748;
+  font-size: 13px;
+  text-align: left;
+}
+
+.td-desc {
+  color: #718096;
+  font-size: 12.5px;
+}
+
+.td-created {
+  color: #718096;
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+.pm-dash { color: #cbd5e0; }
+
+/* ── Status badge ── */
+.pm-status-badge {
+  display: inline-block;
+  padding: 3px 12px;
+  border-radius: 20px;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+.pm-status-badge.active {
+  background: #dcfce7;
+  color: #15803d;
+}
+.pm-status-badge.inactive {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+/* ── Action buttons — blue edit, red delete matching screenshot ── */
+.pm-action-btns {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+}
+
+.pm-act-edit,
+.pm-act-del {
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.18s, transform 0.15s;
+  padding: 0;
+}
+
+/* Blue edit button — exactly matches screenshot */
+.pm-act-edit {
+  /* background: #3b82f6; */
+  color: white;
+}
+
+/* Red delete button — exactly matches screenshot */
+.pm-act-del {
+  /* background: #ef4444; */
+  color: white;
+}
+
+.pm-act-edit:hover,
+.pm-act-del:hover {
+  opacity: 0.82;
+  transform: scale(1.08);
+}
+
+.pm-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: #a0aec0;
+  font-size: 0.9rem;
+}
+
+/* ══════════════════════════════════════════════
+   PAGINATION FOOTER
+══════════════════════════════════════════════ */
+.pm-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px 16px;
+  border-top: 1px solid #edf2f7;
+  background: #fafafa;
+}
+
+.pm-per-page {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: #4a5568;
+}
+
+.pm-per-page select {
+  padding: 4px 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 5px;
+  font-size: 12.5px;
+  color: #2d3748;
+  background: white;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.pm-per-page select:focus { border-color: #13c6df; }
+
+.pm-page-info {
+  font-size: 12.5px;
+  color: #718096;
+}
+
+.pm-page-nav {
+  display: flex;
+  gap: 4px;
+}
+
+.pm-nav-btn {
+  width: 30px;
+  height: 30px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  border-radius: 5px;
+  font-size: 13px;
+  color: #4a5568;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, border-color 0.15s;
+}
+.pm-nav-btn:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #13c6df;
+}
+.pm-nav-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.pm-nav-btn.active-page {
+  background: #13c6df;
+  border-color: #13c6df;
+  color: white;
+  font-weight: 700;
+}
+
+/* ══════════════════════════════════════════════
+   MODAL OVERLAY & BOX
+══════════════════════════════════════════════ */
+.pm-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 20px;
+}
+
+.pm-modal-box {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 28px 30px 24px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 88vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.20);
+  animation: pm-modal-in 0.22s ease;
+}
+
+@keyframes pm-modal-in {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0); }
+}
+
+.pm-modal-title {
+  margin: 0 0 20px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1a202c;
+}
+
+/* ── Modal footer ── */
+.pm-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #edf2f7;
+}
+.pm-modal-actions.centered { justify-content: center; }
+
+.pm-btn-cancel {
+  background: #f1f5f9;
+  color: #4a5568;
+  border: 1px solid #e2e8f0;
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s;
+}
+.pm-btn-cancel:hover { background: #e2e8f0; }
+
+.pm-btn-primary {
+  background: #13c6df;
+  color: white;
+  border: none;
+  padding: 8px 22px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.18s;
+}
+.pm-btn-primary:hover { opacity: 0.88; }
+
+.pm-btn-danger {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 8px 22px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.18s;
+}
+.pm-btn-danger:hover { opacity: 0.88; }
+
+/* ── Delete modal ── */
+.pm-delete-modal { text-align: center; padding: 8px 0; }
+.pm-delete-icon  { font-size: 2.5rem; margin-bottom: 10px; }
+.pm-delete-msg {
+  margin: 0 0 4px;
+  font-size: 0.88rem;
+  color: #4a5568;
+  line-height: 1.6;
+}
+
+/* ── Scrollbars ── */
+.pm-modal-box::-webkit-scrollbar       { width: 5px; }
+.pm-modal-box::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 6px; }

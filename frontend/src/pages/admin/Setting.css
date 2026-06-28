@@ -1,0 +1,443 @@
+/* src/pages/admin/Settings.css */
+
+/* ══════════════════════════════════════════
+   PAGE SHELL
+══════════════════════════════════════════ */
+.st-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Page Header ── */
+.st-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.st-page-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.st-page-icon { font-size: 22px; }
+
+.st-page-title h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+/* ── Two-column grid ── */
+.st-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.st-col {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ══════════════════════════════════════════
+   CARD
+══════════════════════════════════════════ */
+.st-card {
+  background: white;
+  border-radius: 10px;
+  padding: 22px 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #edf2f7;
+}
+
+.st-card-title {
+  margin: 0 0 18px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #2d3748;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.st-divider {
+  height: 1px;
+  background: #f1f5f9;
+  margin: 18px 0;
+}
+
+.st-section-label {
+  font-size: 0.80rem;
+  font-weight: 700;
+  color: #374151;
+  margin-bottom: 5px;
+}
+
+/* ══════════════════════════════════════════
+   FORM ELEMENTS
+══════════════════════════════════════════ */
+.st-form-group {
+  margin-bottom: 14px;
+}
+.st-form-group:last-child { margin-bottom: 0; }
+
+.st-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.st-form-row .st-form-group { margin-bottom: 0; }
+
+.st-label {
+  display: block;
+  font-size: 0.80rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+.st-req { color: #e53e3e; }
+
+.st-input {
+  width: 100%;
+  padding: 8px 11px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.84rem;
+  color: #1a202c;
+  background: white;
+  outline: none;
+  transition: border-color 0.18s, box-shadow 0.18s;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+.st-input:focus {
+  border-color: #00a3ff;
+  box-shadow: 0 0 0 3px rgba(0,163,255,0.10);
+}
+
+.st-hint {
+  margin: 4px 0 0;
+  font-size: 0.73rem;
+  color: #9ca3af;
+  line-height: 1.4;
+}
+
+/* Color picker row */
+.st-color-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.st-color-picker {
+  width: 44px;
+  height: 36px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 2px;
+  background: white;
+  flex-shrink: 0;
+}
+
+/* Toggle / checkbox */
+.st-toggle-item {
+  padding: 12px 14px;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+}
+
+.st-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #1e3a5f;
+  cursor: pointer;
+}
+
+.st-checkbox {
+  accent-color: #00a3ff;
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+}
+
+/* ══════════════════════════════════════════
+   QUOTES SECTION
+══════════════════════════════════════════ */
+.st-quote-preview {
+  background: linear-gradient(135deg,
+    rgba(255, 59, 92, 0.06) 0%,
+    rgba(19, 198, 223, 0.06) 100%
+  );
+  border: 1px solid rgba(19, 198, 223, 0.25);
+  border-radius: 10px;
+  padding: 16px 18px;
+  margin-bottom: 14px;
+}
+
+.st-quote-preview-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #9ca3af;
+  margin-bottom: 8px;
+}
+
+.st-quote-preview-text {
+  margin: 0 0 8px;
+  font-size: 0.88rem;
+  font-style: italic;
+  color: #374151;
+  line-height: 1.6;
+  border-left: 3px solid #13c6df;
+  padding-left: 12px;
+}
+
+.st-quote-count {
+  font-size: 0.72rem;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+/* Manage quotes button */
+.st-manage-quotes-btn {
+  background: #00a3ff;
+  color: white;
+  border: none;
+  padding: 9px 18px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.18s;
+  font-family: inherit;
+  margin-bottom: 2px;
+}
+.st-manage-quotes-btn:hover { opacity: 0.88; }
+
+/* ══════════════════════════════════════════
+   SAVE BUTTON
+══════════════════════════════════════════ */
+.st-save-btn {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 9px 22px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.18s, transform 0.15s;
+  font-family: inherit;
+}
+.st-save-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+.st-save-btn.large {
+  padding: 11px 32px;
+  font-size: 0.90rem;
+}
+
+.st-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 4px;
+}
+
+/* ══════════════════════════════════════════
+   MODAL OVERLAY & BOX
+══════════════════════════════════════════ */
+.st-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 20px;
+}
+
+.st-modal-box {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 28px 30px 24px;
+  width: 100%;
+  max-width: 560px;
+  max-height: 88vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.20);
+  animation: st-modal-in 0.22s ease;
+}
+
+@keyframes st-modal-in {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0); }
+}
+
+.st-modal-title {
+  margin: 0 0 6px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1a202c;
+}
+
+.st-modal-sub {
+  margin: 0 0 18px;
+  font-size: 0.82rem;
+  color: #718096;
+  line-height: 1.5;
+}
+
+/* ── Quote list in modal ── */
+.st-quote-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.st-quote-item {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.st-quote-textarea {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 0.83rem;
+  color: #374151;
+  resize: none;
+  outline: none;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+.st-quote-del {
+  flex-shrink: 0;
+  background: #fee2e2;
+  color: #b91c1c;
+  border: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.15s;
+}
+.st-quote-del:hover { opacity: 0.80; }
+
+/* Add new quote row */
+.st-quote-add-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-bottom: 4px;
+}
+
+.st-quote-new {
+  flex: 1;
+  padding: 9px 12px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.83rem;
+  color: #1a202c;
+  resize: none;
+  outline: none;
+  font-family: inherit;
+  line-height: 1.5;
+  transition: border-color 0.18s;
+}
+.st-quote-new:focus { border-color: #00a3ff; }
+
+.st-quote-add-btn {
+  flex-shrink: 0;
+  background: #10b981;
+  color: white;
+  border: none;
+  padding: 9px 16px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.18s;
+  white-space: nowrap;
+}
+.st-quote-add-btn:hover { opacity: 0.88; }
+
+/* ── Modal footer ── */
+.st-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 14px;
+  border-top: 1px solid #edf2f7;
+}
+
+.st-btn-cancel {
+  background: #f1f5f9;
+  color: #4a5568;
+  border: 1px solid #e2e8f0;
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s;
+  font-family: inherit;
+}
+.st-btn-cancel:hover { background: #e2e8f0; }
+
+.st-btn-primary {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 8px 22px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.18s;
+  font-family: inherit;
+}
+.st-btn-primary:hover { opacity: 0.88; }
+
+/* ── Scrollbars ── */
+.st-modal-box::-webkit-scrollbar       { width: 5px; }
+.st-modal-box::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 6px; }
+.st-quote-list::-webkit-scrollbar       { width: 4px; }
+.st-quote-list::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 4px; }
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .st-grid     { grid-template-columns: 1fr; }
+  .st-form-row { grid-template-columns: 1fr; }
+}

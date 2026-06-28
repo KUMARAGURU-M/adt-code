@@ -1,0 +1,423 @@
+/* src/pages/admin/ActivityLogs.css */
+
+/* ══════════════════════════════════════════════
+   PAGE SHELL
+══════════════════════════════════════════════ */
+.al-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Page Header ── */
+.al-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.al-page-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.al-page-icon {
+  font-size: 22px;
+}
+
+.al-page-title h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+/* ══════════════════════════════════════════════
+   FILTER CARD
+══════════════════════════════════════════════ */
+.al-filter-card {
+  background: white;
+  border-radius: 10px;
+  padding: 20px 24px 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #edf2f7;
+}
+
+.al-filter-title {
+  margin: 0 0 16px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+/* Exactly 2 columns — Entity Type | Action — matching screenshot */
+.al-filter-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 24px;
+  margin-bottom: 18px;
+}
+
+.al-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.al-filter-group label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+/* Select styled to match screenshot — with visible chevron */
+.al-filter-select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 9px 36px 9px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: #1a202c;
+  background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%234a5568' d='M1 1l5 5 5-5'/%3E%3C/svg%3E") no-repeat right 12px center;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.18s;
+  box-sizing: border-box;
+  width: 100%;
+  font-family: inherit;
+}
+
+.al-filter-select:focus {
+  border-color: #13c6df;
+}
+
+/* Apply Filters button — blue matching screenshot */
+.al-apply-btn {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.18s;
+}
+
+.al-apply-btn:hover {
+  opacity: 0.88;
+}
+
+/* ══════════════════════════════════════════════
+   TABLE CARD
+══════════════════════════════════════════════ */
+.al-table-card {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #edf2f7;
+  overflow: hidden;
+}
+
+.al-table-wrapper {
+  overflow-x: auto;
+}
+
+.al-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  min-width: 820px;
+}
+
+/* Standardized header background */
+.al-table thead tr {
+  background: #f8fafc;
+}
+
+.al-table th {
+  padding: 14px 15px;
+  color: #475569;
+  font-weight: 800;
+  font-size: 14px;
+  text-align: left;
+  border-bottom: 1px solid #edf2f7;
+  white-space: nowrap;
+}
+
+/* Column widths — proportional to screenshot */
+.col-ts {
+  width: 16%;
+  min-width: 145px;
+}
+
+.col-user {
+  width: 16%;
+  min-width: 130px;
+}
+
+.col-action {
+  width: 8%;
+  min-width: 80px;
+}
+
+.col-entity-type {
+  width: 10%;
+  min-width: 90px;
+}
+
+.col-entity {
+  width: 16%;
+  min-width: 130px;
+}
+
+.col-changes {
+  width: 22%;
+}
+
+.col-ip {
+  width: 12%;
+  min-width: 100px;
+}
+
+.al-table td {
+  padding: 11px 15px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #4a5568;
+  vertical-align: middle;
+  text-align: center;
+}
+
+.al-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.al-table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+/* Timestamp */
+.td-ts {
+  font-size: 12.5px;
+  color: #4b5563;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* User */
+.td-user {
+  font-weight: 600;
+  color: #111827;
+}
+
+/* Action badge — color per action type matching screenshot */
+.al-action-badge {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+}
+
+/* LOGIN — amber/orange matching screenshot exactly */
+.al-action-login {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+/* LOGOUT — slate */
+.al-action-logout {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+/* CREATE — green */
+.al-action-create {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+/* UPDATE — blue */
+.al-action-update {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+/* DELETE — red */
+.al-action-delete {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+/* Entity type badge — light cyan matching screenshot */
+.al-entity-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 5px;
+  background: #cffafe;
+  color: #0e7490;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Entity name */
+.td-entity {
+  font-weight: 600;
+  color: #111827;
+}
+
+/* Changes */
+.al-changes-text {
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.al-dash {
+  color: #d1d5db;
+}
+
+/* IP Address — monospace, subdued */
+.td-ip {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.al-empty {
+  text-align: center;
+  padding: 48px 20px;
+  color: #a0aec0;
+  font-size: 0.88rem;
+}
+
+/* ══════════════════════════════════════════════
+   PAGINATION FOOTER
+   Matches screenshot layout:
+   [Items per page: 10 ▼]  [Showing 1 to 10 of 11 items]  [«« « 1 2 » »»]
+══════════════════════════════════════════════ */
+.al-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px 16px;
+  border-top: 1px solid #f3f4f6;
+  background: #fafafa;
+}
+
+/* Items per page */
+.al-per-page {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: #4a5568;
+}
+
+.al-per-page select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 5px 28px 5px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 5px;
+  font-size: 12.5px;
+  color: #2d3748;
+  background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%234a5568' d='M1 1l4 4 4-4'/%3E%3C/svg%3E") no-repeat right 8px center;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  font-family: inherit;
+}
+
+.al-per-page select:focus {
+  border-color: #13c6df;
+}
+
+/* Showing X to Y of Z */
+.al-page-info {
+  font-size: 12.5px;
+  color: #718096;
+}
+
+/* Nav buttons group */
+.al-page-nav {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+}
+
+/* All nav buttons */
+.al-nav-btn {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 6px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  border-radius: 5px;
+  font-size: 13px;
+  color: #4a5568;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.14s, border-color 0.14s, color 0.14s;
+  font-family: inherit;
+  line-height: 1;
+}
+
+.al-nav-btn:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #cbd5e0;
+}
+
+.al-nav-btn:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+/* Edge nav (first/last) — slightly different char */
+.al-nav-edge {
+  font-size: 12px;
+  color: #718096;
+}
+
+/* Active page — blue fill matching screenshot */
+.al-active-page {
+  background: #3b82f6 !important;
+  border-color: #3b82f6 !important;
+  color: white !important;
+  font-weight: 700;
+}
+
+/* ══════════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════════ */
+@media (max-width: 700px) {
+  .al-filter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .al-pagination {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* Scrollbar */
+.al-table-wrapper::-webkit-scrollbar {
+  height: 5px;
+}
+
+.al-table-wrapper::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 6px;
+}

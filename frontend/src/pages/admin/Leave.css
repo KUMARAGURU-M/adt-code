@@ -1,0 +1,502 @@
+/* src/pages/admin/Leave.css */
+
+/* ══════════════════════════════════════════════
+   WRAPPER
+══════════════════════════════════════════════ */
+.lv-wrapper {
+  width: 100%;
+}
+
+/* ══════════════════════════════════════════════
+   HEADER
+══════════════════════════════════════════════ */
+.lv-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.lv-header-icon {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.lv-header-title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+/* ══════════════════════════════════════════════
+   TABS
+══════════════════════════════════════════════ */
+.lv-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.lv-tab {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #718096;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  transition: color 0.18s, border-color 0.18s, background 0.18s;
+  border-radius: 6px 6px 0 0;
+  white-space: nowrap;
+}
+
+.lv-tab:hover {
+  color: #2d3748;
+  background: #f8fafc;
+}
+
+.lv-tab--active {
+  color: #ffffff;
+  background: #00a3ff;
+  border-bottom-color: #00a3ff;
+}
+
+.lv-tab--active:hover {
+  background: #0090e0;
+  color: #fff;
+}
+
+.lv-tab-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+/* ══════════════════════════════════════════════
+   CONTENT
+══════════════════════════════════════════════ */
+.lv-content {
+  width: 100%;
+}
+
+/* ══════════════════════════════════════════════
+   FILTER CARD
+══════════════════════════════════════════════ */
+.lv-filter-card {
+  background: white;
+  border-radius: 10px;
+  padding: 18px 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  margin-bottom: 18px;
+  display: flex;
+  align-items: flex-end;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.lv-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 180px;
+}
+
+.lv-filter-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.lv-filter-select {
+  padding: 9px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: #1a202c;
+  background: white;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.18s;
+  font-family: inherit;
+  min-width: 180px;
+}
+.lv-filter-select:focus { border-color: #00a3ff; }
+
+/* ══════════════════════════════════════════════
+   TABLE
+══════════════════════════════════════════════ */
+.lv-table-card {
+  background: white;
+  border-radius: 10px;
+  overflow-x: auto;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.lv-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13px;
+  min-width: 700px;
+}
+
+.lv-table th {
+  background-color: #f8fafc;
+  padding: 14px 15px;
+  color: #475569;
+  font-weight: 800;
+  font-size: 14px;
+  border-bottom: 1px solid #edf2f7;
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+}
+
+.lv-table td {
+  padding: 11px 15px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #4a5568;
+  vertical-align: middle;
+  text-align: center;
+}
+
+.lv-table tbody tr:last-child td { border-bottom: none; }
+.lv-row:hover { background-color: #f8fafc; }
+
+.lv-name-cell { font-weight: 600; color: #1a202c; }
+.lv-reason    { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.lv-empty {
+  text-align: center;
+  padding: 40px !important;
+  color: #a0aec0;
+  font-style: italic;
+}
+
+/* ══════════════════════════════════════════════
+   BADGES
+══════════════════════════════════════════════ */
+.lv-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.lv-badge--pending   { background: #fef9c3; color: #92400e; }
+.lv-badge--approved  { background: #dcfce7; color: #15803d; }
+.lv-badge--rejected  { background: #fee2e2; color: #b91c1c; }
+.lv-badge--cancelled { background: #f1f5f9; color: #475569; }
+
+.lv-code-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  background: #e0e7ff;
+  color: #4338ca;
+  letter-spacing: 0.5px;
+}
+
+.lv-bool {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.lv-bool--yes { background: #dcfce7; color: #15803d; }
+.lv-bool--no  { background: #f1f5f9; color: #475569; }
+
+/* ══════════════════════════════════════════════
+   ACTION BUTTONS
+══════════════════════════════════════════════ */
+.lv-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.lv-action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  line-height: 1;
+  transition: background 0.15s;
+}
+.lv-action-btn:hover { background: #f1f5f9; }
+
+/* ══════════════════════════════════════════════
+   BUTTONS
+══════════════════════════════════════════════ */
+.lv-btn-primary {
+  background-color: #00a3ff;
+  color: white;
+  border: none;
+  padding: 9px 18px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  font-family: inherit;
+  white-space: nowrap;
+}
+.lv-btn-primary:hover { opacity: 0.88; }
+
+.lv-btn-cancel {
+  background: #f1f5f9;
+  color: #4a5568;
+  border: 1px solid #e2e8f0;
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s;
+  font-family: inherit;
+}
+.lv-btn-cancel:hover { background: #e2e8f0; }
+
+.lv-btn-danger {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 8px 24px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.18s;
+  font-family: inherit;
+}
+.lv-btn-danger:hover { opacity: 0.88; }
+
+/* ══════════════════════════════════════════════
+   MODAL
+══════════════════════════════════════════════ */
+.lv-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 20px;
+}
+
+.lv-modal {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 28px 30px 24px;
+  width: 100%;
+  max-width: 520px;
+  max-height: 88vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.20);
+  animation: lv-modal-in 0.22s ease;
+}
+
+@keyframes lv-modal-in {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.lv-modal-title {
+  margin: 0 0 20px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1a202c;
+}
+
+.lv-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid #edf2f7;
+}
+
+.lv-modal-actions--center { justify-content: center; }
+
+.lv-modal::-webkit-scrollbar { width: 5px; }
+.lv-modal::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 6px; }
+
+/* ══════════════════════════════════════════════
+   CONFIRM MODAL
+══════════════════════════════════════════════ */
+.lv-confirm { text-align: center; padding: 8px 0; }
+.lv-confirm-icon { font-size: 2.5rem; margin-bottom: 10px; }
+.lv-confirm-text {
+  margin: 0 0 8px;
+  font-size: 0.90rem;
+  color: #4a5568;
+  line-height: 1.6;
+}
+
+/* ══════════════════════════════════════════════
+   FORM
+══════════════════════════════════════════════ */
+.lv-form-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.lv-form-group {
+  margin-bottom: 16px;
+}
+
+.lv-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 0;
+}
+
+.lv-form-label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 6px;
+}
+
+.lv-req { color: #e53e3e; }
+
+.lv-form-input,
+.lv-form-select,
+.lv-form-textarea {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: #1a202c;
+  outline: none;
+  background: white;
+  transition: border-color 0.18s;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+.lv-form-input:focus,
+.lv-form-select:focus,
+.lv-form-textarea:focus { border-color: #00a3ff; }
+
+.lv-input--error { border-color: #e53e3e !important; }
+
+.lv-form-textarea {
+  resize: vertical;
+  min-height: 72px;
+}
+
+.lv-form-hint {
+  margin: 0 0 6px;
+  font-size: 0.75rem;
+  color: #718096;
+}
+
+.lv-form-error {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.78rem;
+  color: #e53e3e;
+  font-weight: 600;
+}
+
+.lv-form-check {
+  margin-bottom: 14px;
+}
+
+.lv-check-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #2d3748;
+  cursor: pointer;
+}
+.lv-check-label input[type="checkbox"] {
+  accent-color: #00a3ff;
+  cursor: pointer;
+  width: 15px;
+  height: 15px;
+}
+
+/* ══════════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .lv-tabs { flex-wrap: wrap; }
+  .lv-tab  { font-size: 0.78rem; padding: 8px 14px; }
+  .lv-form-row { grid-template-columns: 1fr; }
+  .lv-filter-card { flex-direction: column; align-items: stretch; }
+  .lv-modal { margin: 0; padding: 24px 18px 20px; }
+}
+
+/* ══════════════════════════════════════════════
+   PENDING REQUEST HIGHLIGHTING
+   ══════════════════════════════════════════════ */
+.lv-row--pending {
+  background-color: #fffbeb !important; /* Soft warm amber/yellow tint */
+  transition: background-color 0.25s ease;
+}
+
+.lv-row--pending:hover {
+  background-color: #fef3c7 !important; /* Slightly darker warm tint on hover */
+}
+
+.lv-row--pending td {
+  background-color: inherit;
+  font-weight: 500;
+  color: #1e293b;
+  border-bottom: 1px solid #fef08a !important; /* Soft yellow separator border */
+}
+
+.lv-row--pending td:first-child {
+  position: relative;
+  border-left: 4px solid #d97706 !important; /* Solid amber border accent on the left */
+}
+
+@keyframes lv-pulse {
+  0% {
+    transform: scale(0.9);
+    box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.7);
+  }
+  50% {
+    transform: scale(1.15);
+    box-shadow: 0 0 0 6px rgba(217, 119, 6, 0);
+  }
+  100% {
+    transform: scale(0.9);
+    box-shadow: 0 0 0 0 rgba(217, 119, 6, 0);
+  }
+}
+
+.lv-pulse-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background-color: #d97706; /* Match the amber accent */
+  border-radius: 50%;
+  margin-right: 8px;
+  animation: lv-pulse 2s infinite ease-in-out;
+  vertical-align: middle;
+  box-shadow: 0 0 8px rgba(217, 119, 6, 0.5);
+}

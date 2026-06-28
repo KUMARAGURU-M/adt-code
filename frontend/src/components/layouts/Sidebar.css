@@ -1,0 +1,302 @@
+/* src/components/layouts/Sidebar.css */
+
+/* ── Glassmorphism base ── */
+.sidebar {
+  width: 190px;
+  height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 1000;
+
+  /*
+    Two-layer background:
+    1. Brand gradient  — pink (top-left) → gray (mid) → cyan (bottom-right)
+    2. Deep dark base  — keeps readability
+  */
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 59,  92,  0.22)  0%,
+      rgba(155, 155, 155, 0.08) 50%,
+      rgba(19,  198, 223, 0.22) 100%
+    ),
+    rgba(8, 13, 26, 0.78);
+
+  backdrop-filter: blur(24px) saturate(170%);
+  -webkit-backdrop-filter: blur(24px) saturate(170%);
+
+  border-right: 1px solid rgba(255, 255, 255, 0.10);
+  border-top:   1px solid rgba(255, 255, 255, 0.05);
+
+  box-shadow:
+    4px 0 36px rgba(0, 0, 0, 0.40),
+    inset 1px 0 0 rgba(255, 255, 255, 0.04);
+
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* ── Scrollbar ── */
+.sidebar::-webkit-scrollbar        { width: 4px; }
+.sidebar::-webkit-scrollbar-track  { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb  {
+  background: rgba(255, 255, 255, 0.10);
+  border-radius: 10px;
+}
+
+/* ── Header ── */
+.sidebar-header {
+  padding: 20px 14px 16px;
+  text-align: left;               /* ← was center */
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.brand-name {
+  font-size: 0.88rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  line-height: 1.45;
+  margin: 0;
+  background: linear-gradient(135deg, #13c6df 0%, #a0f0fb 70%, #ffffff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.admin-status {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 0.60rem;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  padding: 2px 9px;
+  border-radius: 4px;
+  background: rgba(19, 198, 223, 0.18);
+  border: 1px solid rgba(19, 198, 223, 0.40);
+  color: #13c6df;                 /* ← solid visible color, not transparent text */
+  -webkit-text-fill-color: #13c6df;
+  text-shadow: 0 0 8px rgba(19, 198, 223, 0.50);
+}
+
+/* ── Nav container ── */
+.sidebar-nav {
+  margin-top: 10px;
+  padding: 0 8px 18px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 2px;
+}
+
+/* ── Nav item — default ── */
+.nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 9px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  text-decoration: none !important;
+  color: rgb(164, 161, 161) !important;
+  gap: 10px;
+  overflow: hidden;
+
+  background: transparent;
+  border: 1px solid transparent;
+
+  transition:
+    background   0.28s ease,
+    border-color 0.28s ease,
+    color        0.28s ease,
+    transform    0.22s ease,
+    box-shadow   0.28s ease;
+}
+
+/* Shimmer sweep — slides across on hover */
+.nav-item::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent            25%,
+    rgba(255,255,255,0.07) 50%,
+    transparent            75%
+  );
+  transform: translateX(-120%);
+  transition: transform 0.55s ease;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Left accent bar — hidden by default */
+.nav-item::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 20%;
+  height: 60%;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: linear-gradient(180deg, #ff3b5c, #13c6df);
+  box-shadow: 0 0 8px rgba(19, 198, 223, 0.50);
+  opacity: 0;
+  transform: scaleY(0);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  z-index: 1;
+}
+
+/* Keep text above pseudo-elements */
+.nav-icon,
+.nav-text {
+  position: relative;
+  z-index: 2;
+}
+
+/* ── Hover ── */
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.10);
+  color: #ffffff !important;
+  transform: translateX(5px);
+  box-shadow:
+    0 2px 14px rgba(0, 0, 0, 0.20),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.nav-item:hover::before {
+  transform: translateX(120%);  /* shimmer slides through */
+}
+
+/* ── Active ── */
+.nav-item.active {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 59,  92,  0.70)  0%,
+    rgba(140, 140, 155, 0.38) 50%,
+    rgba(19,  198, 223, 0.70) 100%
+  );
+  border-color: rgba(255, 255, 255, 0.16);
+  color: #ffffff !important;
+  transform: translateX(5px);
+  box-shadow:
+    0 4px 20px rgba(255, 59,  92,  0.25),
+    0 2px 10px rgba(19,  198, 223, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.nav-item.active::after {
+  opacity: 1;
+  transform: scaleY(1);
+}
+
+/* Active shimmer — subtle persistent glow */
+.nav-item.active::before {
+  background: linear-gradient(
+    105deg,
+    transparent            15%,
+    rgba(255,255,255,0.08) 50%,
+    transparent            85%
+  );
+  transform: translateX(0);
+  animation: shimmer-pulse 3s ease-in-out infinite;
+}
+
+@keyframes shimmer-pulse {
+  0%,  100% { opacity: 0.6; }
+  50%        { opacity: 1.0; }
+}
+
+/* ── Icon ── */
+.nav-icon {
+  font-size: 1rem;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.22s ease;
+}
+
+.sidebar-img-icon {
+  width: 25px;
+  height: 25px;
+  object-fit: contain;
+  border-radius: 2px;
+  display: block;
+}
+
+.nav-item:hover  .nav-icon,
+.nav-item.active .nav-icon {
+  transform: scale(1.18);
+}
+
+/* ── Text ── */
+.nav-text {
+  font-size: 0.82rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-decoration: none;
+  letter-spacing: 0.2px;
+  transition: letter-spacing 0.22s ease;
+}
+
+.nav-item.active .nav-text {
+  font-weight: 700;
+  letter-spacing: 0.35px;
+}
+
+/* ── Notification Badge ── */
+.sidebar-badge {
+  background: #ff3b5c;
+  color: #ffffff;
+  font-size: 0.70rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 10px;
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  box-shadow: 0 0 8px rgba(255, 59, 92, 0.6);
+  z-index: 2;
+  transition: transform 0.22s ease;
+}
+
+.nav-item:hover .sidebar-badge,
+.nav-item.active .sidebar-badge {
+  transform: scale(1.05);
+}
+
+/* Pulsing blink animation */
+.sidebar-badge.blink {
+  animation: badge-pulse 1.8s infinite ease-in-out;
+}
+
+@keyframes badge-pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 59, 92, 0.7);
+  }
+  70% {
+    transform: scale(1.08);
+    box-shadow: 0 0 0 6px rgba(255, 59, 92, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 59, 92, 0);
+  }
+}

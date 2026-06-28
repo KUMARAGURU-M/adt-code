@@ -1,0 +1,357 @@
+/* src/pages/admin/AdminDashboard.css */
+
+.dashboard-container {
+  width: 100%;
+}
+
+.dashboard-title-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.dashboard-icon {
+  font-size: 22px;
+}
+
+.dashboard-text {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-sizing: border-box;
+}
+
+.stat-title {
+  color: #718096;
+  font-size: 13px;
+  margin: 0 0 8px;
+  font-weight: 500;
+}
+
+.stat-value {
+  font-size: 30px;
+  font-weight: 800;
+  margin: 0 0 6px;
+  color: #1a202c;
+}
+
+.stat-sub {
+  color: #a0aec0;
+  font-size: 12px;
+  margin: 0;
+}
+
+.action-card,
+.welcome-card {
+  background: white;
+  padding: 22px 24px;
+  border-radius: 10px;
+  margin-bottom: 18px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.card-label {
+  margin: 0 0 14px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: 9px 18px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.2s;
+}
+
+.btn:hover {
+  opacity: 0.88;
+}
+
+.btn-primary {
+  background-color: #00a3ff;
+  color: white;
+}
+
+.btn-outline {
+  background-color: #ffffff;
+  color: #4a5568;
+  border: 1px solid #e2e8f0;
+}
+
+.welcome-desc {
+  color: #4a5568;
+  line-height: 1.7;
+  font-size: 0.9rem;
+  margin: 0 0 12px;
+}
+
+.footer-credit {
+  font-size: 11px;
+  color: #a0aec0;
+  margin: 0;
+}
+
+@media (max-width: 1100px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dashboard-flex-row {
+  display: flex;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.dashboard-flex-row > div {
+  flex: 1;
+}
+
+.checkins-card {
+  background: white;
+  padding: 22px 24px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.checkins-table-wrapper {
+  overflow-x: auto;
+}
+
+.checkins-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.checkins-table th,
+.checkins-table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.checkins-table th {
+  font-weight: 600;
+  color: #718096;
+}
+
+.checkins-table td.emp-name {
+  font-weight: 500;
+  color: #2d3748;
+}
+
+.checkins-table td.time-col {
+  font-weight: 600;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.status-absent {
+  background-color: #fee2e2;
+  color: #ef4444;
+}
+
+.status-checkedin {
+  background-color: #dbeafe;
+  color: #2563eb;
+}
+
+.status-completed {
+  background-color: #dcfce7;
+  color: #16a34a;
+}
+
+.status-present {
+  background-color: #fef9c3;
+  color: #ca8a04;
+}
+
+.loading-text,
+.no-data-text {
+  color: #718096;
+  font-size: 0.85rem;
+  font-style: italic;
+  margin: 10px 0;
+}
+
+@media (max-width: 900px) {
+  .dashboard-flex-row {
+    flex-direction: column;
+  }
+}
+
+/* ════════════════════════════════════════════
+   SHIFT ATTENDANCE WIDGET (from EmpDashboard)
+════════════════════════════════════════════ */
+.emp-checkin-widget {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(240, 244, 255, 0.8) 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(19, 198, 223, 0.2);
+  border-radius: 16px;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  box-sizing: border-box;
+}
+
+.emp-checkin-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.emp-checkin-icon {
+  font-size: 1.5rem;
+  background: rgba(19, 198, 223, 0.1);
+  padding: 8px;
+  border-radius: 12px;
+}
+
+.emp-checkin-title-block h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1a202c;
+}
+
+.emp-checkin-title-block p {
+  margin: 2px 0 0;
+  font-size: 0.8rem;
+  color: #718096;
+}
+
+.emp-checkin-status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.emp-checkin-time-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.time-box-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #718096;
+}
+
+.time-box-val {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #1a202c;
+}
+
+.time-box-val.checkin {
+  color: #16a34a;
+}
+
+.time-box-val.checkout {
+  color: #ea580c;
+}
+
+.emp-checkin-actions {
+  display: flex;
+  align-items: center;
+}
+
+.checkin-btn {
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 10px 24px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-checkin {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);
+}
+
+.btn-checkin:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(22, 163, 74, 0.4);
+}
+
+.btn-checkout {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.25);
+}
+
+.btn-checkout:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(234, 88, 12, 0.4);
+}
+
+.btn-disabled {
+  background: #e2e8f0;
+  color: #a0aec0;
+  cursor: not-allowed;
+}
+
+.checkin-error-msg {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.05);
+  padding: 6px 12px;
+  border-radius: 8px;
+  border-left: 3px solid #ef4444;
+}

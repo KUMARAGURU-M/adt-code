@@ -1,0 +1,262 @@
+/* src/pages/user/EmpLeave.css */
+
+.el-page {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Poppins', sans-serif;
+  color: #333;
+}
+
+/* HEADER */
+.el-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.el-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0;
+}
+
+.el-subtitle {
+  font-size: 0.9rem;
+  color: #666;
+  margin: 0;
+}
+
+/* TABS AND ACTIONS */
+.el-tabs-container {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.el-tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.el-tab-btn {
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.80rem;
+  font-weight: 600;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 3px solid transparent;
+}
+
+.el-tab-btn:hover {
+  color: #333;
+}
+
+.el-tab-btn.active {
+  background: #0ea5e9;
+  color: #ffffff;
+  border-bottom: 3px solid #0ea5e9;
+}
+
+.el-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px 0;
+}
+
+.el-apply-btn {
+  background: #0ea5e9;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  padding: 10px 20px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.el-apply-btn:hover {
+  background: #0284c7;
+}
+
+/* CONTENT CARDS */
+.el-content {
+  width: 100%;
+}
+
+.el-card {
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.el-empty-card {
+  padding: 40px 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.el-empty-text {
+  font-size: 0.80rem;
+  color: #666;
+  margin: 0;
+}
+
+/* TABLES */
+.el-table-container {
+  overflow-x: auto;
+}
+
+.el-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+}
+
+.el-table th, .el-table td {
+  padding: 12px 14px;
+  text-align: left;
+}
+
+.el-table th {
+  background: #f8f9fa;
+  color: #475569;
+  font-weight: 600;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.el-table td {
+  border-bottom: 1px solid #f1f5f9;
+  color: #333;
+}
+
+.el-empty-row {
+  text-align: center !important;
+  color: #94a3b8 !important;
+  padding: 28px 16px !important;
+}
+
+/* MODAL OVERLAY */
+.el-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.el-modal {
+  background: #ffffff;
+  width: 100%;
+  max-width: 450px;
+  border-radius: 8px;
+  padding: 18px 24px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.el-modal-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0 0 6px 0;
+}
+
+.el-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.el-form-group label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.el-select-wrapper {
+  position: relative;
+}
+
+.el-select, .el-input, .el-textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.80rem;
+  color: #333;
+  background: #fff;
+  transition: border-color 0.2s ease;
+}
+
+.el-select {
+  appearance: none;
+  cursor: pointer;
+  padding-right: 28px;
+}
+
+.el-select-arrow {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #000;
+  font-weight: bold;
+}
+
+.el-textarea {
+  resize: vertical;
+}
+
+.el-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.el-btn-cancel {
+  background: #64748b;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.80rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.el-btn-submit {
+  background: #0ea5e9;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.80rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}

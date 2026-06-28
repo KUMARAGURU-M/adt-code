@@ -1,0 +1,256 @@
+/* src/pages/employee/EmpHeader.css */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;900&family=Rajdhani:wght@500;600;700&display=swap');
+
+/* ════════════════════════════════════════════
+   HEADER — glassmorphism, pink → gray → cyan
+════════════════════════════════════════════ */
+.emp-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  width: 100%;
+  box-sizing: border-box;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 59,  92,  0.22)  0%,
+      rgba(155, 155, 155, 0.08) 50%,
+      rgba(19,  198, 223, 0.22) 100%
+    ),
+    rgba(8, 13, 26, 0.78);
+
+  backdrop-filter: blur(24px) saturate(170%);
+  -webkit-backdrop-filter: blur(24px) saturate(170%);
+
+  border-right: 1px solid rgba(255, 255, 255, 0.10);
+  border-top:   1px solid rgba(255, 255, 255, 0.05);
+
+  box-shadow:
+    4px 0 36px rgba(0, 0, 0, 0.40),
+    inset 1px 0 0 rgba(255, 255, 255, 0.04);
+}
+
+/* Top accent line — 3-colour brand gradient */
+.emp-header::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    #ff3b5c      20%,
+    #9b9b9b      50%,
+    #13c6df      80%,
+    transparent  100%
+  );
+  opacity: 0.90;
+}
+
+/* ── Single row: 3-column grid ── */
+.emp-header-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 10px 18px 12px;
+  gap: 16px;
+}
+
+/* ════════════════════════════════════════════
+   LEFT — Production Report + Employee badge
+════════════════════════════════════════════ */
+.emp-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.emp-prod-label {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.50rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  line-height: 1.2;
+  margin: 0;
+  color: #13c6df;
+  text-shadow: 0 0 10px rgba(19, 198, 223, 0.60);
+}
+
+.emp-user-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 59, 92, 0.12);
+  border: 1px solid rgba(255, 59, 92, 0.30);
+  border-radius: 4px;
+  padding: 2px 8px;
+  width: fit-content;
+  backdrop-filter: blur(8px);
+}
+
+.emp-badge-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: #ff3b5c;
+  box-shadow: 0 0 6px #ff3b5c;
+  animation: emp-pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes emp-pulse-dot {
+  0%, 100% { opacity: 1; box-shadow: 0 0 6px #ff3b5c; }
+  50%       { opacity: 0.5; box-shadow: 0 0 14px #ff3b5c; }
+}
+
+.emp-badge-text {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #ff3b5c;
+  text-transform: uppercase;
+}
+
+/* ════════════════════════════════════════════
+   CENTRE — Company name + location
+════════════════════════════════════════════ */
+.emp-header-centre {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.emp-company-name {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.10rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  line-height: 1;
+  user-select: none;
+}
+
+.emp-arrow {
+  color: #ff3b5c;
+  text-shadow:
+    0 0 10px rgba(255, 59, 92, 0.80),
+    0 0 24px rgba(255, 59, 92, 0.50),
+    0 0 48px rgba(255, 59, 92, 0.30);
+  animation: emp-glow-red 3s ease-in-out infinite alternate;
+}
+.emp-data {
+  color: #9b9b9b;
+  text-shadow:
+    0 0 10px rgba(155, 155, 155, 0.50),
+    0 0 22px rgba(155, 155, 155, 0.30);
+}
+.emp-dash { color: rgba(155, 155, 155, 0.45); }
+.emp-tech {
+  color: #13c6df;
+  text-shadow:
+    0 0 10px rgba(19, 198, 223, 0.80),
+    0 0 24px rgba(19, 198, 223, 0.50),
+    0 0 48px rgba(19, 198, 223, 0.30);
+  animation: emp-glow-cyan 3s ease-in-out infinite alternate;
+}
+
+@keyframes emp-glow-red {
+  from { text-shadow: 0 0 10px rgba(255,59,92,0.80), 0 0 24px rgba(255,59,92,0.50), 0 0 48px rgba(255,59,92,0.30); }
+  to   { text-shadow: 0 0 18px rgba(255,59,92,1),    0 0 36px rgba(255,59,92,0.70), 0 0 72px rgba(255,59,92,0.40); }
+}
+@keyframes emp-glow-cyan {
+  from { text-shadow: 0 0 10px rgba(19,198,223,0.80), 0 0 24px rgba(19,198,223,0.50), 0 0 48px rgba(19,198,223,0.30); }
+  to   { text-shadow: 0 0 18px rgba(19,198,223,1),    0 0 36px rgba(19,198,223,0.70), 0 0 72px rgba(19,198,223,0.40); }
+}
+
+.emp-location {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.58rem;
+  color: rgba(155, 155, 155, 0.55);
+  font-weight: 500;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  margin-top: 1px;
+}
+
+/* ════════════════════════════════════════════
+   RIGHT — Welcome + Logout
+════════════════════════════════════════════ */
+.emp-header-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+}
+
+.emp-welcome-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+}
+
+.emp-welcome-label {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.60rem;
+  color: rgba(155, 155, 155, 0.55);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-weight: 500;
+}
+
+.emp-welcome-name {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #f0f4ff;
+  letter-spacing: 0.05em;
+}
+
+.emp-logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  background: rgba(255, 59, 92, 0.12);
+  border: 1px solid rgba(255, 59, 92, 0.32);
+  border-radius: 8px;
+  color: #ff3b5c;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.80rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.22s ease;
+  backdrop-filter: blur(8px);
+}
+.emp-logout-btn:hover {
+  background: rgba(255, 59, 92, 0.22);
+  border-color: rgba(255, 59, 92, 0.65);
+  box-shadow: 0 0 18px rgba(255, 59, 92, 0.35);
+  transform: translateY(-1px);
+}
+
+.emp-impersonate-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(19, 198, 223, 0.15);
+  border: 1px solid rgba(19, 198, 223, 0.40);
+  border-radius: 4px;
+  padding: 2px 8px;
+  width: fit-content;
+  backdrop-filter: blur(8px);
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.52rem;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  color: #13c6df;
+  text-transform: uppercase;
+  text-shadow: 0 0 8px rgba(19, 198, 223, 0.50);
+}

@@ -1,0 +1,444 @@
+/* src/pages/user/WorkPortal.css */
+
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;900&family=Rajdhani:wght@500;600;700&family=Poppins:wght@400;500;600;700;800&display=swap');
+
+/* ════════════════════════════════════════════
+   PAGE BACKGROUND
+════════════════════════════════════════════ */
+.wp-page {
+  min-height: 100vh;
+
+  background: #f4f7fb;
+
+  font-family: 'Poppins', sans-serif;
+
+  display: flex;
+  flex-direction: column;
+
+  color: #111827;
+}
+
+/* ════════════════════════════════════════════
+   HEADER — GLASSMORPHISM
+════════════════════════════════════════════ */
+.wp-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+
+  width: 100%;
+  box-sizing: border-box;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 59, 92, 0.22) 0%,
+      rgba(155, 155, 155, 0.08) 50%,
+      rgba(19, 198, 223, 0.22) 100%
+    ),
+    rgba(8, 13, 26, 0.78);
+
+  backdrop-filter: blur(24px) saturate(170%);
+  -webkit-backdrop-filter: blur(24px) saturate(170%);
+
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+
+  box-shadow:
+    0 4px 36px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+
+  padding: 12px 20px;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* TOP ACCENT LINE */
+.wp-header::before {
+  content: '';
+
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+
+  height: 3px;
+
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    #ff3b5c 20%,
+    #9b9b9b 50%,
+    #13c6df 80%,
+    transparent 100%
+  );
+
+  opacity: 0.9;
+}
+
+/* LEFT */
+.wp-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wp-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.wp-title-icon {
+  font-size: 1.4rem;
+
+  color: #13c6df;
+
+  text-shadow:
+    0 0 12px rgba(19, 198, 223, 0.7);
+}
+
+.wp-title {
+  margin: 0;
+
+  font-size: 1.35rem;
+  font-weight: 800;
+
+  letter-spacing: 0.05em;
+
+  color: #f8fbff;
+
+  text-shadow:
+    0 0 12px rgba(255,255,255,0.08),
+    0 0 28px rgba(19,198,223,0.18);
+}
+
+.wp-subtitle {
+  margin: 0;
+
+  font-size: 0.72rem;
+  font-weight: 600;
+
+  letter-spacing: 3px;
+  text-transform: uppercase;
+
+  color: rgba(255, 255, 255, 0.65);
+}
+
+/* RIGHT */
+.wp-header-right {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+/* BACK BUTTON */
+.wp-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  padding: 8px 18px;
+
+  background: rgba(255, 59, 92, 0.12);
+
+  border: 1px solid rgba(255, 59, 92, 0.30);
+  border-radius: 8px;
+
+  color: #ff3b5c;
+
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.80rem;
+  font-weight: 700;
+
+  letter-spacing: 1px;
+  text-transform: uppercase;
+
+  cursor: pointer;
+
+  transition: all 0.22s ease;
+
+  backdrop-filter: blur(8px);
+}
+
+.wp-back-btn:hover {
+  background: rgba(255, 59, 92, 0.22);
+
+  border-color: rgba(255, 59, 92, 0.65);
+
+  box-shadow:
+    0 0 18px rgba(255, 59, 92, 0.35);
+
+  transform: translateY(-1px);
+}
+
+/* USER GREETING */
+.wp-user-greeting {
+  font-size: 0.82rem;
+  font-weight: 600;
+
+  color: #f8fbff;
+
+  letter-spacing: 0.04em;
+}
+
+/* ════════════════════════════════════════════
+   MAIN CONTAINER
+════════════════════════════════════════════ */
+.wp-container {
+  max-width: 1200px;
+
+  width: 100%;
+
+  margin: 0 auto;
+
+  padding: 36px 32px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ════════════════════════════════════════════
+   CARDS — WHITE STYLE
+════════════════════════════════════════════ */
+.wp-card {
+  background: #ffffff;
+
+  border: 1px solid rgba(0,0,0,0.06);
+
+  border-radius: 18px;
+
+  padding: 28px 32px;
+
+  box-shadow:
+    0 10px 34px rgba(15, 23, 42, 0.08);
+
+  transition: all 0.25s ease;
+}
+
+.wp-card:hover {
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 16px 40px rgba(15, 23, 42, 0.12);
+}
+
+/* CARD TITLE */
+.wp-card-title {
+  margin: 0 0 22px;
+
+  font-size: 1.08rem;
+  font-weight: 700;
+
+  letter-spacing: 0.03em;
+
+  color: #111827;
+}
+
+/* ════════════════════════════════════════════
+   SELECTION ROW
+════════════════════════════════════════════ */
+.wp-selection-row {
+  display: flex;
+  gap: 32px;
+}
+
+.wp-form-group {
+  flex: 1;
+
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* LABEL */
+.wp-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+
+  letter-spacing: 0.04em;
+
+  color: #374151;
+}
+
+/* SELECT WRAPPER */
+.wp-select-wrapper {
+  position: relative;
+}
+
+/* SELECT */
+.wp-select {
+  width: 100%;
+
+  padding: 12px 42px 12px 16px;
+
+  border-radius: 10px;
+
+  border: 1px solid #d1d5db;
+
+  background: #ffffff;
+
+  color: #111827;
+
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.92rem;
+
+  appearance: none;
+
+  transition: all 0.25s ease;
+
+  cursor: pointer;
+}
+
+.wp-select:focus {
+  outline: none;
+
+  border-color: #13c6df;
+
+  box-shadow:
+    0 0 0 4px rgba(19,198,223,0.10);
+}
+
+.wp-select-arrow {
+  position: absolute;
+
+  top: 50%;
+  right: 16px;
+
+  transform: translateY(-50%);
+
+  pointer-events: none;
+
+  color: #13c6df;
+
+  font-size: 0.9rem;
+}
+
+/* ════════════════════════════════════════════
+   UPLOAD AREA
+════════════════════════════════════════════ */
+.wp-upload-area {
+  border: 1px dashed #cbd5e1;
+
+  border-radius: 14px;
+
+  padding: 22px;
+
+  background: #f8fafc;
+
+  transition: all 0.25s ease;
+}
+
+.wp-upload-area:hover {
+  border-color: #13c6df;
+
+  background: #f0fbff;
+}
+
+.wp-file-input {
+  width: 100%;
+
+  color: #334155;
+
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.92rem;
+}
+
+/* ════════════════════════════════════════════
+   EMPTY STATE
+════════════════════════════════════════════ */
+.wp-empty-card {
+  min-height: 320px;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.wp-empty-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  gap: 14px;
+
+  text-align: center;
+}
+
+.wp-empty-icon {
+  font-size: 4.5rem;
+
+  color: #cbd5e1;
+}
+
+.wp-empty-title {
+  margin: 0;
+
+  font-size: 1.3rem;
+  font-weight: 700;
+
+  color: #334155;
+}
+
+.wp-empty-text {
+  margin: 0;
+
+  max-width: 560px;
+
+  font-size: 0.92rem;
+  line-height: 1.7;
+
+  color: #64748b;
+}
+
+/* ════════════════════════════════════════════
+   RESPONSIVE
+════════════════════════════════════════════ */
+@media (max-width: 900px) {
+
+  .wp-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 18px;
+  }
+
+  .wp-header-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .wp-selection-row {
+    flex-direction: column;
+  }
+
+  .wp-container {
+    padding: 24px 18px;
+  }
+
+  .wp-card {
+    padding: 22px;
+  }
+}
+
+@media (max-width: 600px) {
+
+  .wp-title {
+    font-size: 1.1rem;
+  }
+
+  .wp-subtitle {
+    letter-spacing: 2px;
+    font-size: 0.65rem;
+  }
+
+  .wp-back-btn {
+    padding: 7px 14px;
+    font-size: 0.72rem;
+  }
+
+  .wp-user-greeting {
+    font-size: 0.72rem;
+  }
+}

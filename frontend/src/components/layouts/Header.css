@@ -1,0 +1,143 @@
+/* src/components/layouts/Header.css */
+
+.main-header {
+  height: 65px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 28px;
+  position: sticky;
+  top: 0;
+  z-index: 999;
+  width: 100%;
+  box-sizing: border-box;
+  flex-shrink: 0;
+
+  /* White glassmorphism — frosted glass over the light dashboard */
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+
+  border-bottom: 1px solid rgba(255, 255, 255, 0.60);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.80) inset,
+    0 4px 24px rgba(0, 0, 0, 0.08);
+}
+
+/* ── Brand ── */
+.header-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.company-title {
+  font-size: 22px;
+  font-weight: 900;
+  margin: 0;
+  letter-spacing: 2px;
+  display: flex;
+  gap: 0;
+  align-items: baseline;
+}
+
+/* ARROW — vivid pink, readable on white */
+.text-pink {
+  color: #ff3b5c;
+  text-shadow: 0 0 18px rgba(255, 59, 92, 0.25);
+}
+
+/* DATA — dark gray, readable on white */
+.text-gray {
+  color: #6b7280;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+/* TECH — vivid cyan, readable on white */
+.text-cyan {
+  color: #0db4cc;
+  text-shadow: 0 0 18px rgba(13, 180, 204, 0.25);
+}
+
+.company-location {
+  font-size: 0.62rem;
+  color: #9ca3af;
+  margin: 0;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+}
+
+/* ── Vertical divider ── */
+.header-divider {
+  width: 1px;
+  height: 32px;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgba(0, 0, 0, 0.10),
+    transparent
+  );
+}
+
+/* ── User section ── */
+.header-user {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.user-details {
+  text-align: right;
+}
+
+.logged-label {
+  font-size: 0.60rem;
+  color: #9ca3af;
+  display: block;
+  margin-bottom: 2px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-weight: 600;
+}
+
+/* Username — dark readable text with cyan accent on white */
+.user-name {
+  font-size: 0.88rem;
+  font-weight: 800;
+  display: block;
+  letter-spacing: 0.5px;
+  background: linear-gradient(90deg, #0db4cc 0%, #0891b2 60%, #1e3a5f 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 4px rgba(13, 180, 204, 0.20));
+}
+
+/* ── Logout button ── */
+.logout-button {
+  background: linear-gradient(135deg, #ff3b5c, #c81e3c);
+  color: #ffffff;
+  border: none;
+  padding: 7px 18px;
+  border-radius: 7px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  transition:
+    box-shadow 0.22s ease,
+    transform  0.18s ease;
+  box-shadow:
+    0 2px 12px rgba(255, 59, 92, 0.35),
+    0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.logout-button:hover {
+  box-shadow:
+    0 6px 20px rgba(255, 59, 92, 0.50),
+    0 2px 6px rgba(0, 0, 0, 0.20);
+  transform: translateY(-1px);
+}
