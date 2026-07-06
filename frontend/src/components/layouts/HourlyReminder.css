@@ -1,0 +1,83 @@
+/* src/components/layouts/HourlyReminder.css */
+
+.global-popup-notification {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999; /* Ensure it is above the chat widget and other overlay elements */
+  width: 330px;
+  background: rgba(34, 36, 58, 0.85); /* Dark layout theme matching general design guidelines */
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(19, 198, 223, 0.25); /* Subtle cyan border */
+  box-shadow: 0 12px 40px rgba(19, 198, 223, 0.16), 0 4px 12px rgba(0, 0, 0, 0.25);
+  border-radius: 12px;
+  padding: 16px 20px;
+  cursor: pointer;
+  color: #ffffff;
+  border-left: 4px solid #13c6df; /* Cyan bar */
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  animation: global-popup-slide-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.global-popup-notification:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 45px rgba(19, 198, 223, 0.25), 0 6px 16px rgba(0, 0, 0, 0.3);
+  border-color: rgba(19, 198, 223, 0.45);
+}
+
+.global-popup-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  font-size: 11px;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.5);
+  transition: color 0.15s;
+  padding: 4px;
+}
+
+.global-popup-close:hover {
+  color: #ff3b5c; /* Pink Close button state */
+}
+
+.global-popup-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.global-popup-text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  font-weight: 500;
+  font-family: 'Poppins', 'Inter', sans-serif;
+  color: #f1f5f9;
+  text-align: left;
+}
+
+.global-popup-action {
+  font-size: 11px;
+  font-weight: 700;
+  color: #13c6df;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: color 0.15s;
+  align-self: flex-end;
+}
+
+.global-popup-notification:hover .global-popup-action {
+  color: #ffffff;
+}
+
+@keyframes global-popup-slide-in {
+  from {
+    transform: translateY(40px) scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}

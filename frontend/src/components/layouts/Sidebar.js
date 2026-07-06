@@ -11,6 +11,7 @@ const menuItems = [
   { name: 'DASHBOARD', icon: '📊', path: '/admin/dashboard' },
   { name: 'USERS', icon: '👥', path: '/admin/users' },
   { name: 'WORKWISE', icon: '➤', path: '/admin/workwise' },
+  { name: 'DIGICONVERTOR', icon: '🔄', path: '/admin/digiconvertor' },
   { name: 'ATTENDANCE', icon: '📅', path: '/admin/attendance' },
   { name: 'PROJECTS', icon: '📁', path: '/admin/projects' },
   { name: 'BOOKS/JOB', icon: '📖', path: '/admin/books' },
@@ -22,6 +23,7 @@ const menuItems = [
   { name: 'LEAVES', icon: '🏖️', path: '/admin/leaves' },
   { name: 'ROLES & PERMISSIONS', icon: '🔐', path: '/admin/roles' },
   { name: 'REPORTS', icon: '📈', path: '/admin/reports' },
+  { name: 'HOURLY GRAPH', icon: '📝', path: '/admin/hourly-graph' },
   { name: 'ACTIVITY LOGS', icon: '📝', path: '/admin/activity-logs' },
   { name: 'TIME LOG', icon: <img src={timelogIcon} alt="Time Log" className="sidebar-img-icon" />, path: '/admin/timelog' },
   { name: 'INVOICES', icon: <img src={invoiceIcon} alt="Invoices" className="sidebar-img-icon" />, path: '/admin/invoices' },
@@ -29,7 +31,7 @@ const menuItems = [
   { name: 'SETTINGS', icon: '🛠️', path: '/admin/settings' },
 ];
 
-const Sidebar = () => {
+const Sidebar = ({ isMobileOpen, onCloseMobile }) => {
   const [pendingLeavesCount, setPendingLeavesCount] = useState(0);
   const location = useLocation();
 
@@ -40,12 +42,12 @@ const Sidebar = () => {
   const displayRole = roles.includes('Admin')
     ? 'Admin'
     : roles.includes('Manager')
-    ? 'Manager'
-    : roles.includes('Team Leader')
-    ? 'Team Leader'
-    : roles.includes('Employee')
-    ? 'Employee'
-    : 'User';
+      ? 'Manager'
+      : roles.includes('Team Leader')
+        ? 'Team Leader'
+        : roles.includes('Employee')
+          ? 'Employee'
+          : 'User';
 
   const hasRole = (roleName) => roles.includes(roleName);
 
@@ -57,6 +59,7 @@ const Sidebar = () => {
       const allowed = [
         'DASHBOARD',
         'WORKWISE',
+        'DIGICONVERTOR',
         'BOOKS/JOB',
         'PRODUCTION',
         'TASKS',
@@ -64,6 +67,7 @@ const Sidebar = () => {
         'SHIFTS',
         'LEAVES',
         'REPORTS',
+        'HOURLY GRAPH',
         'TIME LOG'
       ];
       return allowed.includes(item.name);
@@ -72,10 +76,12 @@ const Sidebar = () => {
       const allowed = [
         'DASHBOARD',
         'WORKWISE',
+        'DIGICONVERTOR',
         'BOOKS/JOB',
         'PRODUCTION',
         'TASKS',
         'REPORTS',
+        'HOURLY GRAPH',
         'TIME LOG'
       ];
       return allowed.includes(item.name);
@@ -83,7 +89,8 @@ const Sidebar = () => {
     if (hasRole('Employee')) {
       const allowed = [
         'WORKWISE',
-        'PRODUCTION'
+        'PRODUCTION',
+        'HOURLY GRAPH'
       ];
       return allowed.includes(item.name);
     }
@@ -112,34 +119,50 @@ const Sidebar = () => {
     return () => clearInterval(interval);
   }, [location.pathname, isAdminOrManager]);
 
+  const handleNavClick = () => {
+    if (onCloseMobile) {
+      onCloseMobile();
+    }
+  };
+
   return (
-    <div className="sidebar">
-      <div className="sidebar-header">
-        {/* ← Left-aligned, two lines via <br /> */}
-        <h2 className="brand-name">
-          ADT<br />Production
-        </h2>
-        <span className="admin-status">{displayRole}</span>
+    <>
+      {isMobileOpen && (
+        <div
+          className="sidebar-mobile-backdrop"
+          onClick={onCloseMobile}
+          aria-hidden="true"
+        />
+      )}
+      <div className={`sidebar${isMobileOpen ? ' mobile-open' : ''}`}>
+        <div className="sidebar-header">
+          {/* ← Left-aligned, two lines via <br /> */}
+          <h2 className="brand-name">
+            ADT<br />Production
+          </h2>
+          <span className="admin-status">{displayRole}</span>
+        </div>
+        <nav className="sidebar-nav">
+          {filteredMenuItems.map((item) => {
+            const resolvedPath = item.path.replace('/admin/', `/${prefix}/`);
+            return (
+              <NavLink
+                key={item.path}
+                to={resolvedPath}
+                onClick={handleNavClick}
+                className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+              >
+                <span className="nav-icon">{item.icon}</span>
+                <span className="nav-text">{item.name}</span>
+                {item.name === 'LEAVES' && pendingLeavesCount > 0 && (
+                  <span className="sidebar-badge blink">{pendingLeavesCount}</span>
+                )}
+              </NavLink>
+            );
+          })}
+        </nav>
       </div>
-      <nav className="sidebar-nav">
-        {filteredMenuItems.map((item) => {
-          const resolvedPath = item.path.replace('/admin/', `/${prefix}/`);
-          return (
-            <NavLink
-              key={item.path}
-              to={resolvedPath}
-              className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
-            >
-              <span className="nav-icon">{item.icon}</span>
-              <span className="nav-text">{item.name}</span>
-              {item.name === 'LEAVES' && pendingLeavesCount > 0 && (
-                <span className="sidebar-badge blink">{pendingLeavesCount}</span>
-              )}
-            </NavLink>
-          );
-        })}
-      </nav>
-    </div>
+    </>
   );
 };
 

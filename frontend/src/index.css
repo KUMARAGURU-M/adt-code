@@ -36,214 +36,187 @@ th {
 }
 
 /* Complexity background/text styling for select dropdowns, options, and cells */
+.status-pill,
+.complexity-badge,
+.bj-status-pill,
+.filestatus-pill,
+.billing-badge,
+.prod-status-pill,
+.qc-status-pill,
+.et-status-badge,
+.role-badge,
+.sm-status-badge,
+span.complexity-simple,
+span.complexity-medium,
+span.complexity-complex,
+span.complexity-heavycomplex,
 select.complexity-simple,
 option.complexity-simple,
-span.complexity-simple {
-  background-color: #dcfce7 !important;
-  color: #15803d !important;
-  border-color: #86efac !important;
-}
-
 select.complexity-medium,
 option.complexity-medium,
-span.complexity-medium {
+select.complexity-complex,
+option.complexity-complex,
+select.complexity-heavycomplex,
+option.complexity-heavycomplex {
+  display: inline-block !important;
+  padding: 4px 10px !important;
+  border-radius: 6px !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  white-space: nowrap !important;
+  text-align: center !important;
+  text-transform: uppercase !important;
+  border: 1px solid transparent !important;
+  box-sizing: border-box !important;
+  letter-spacing: 0.03em !important;
+  line-height: 1.4 !important;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   CONSISTENT STATUS COLORS
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* 1. GREEN (Simple, Finish, Finished, Completed, Active, Success, Billed, Uploaded) */
+.status-simple,
+.status-finish,
+.status-finished,
+.status-completed,
+.status-active,
+.status-success,
+.status-granted,
+.status-billed,
+.complexity-simple,
+span.complexity-simple,
+select.complexity-simple,
+option.complexity-simple,
+.bj-sp-finish,
+.bj-sp-completed,
+.bj-sp-active,
+.bj-sp-billed,
+.prod-sp-finish,
+.qc-sp-finish,
+.file-sp-finish,
+.file-sp-completed,
+.status-badge.active,
+.sm-status-badge.active,
+.tm-access-badge--granted,
+.bb-billed,
+.bb-credited,
+.status-credited,
+.att-summary-select.status-credited {
+  background-color: #dcfce7 !important;
+  color: #15803d !important;
+  border-color: #bbf7d0 !important;
+}
+
+/* 2. YELLOW/GOLD (Medium, WIP, In Progress, In-Progress, Running) */
+.status-medium,
+.status-wip,
+.status-inprogress,
+.status-in_progress,
+.status-running,
+.complexity-medium,
+span.complexity-medium,
+select.complexity-medium,
+option.complexity-medium,
+.bj-sp-wip,
+.prod-sp-wip,
+.qc-sp-wip,
+.file-sp-wip,
+.bb-wip {
   background-color: #fef9c3 !important;
   color: #854d0e !important;
   border-color: #fde047 !important;
 }
 
-select.complexity-complex,
-option.complexity-complex,
-span.complexity-complex {
-  background-color: #fed7aa !important;
-  color: #9a3412 !important;
-  border-color: #fb923c !important;
-}
-
-select.complexity-heavycomplex,
-option.complexity-heavycomplex,
-span.complexity-heavycomplex {
-  background-color: #fee2e2 !important;
-  color: #991b1b !important;
-  border-color: #fca5a5 !important;
-}
-
-/* ==========================================================================
-   STATUS & PROJECT PALETTES (Global Consistency & Distinct Categories)
-   ========================================================================== */
-
-/* ── 1. Book Job Status (Soft Pastels) ── */
-.bj-status-pill {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.bj-sp-finish {
-  background-color: #e8f5e9 !important;
-  color: #2e7d32 !important;
-  border: 1px solid #c8e6c9 !important;
-}
-
-.bj-sp-wip {
-  background-color: #e3f2fd !important;
-  color: #1565c0 !important;
-  border: 1px solid #bbdefb !important;
-}
-
-.bj-sp-yts {
-  background-color: #f5f5f5 !important;
-  color: #616161 !important;
-  border: 1px solid #e0e0e0 !important;
-}
-
-.bj-sp-rtu {
-  background-color: #f3e5f5 !important;
-  color: #7b1fa2 !important;
-  border: 1px solid #e1bee7 !important;
-}
-
-.bj-sp-uploaded {
-  background-color: #e0f2f1 !important;
-  color: #00695c !important;
-  border: 1px solid #b2dfdb !important;
-}
-
-.bj-sp-pending {
-  background-color: #fff8e1 !important;
-  color: #ff8f00 !important;
-  border: 1px solid #ffe082 !important;
-}
-
-.bj-sp-hold {
-  background-color: #fff3e0 !important;
-  color: #e65100 !important;
-  border: 1px solid #ffe0b2 !important;
-}
-
-.bj-sp-query {
-  background-color: #fce4ec !important;
-  color: #c2185b !important;
-  border: 1px solid #f8bbd0 !important;
-}
-
-/* ── 2. Production Process Status (Vibrant Solid) ── */
-.prod-status-pill {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.prod-sp-finish {
-  background-color: #dcfce7 !important;
-  color: #15803d !important;
-  border: 1px solid #bbf7d0 !important;
-}
-
-.prod-sp-wip {
+/* 3. AMBER/ORANGE (Pending) */
+.status-pending,
+.bj-sp-pending,
+.prod-sp-pending,
+.qc-sp-pending,
+.file-sp-pending,
+.bb-pending {
   background-color: #ffedd5 !important;
   color: #c2410c !important;
-  border: 1px solid #fed7aa !important;
+  border-color: #fed7aa !important;
 }
 
-.prod-sp-yts {
+/* 4. BLUE (YTS - Yet to Start, Invoiced) */
+.status-yts,
+.status-invoiced,
+.bj-sp-yts,
+.prod-sp-yts,
+.qc-sp-yts,
+.file-sp-yts,
+.bb-yts,
+.bb-invoiced {
   background-color: #e0f2fe !important;
   color: #0369a1 !important;
-  border: 1px solid #bae6fd !important;
+  border-color: #bae6fd !important;
 }
 
-.prod-sp-rtu {
+/* 5. PURPLE/INDIGO (RTU, Uploaded, Heavy Complex) */
+.status-rtu,
+.status-uploaded,
+.status-heavycomplex,
+.complexity-heavycomplex,
+span.complexity-heavycomplex,
+select.complexity-heavycomplex,
+option.complexity-heavycomplex,
+.bj-sp-rtu,
+.bj-sp-uploaded,
+.prod-sp-rtu,
+.prod-sp-uploaded,
+.qc-sp-rtu,
+.qc-sp-uploaded,
+.file-sp-rtu,
+.file-sp-uploaded,
+.bb-rtu,
+.bb-uploaded {
   background-color: #f3e8ff !important;
   color: #7e22ce !important;
-  border: 1px solid #e9d5ff !important;
+  border-color: #e9d5ff !important;
 }
 
-.prod-sp-uploaded {
-  background-color: #e2e8f0 !important;
-  color: #334155 !important;
-  border: 1px solid #cbd5e1 !important;
+/* 6. ORANGE-RED (Complex) */
+.status-complex,
+.complexity-complex,
+span.complexity-complex,
+select.complexity-complex,
+option.complexity-complex {
+  background-color: #ffe4e6 !important;
+  color: #be123c !important;
+  border-color: #fecdd3 !important;
 }
 
-.prod-sp-pending {
-  background-color: #fef3c7 !important;
-  color: #d97706 !important;
-  border: 1px solid #fde68a !important;
-}
-
-.prod-sp-hold {
+/* 7. RED (Hold, Inactive, Denied, Cancelled) */
+.status-hold,
+.status-inactive,
+.status-denied,
+.status-cancelled,
+.bj-sp-hold,
+.prod-sp-hold,
+.qc-sp-hold,
+.file-sp-hold,
+.bb-hold,
+.status-badge.inactive,
+.sm-status-badge.inactive,
+.tm-access-badge--denied {
   background-color: #fee2e2 !important;
   color: #b91c1c !important;
-  border: 1px solid #fecaca !important;
+  border-color: #fecaca !important;
 }
 
-.prod-sp-query {
+/* 8. PINK (Query) */
+.status-query,
+.bj-sp-query,
+.prod-sp-query,
+.qc-sp-query,
+.file-sp-query,
+.bb-query {
   background-color: #fce7f3 !important;
   color: #be185d !important;
-  border: 1px solid #fbcfe8 !important;
-}
-
-/* ── 3. QC Status (Cool Outline/Deep Tones) ── */
-.qc-status-pill {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.qc-sp-finish {
-  background-color: #e0f7fa !important;
-  color: #006064 !important;
-  border: 1px solid #b2ebf2 !important;
-}
-
-.qc-sp-wip {
-  background-color: #e8eaf6 !important;
-  color: #1a237e !important;
-  border: 1px solid #c5cae9 !important;
-}
-
-.qc-sp-yts {
-  background-color: #e0f2fe !important;
-  color: #0284c7 !important;
-  border: 1px solid #93c5fd !important;
-}
-
-.qc-sp-rtu {
-  background-color: #fdf2f8 !important;
-  color: #9d174d !important;
-  border: 1px solid #fbcfe8 !important;
-}
-
-.qc-sp-uploaded {
-  background-color: #f1f8e9 !important;
-  color: #33691e !important;
-  border: 1px solid #dcedc8 !important;
-}
-
-.qc-sp-pending {
-  background-color: #fff5f5 !important;
-  color: #c53030 !important;
-  border: 1px solid #feb2b2 !important;
-}
-
-.qc-sp-hold {
-  background-color: #eceff1 !important;
-  color: #263238 !important;
-  border: 1px solid #b0bec5 !important;
-}
-
-.qc-sp-query {
-  background-color: #fce4ec !important;
-  color: #880e4f !important;
-  border: 1px solid #f8bbd0 !important;
+  border-color: #fbcfe8 !important;
 }
 
 /* ── 4. Project brand badges ── */
@@ -310,4 +283,72 @@ span.complexity-heavycomplex {
   background-color: #f1f5f9 !important;
   color: #475569 !important;
   border: 1px solid #cbd5e1 !important;
+}
+
+/* ==========================================================================
+   GLOBAL MOBILE RESPONSIVE UTILITIES
+   ========================================================================== */
+
+/* Responsive table wrappers */
+.table-responsive,
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 768px) {
+
+  /* Prevent horizontal scrollbar on body */
+  html,
+  body {
+    overflow-x: hidden;
+  }
+
+  /* Ensure tables don't force page overflow */
+  table {
+    width: 100%;
+    min-width: 600px;
+    /* Allows horizontal scrolling inside table-responsive containers */
+  }
+
+  /* Flex containers stack vertically on mobile if needed */
+  .responsive-flex-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   ROLE BADGES (Distinct Colors)
+   ────────────────────────────────────────────────────────────────────────── */
+.role-badge.admin {
+  background-color: #fee2e2 !important;
+  color: #b91c1c !important;
+  border-color: #fecaca !important;
+}
+
+.role-badge.manager {
+  background-color: #dcfce7 !important;
+  color: #15803d !important;
+  border-color: #bbf7d0 !important;
+}
+
+.role-badge.team-leader {
+  background-color: #f3e8ff !important;
+  color: #6b21a8 !important;
+  border-color: #e9d5ff !important;
+}
+
+.role-badge.employee {
+  background-color: #e0e7ff !important;
+  color: #4338ca !important;
+  border-color: #c7d2fe !important;
+}
+
+.role-badge.viewer {
+  background-color: #f1f5f9 !important;
+  color: #475569 !important;
+  border-color: #cbd5e1 !important;
 }

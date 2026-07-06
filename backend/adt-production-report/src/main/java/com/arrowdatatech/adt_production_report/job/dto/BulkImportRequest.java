@@ -24,4 +24,7 @@ public class BulkImportRequest {
     // e.g. ["receiveDate","jobId","title","pageCount","isbn"]
     @JsonProperty("fieldOrder")
     private List<String> fieldOrder;
+
+    @JsonProperty("workflowId")
+    private UUID workflowId;
 }

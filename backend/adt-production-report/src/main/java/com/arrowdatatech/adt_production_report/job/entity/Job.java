@@ -2,6 +2,7 @@ package com.arrowdatatech.adt_production_report.job.entity;
 
 import com.arrowdatatech.adt_production_report.common.entity.BaseEntity;
 import com.arrowdatatech.adt_production_report.project.entity.Project;
+import com.arrowdatatech.adt_production_report.project.entity.Workflow;
 import com.arrowdatatech.adt_production_report.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -27,6 +28,11 @@ public class Job extends BaseEntity {
     @org.hibernate.annotations.NotFound(action = org.hibernate.annotations.NotFoundAction.IGNORE)
     private Project project;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "workflow_id",
+            foreignKey = @ForeignKey(name = "fk_jobs_workflow"))
+    private Workflow workflow;
+
     @Column(name = "job_id_code", nullable = true, length = 60)
     private String jobIdCode;
 
@@ -36,9 +42,8 @@ public class Job extends BaseEntity {
     @Column(name = "title_name", nullable = false, length = 500)
     private String titleName;
 
-    @Column(name = "page_count", nullable = false)
-    @Builder.Default
-    private Integer pageCount = 0;
+    @Column(name = "page_count", nullable = true)
+    private Integer pageCount;
 
     @Column(name = "number_of_chapters")
     private Integer numberOfChapters;
@@ -111,3 +116,8 @@ public class Job extends BaseEntity {
     @org.hibernate.annotations.NotFound(action = org.hibernate.annotations.NotFoundAction.IGNORE)
     private User createdBy;
 }
+
+
+
+
+

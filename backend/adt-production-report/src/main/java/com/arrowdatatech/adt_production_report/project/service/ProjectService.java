@@ -9,7 +9,9 @@ import com.arrowdatatech.adt_production_report.common.util.SecurityUtils;
 import com.arrowdatatech.adt_production_report.project.dto.CreateProjectRequest;
 import com.arrowdatatech.adt_production_report.project.dto.ProjectResponse;
 import com.arrowdatatech.adt_production_report.project.entity.Project;
+import com.arrowdatatech.adt_production_report.project.entity.Workflow;
 import com.arrowdatatech.adt_production_report.project.repository.ProjectRepository;
+import com.arrowdatatech.adt_production_report.project.repository.WorkflowRepository;
 import com.arrowdatatech.adt_production_report.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +33,7 @@ public class ProjectService {
     private final ClientRepository clientRepository;
     private final UserRepository userRepository;
     private final ActivityLogService activityLogService;
+    private final WorkflowRepository workflowRepository;
 
     // ─────────────────────────────────────────────
     // GET ALL ACTIVE PROJECTS
@@ -92,10 +95,18 @@ public class ProjectService {
                             "Client", "id", request.getClientId()));
         }
 
+        Workflow workflow = null;
+        if (request.getWorkflowId() != null) {
+            workflow = workflowRepository.findById(request.getWorkflowId())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Workflow", "id", request.getWorkflowId()));
+        }
+
         Project project = Project.builder()
                 .name(request.getName().trim())
                 .description(request.getDescription())
                 .client(client)
+                .workflow(workflow)
                 .type(request.getType())
                 .complexityLevel(request.getComplexityLevel())
                 .ratePerPage(request.getRatePerPage() != null
@@ -150,20 +161,28 @@ public class ProjectService {
                     .orElseThrow(() -> new ResourceNotFoundException(
                             "Client", "id", request.getClientId()));
             project.setClient(client);
+        } else {
+            project.setClient(null);
+        }
+
+        // Update workflow
+        if (request.getWorkflowId() != null) {
+            Workflow workflow = workflowRepository.findById(request.getWorkflowId())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Workflow", "id", request.getWorkflowId()));
+            project.setWorkflow(workflow);
+        } else {
+            project.setWorkflow(null);
         }
 
         if (request.getName() != null) {
             project.setName(request.getName().trim());
         }
-        if (request.getDescription() != null) {
-            project.setDescription(request.getDescription());
-        }
+        project.setDescription(request.getDescription());
         if (request.getRatePerPage() != null) {
             project.setRatePerPage(request.getRatePerPage());
         }
-        if (request.getHourlyRate() != null) {
-            project.setHourlyRate(request.getHourlyRate());
-        }
+        project.setHourlyRate(request.getHourlyRate());
         if (request.getIsActive() != null) {
             project.setIsActive(request.getIsActive());
         }
@@ -271,6 +290,10 @@ public class ProjectService {
                         ? project.getClient().getId() : null)
                 .clientName(project.getClient() != null
                         ? project.getClient().getCompanyName() : null)
+                .workflowId(project.getWorkflow() != null
+                        ? project.getWorkflow().getId() : null)
+                .workflowName(project.getWorkflow() != null
+                        ? project.getWorkflow().getName() : null)
                 .type(project.getType())
                 .complexityLevel(project.getComplexityLevel())
                 .ratePerPage(project.getRatePerPage())

@@ -71,5 +71,9 @@ public class InvoiceResponse {
         private LocalDate startDate;
         private LocalDate endDate;
         private String language;
+        private UUID workflowId;
+        private String workflowName;
+        private String processNames;
+        private String workflowNames;
     }
 }

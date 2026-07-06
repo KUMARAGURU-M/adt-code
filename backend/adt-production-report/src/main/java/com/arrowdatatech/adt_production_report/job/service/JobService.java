@@ -12,7 +12,9 @@ import com.arrowdatatech.adt_production_report.job.repository.ImportBatchReposit
 import com.arrowdatatech.adt_production_report.job.repository.ImportFieldMappingRepository;
 import com.arrowdatatech.adt_production_report.job.repository.JobRepository;
 import com.arrowdatatech.adt_production_report.project.entity.Project;
+import com.arrowdatatech.adt_production_report.project.entity.Workflow;
 import com.arrowdatatech.adt_production_report.project.repository.ProjectRepository;
+import com.arrowdatatech.adt_production_report.project.repository.WorkflowRepository;
 import com.arrowdatatech.adt_production_report.user.entity.User;
 import com.arrowdatatech.adt_production_report.user.repository.UserRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -32,6 +34,7 @@ import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.stream.Collectors;
 import com.arrowdatatech.adt_production_report.task.repository.TaskJobAssignmentRepository;
+import com.arrowdatatech.adt_production_report.task.repository.TaskRepository;
 import com.arrowdatatech.adt_production_report.task.entity.TaskJobAssignment;
 import com.arrowdatatech.adt_production_report.task.entity.Task;
 
@@ -49,6 +52,8 @@ public class JobService {
     private final ActivityLogService activityLogService;
     private final ObjectMapper objectMapper;
     private final TaskJobAssignmentRepository taskJobAssignmentRepository;
+    private final TaskRepository taskRepository;
+    private final WorkflowRepository workflowRepository;
 
     // ─────────────────────────────────────────────
     // SEARCH JOBS
@@ -89,18 +94,24 @@ public class JobService {
         Map<UUID, List<TaskJobAssignment>> assignmentsByJobId = assignments.stream()
                 .collect(Collectors.groupingBy(tja -> tja.getJob().getId()));
 
+        List<UUID> projectIds = jobs.getContent().stream()
+                .map(j -> j.getProject() != null ? j.getProject().getId() : null)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+        Map<UUID, List<String>> processesByProjectId = getProcessesByProjectIds(projectIds);
+
         return jobs.map(job -> {
             List<TaskJobAssignment> jobAssignments = assignmentsByJobId.getOrDefault(job.getId(), List.of());
-            List<String> processes = jobAssignments.stream()
-                    .map(TaskJobAssignment::getTask)
-                    .map(task -> task.getProcess() != null ? task.getProcess().getName() : null)
-                    .filter(Objects::nonNull)
-                    .distinct()
-                    .collect(Collectors.toList());
+            List<String> processes = processesByProjectId.getOrDefault(
+                    job.getProject() != null ? job.getProject().getId() : null,
+                    List.of()
+            );
 
             List<String> employees = jobAssignments.stream()
                     .map(TaskJobAssignment::getTask)
                     .flatMap(task -> task.getEmployeeAssignments().stream())
+                    .filter(tea -> tea != null && tea.getUser() != null)
                     .map(tea -> tea.getUser().getEmployeeProfile() != null 
                             ? tea.getUser().getEmployeeProfile().getFullName() 
                             : tea.getUser().getUserCode())
@@ -125,15 +136,14 @@ public class JobService {
     public JobResponse getJobById(UUID id) {
         Job job = findJob(id);
         List<TaskJobAssignment> assignments = taskJobAssignmentRepository.findAssignmentsByJobIds(List.of(job.getId()));
-        List<String> processes = assignments.stream()
-                .map(TaskJobAssignment::getTask)
-                .map(t -> t.getProcess() != null ? t.getProcess().getName() : null)
-                .filter(Objects::nonNull)
-                .distinct()
-                .collect(Collectors.toList());
+        List<String> processes = List.of();
+        if (job.getProject() != null) {
+            processes = taskRepository.findProcessNamesByProjectId(job.getProject().getId());
+        }
         List<String> employees = assignments.stream()
                 .map(TaskJobAssignment::getTask)
                 .flatMap(task -> task.getEmployeeAssignments().stream())
+                .filter(tea -> tea != null && tea.getUser() != null)
                 .map(tea -> tea.getUser().getEmployeeProfile() != null 
                         ? tea.getUser().getEmployeeProfile().getFullName() 
                         : tea.getUser().getUserCode())
@@ -153,9 +163,10 @@ public class JobService {
     // ─────────────────────────────────────────────
     @Transactional(readOnly = true)
     public List<JobResponse> getJobsByProject(UUID projectId) {
+        List<String> processes = taskRepository.findProcessNamesByProjectId(projectId);
         return jobRepository.findByProjectIdOrderByReceiveDateDesc(projectId)
                 .stream()
-                .map(this::toResponse)
+                .map(job -> toResponse(job, null, null, processes))
                 .collect(Collectors.toList());
     }
 
@@ -164,9 +175,10 @@ public class JobService {
     // ─────────────────────────────────────────────
     @Transactional(readOnly = true)
     public List<JobResponse> getAvailableJobsForTask(UUID projectId) {
+        List<String> processes = taskRepository.findProcessNamesByProjectId(projectId);
         return jobRepository.findAvailableJobsForTask(projectId)
                 .stream()
-                .map(this::toResponse)
+                .map(job -> toResponse(job, null, null, processes))
                 .collect(Collectors.toList());
     }
 
@@ -184,26 +196,35 @@ public class JobService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Project", "id", request.getProjectId()));
 
-        // Per-project uniqueness (matches DB constraint) if Job ID is provided
-        if (request.getJobIdCode() != null && !request.getJobIdCode().isBlank()) {
-            if (jobRepository.existsByProjectIdAndJobIdCode(
-                    project.getId(), request.getJobIdCode().trim())) {
-                throw new BadRequestException(
-                        "Job ID '" + request.getJobIdCode().trim()
-                                + "' already exists for project '"
-                                + project.getName() + "'.");
-            }
+        if (request.getJobIdCode() == null || request.getJobIdCode().trim().isBlank()) {
+            throw new BadRequestException("Job ID is required.");
+        }
+
+        // Per-project uniqueness (matches DB constraint)
+        if (jobRepository.existsByProjectIdAndJobIdCode(
+                project.getId(), request.getJobIdCode().trim())) {
+            throw new BadRequestException(
+                    "Job ID '" + request.getJobIdCode().trim()
+                            + "' already exists for project '"
+                            + project.getName() + "'.");
         }
 
         User currentUser = getCurrentUserOrNull();
 
+        Workflow workflow = null;
+        if (request.getWorkflowId() != null) {
+            workflow = workflowRepository.findById(request.getWorkflowId())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Workflow", "id", request.getWorkflowId()));
+        }
+
         Job job = Job.builder()
                 .project(project)
+                .workflow(workflow)
                 .jobIdCode(request.getJobIdCode() != null && !request.getJobIdCode().isBlank() ? request.getJobIdCode().trim() : null)
                 .xmlIsbn(request.getXmlIsbn())
                 .titleName(request.getTitleName().trim())
-                .pageCount(request.getPageCount() != null
-                        ? request.getPageCount() : 0)
+                .pageCount(request.getPageCount())
                 .numberOfChapters(request.getNumberOfChapters())
                 .pdfInputType(request.getPdfInputType())
                 .complexity(request.getComplexity())
@@ -223,7 +244,8 @@ public class JobService {
 
         job = jobRepository.save(job);
         logAction("CREATE", job);
-        return toResponse(job);
+        List<String> processes = taskRepository.findProcessNamesByProjectId(project.getId());
+        return toResponse(job, null, null, processes);
     }
 
     // ─────────────────────────────────────────────
@@ -234,15 +256,14 @@ public class JobService {
 
         Job job = findJob(id);
 
-        // Check per-project uniqueness if jobIdCode changed and is not blank
-        if (request.getJobIdCode() != null) {
-            String requestJobId = request.getJobIdCode().trim();
-            if (!requestJobId.isBlank()) {
-                if ((job.getJobIdCode() == null || !job.getJobIdCode().equals(requestJobId))
-                        && jobRepository.existsByProjectIdAndJobIdCode(job.getProject().getId(), requestJobId)) {
-                    throw new BadRequestException("Job ID '" + requestJobId + "' already exists.");
-                }
-            }
+        if (request.getJobIdCode() == null || request.getJobIdCode().trim().isBlank()) {
+            throw new BadRequestException("Job ID is required.");
+        }
+
+        String requestJobId = request.getJobIdCode().trim();
+        if ((job.getJobIdCode() == null || !job.getJobIdCode().equals(requestJobId))
+                && jobRepository.existsByProjectIdAndJobIdCode(job.getProject().getId(), requestJobId)) {
+            throw new BadRequestException("Job ID '" + requestJobId + "' already exists.");
         }
 
         if (request.getProjectId() != null
@@ -273,11 +294,21 @@ public class JobService {
         if (request.getEndMonth()        != null) job.setEndMonth(request.getEndMonth());
         if (request.getLanguage()        != null) job.setLanguage(request.getLanguage().trim());
 
+        if (request.getWorkflowId() != null) {
+            Workflow workflow = workflowRepository.findById(request.getWorkflowId())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Workflow", "id", request.getWorkflowId()));
+            job.setWorkflow(workflow);
+        } else {
+            job.setWorkflow(null);
+        }
+
         job.setUpdatedAt(OffsetDateTime.now());
         job = jobRepository.save(job);
 
         logAction("UPDATE", job);
-        return toResponse(job);
+        List<String> processes = taskRepository.findProcessNamesByProjectId(job.getProject().getId());
+        return toResponse(job, null, null, processes);
     }
 
     // ─────────────────────────────────────────────
@@ -393,10 +424,17 @@ public class JobService {
         List<BulkImportResponse.RowError> errors = new ArrayList<>();
         int successCount = 0;
 
+        Workflow selectedWorkflow = null;
+        if (request.getWorkflowId() != null) {
+            selectedWorkflow = workflowRepository.findById(request.getWorkflowId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Workflow", "id", request.getWorkflowId()));
+        }
+
         // HIGH-PERFORMANCE FIX: Load existing Job IDs into memory to prevent transaction death
         Set<String> existingJobIds = jobRepository.findByProjectIdOrderByReceiveDateDesc(project.getId())
                 .stream()
                 .map(Job::getJobIdCode)
+                .filter(id -> id != null && !id.isBlank())
                 .collect(Collectors.toSet());
 
         for (int i = 0; i < request.getRows().size(); i++) {
@@ -407,13 +445,17 @@ public class JobService {
                 Job job = mapRowToJob(row, fieldOrder, project);
 
                 // 1. Safe In-Memory Validation (Prevents Postgres 25P02 error)
-                if (existingJobIds.contains(job.getJobIdCode())) {
+                if (job.getJobIdCode() != null && !job.getJobIdCode().isBlank() && existingJobIds.contains(job.getJobIdCode())) {
                     errors.add(BulkImportResponse.RowError.builder()
                             .rowNumber(rowNum)
                             .field("jobId")
                             .message("Job ID '" + job.getJobIdCode() + "' already exists in this project - skipped.")
                             .build());
                     continue; // Skip safely without throwing an exception
+                }
+
+                if (selectedWorkflow != null) {
+                    job.setWorkflow(selectedWorkflow);
                 }
 
                 // 2. Safe Database Save
@@ -423,7 +465,9 @@ public class JobService {
                 jobRepository.save(job);
 
                 // 3. Add to local set to catch duplicates within the pasted data itself
-                existingJobIds.add(job.getJobIdCode());
+                if (job.getJobIdCode() != null && !job.getJobIdCode().isBlank()) {
+                    existingJobIds.add(job.getJobIdCode());
+                }
                 successCount++;
 
             } catch (Exception e) {
@@ -533,6 +577,13 @@ public class JobService {
         Map<UUID, List<TaskJobAssignment>> assignmentsByJobId = assignments.stream()
                 .collect(Collectors.groupingBy(tja -> tja.getJob().getId()));
 
+        List<UUID> projectIds = jobs.getContent().stream()
+                .map(j -> j.getProject() != null ? j.getProject().getId() : null)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+        Map<UUID, List<String>> processesByProjectId = getProcessesByProjectIds(projectIds);
+
         return jobs.map(job -> {
             List<TaskJobAssignment> jobAssignments = assignmentsByJobId.getOrDefault(job.getId(), List.of());
 
@@ -540,6 +591,7 @@ public class JobService {
             List<String> employees = jobAssignments.stream()
                     .map(TaskJobAssignment::getTask)
                     .flatMap(task -> task.getEmployeeAssignments().stream())
+                    .filter(tea -> tea != null && tea.getUser() != null)
                     .map(tea -> tea.getUser().getEmployeeProfile() != null 
                             ? tea.getUser().getEmployeeProfile().getFullName() 
                             : tea.getUser().getUserCode())
@@ -554,12 +606,10 @@ public class JobService {
                     .min(LocalDate::compareTo)
                     .orElse(null);
 
-            List<String> processes = jobAssignments.stream()
-                    .map(TaskJobAssignment::getTask)
-                    .map(task -> task.getProcess() != null ? task.getProcess().getName() : null)
-                    .filter(Objects::nonNull)
-                    .distinct()
-                    .collect(Collectors.toList());
+            List<String> processes = processesByProjectId.getOrDefault(
+                    job.getProject() != null ? job.getProject().getId() : null,
+                    List.of()
+            );
 
             return toResponse(job, getCombinedEmployees(job, employees), productionStartDate, processes);
         });
@@ -600,6 +650,7 @@ public class JobService {
         List<String> employees = assignments.stream()
                 .map(TaskJobAssignment::getTask)
                 .flatMap(task -> task.getEmployeeAssignments().stream())
+                .filter(tea -> tea != null && tea.getUser() != null)
                 .map(tea -> tea.getUser().getEmployeeProfile() != null 
                         ? tea.getUser().getEmployeeProfile().getFullName() 
                         : tea.getUser().getUserCode())
@@ -613,12 +664,10 @@ public class JobService {
                 .min(LocalDate::compareTo)
                 .orElse(null);
 
-        List<String> processes = assignments.stream()
-                .map(TaskJobAssignment::getTask)
-                .map(task -> task.getProcess() != null ? task.getProcess().getName() : null)
-                .filter(Objects::nonNull)
-                .distinct()
-                .collect(Collectors.toList());
+        List<String> processes = List.of();
+        if (job.getProject() != null) {
+            processes = taskRepository.findProcessNamesByProjectId(job.getProject().getId());
+        }
 
         return toResponse(job, getCombinedEmployees(job, employees), productionStartDate, processes);
     }
@@ -632,8 +681,7 @@ public class JobService {
         Job.JobBuilder builder = Job.builder()
                 .project(project)
                 .status("PENDING")
-                .billingStatus("PENDING")
-                .pageCount(0);
+                .billingStatus("PENDING");
 
         for (int i = 0; i < fieldOrder.size() && i < row.size(); i++) {
             String field = fieldOrder.get(i);
@@ -671,6 +719,9 @@ public class JobService {
         Job job = builder.build();
 
         // Validate mandatory fields
+        if (job.getJobIdCode() == null || job.getJobIdCode().isBlank()) {
+            throw new BadRequestException("Job ID is required");
+        }
         if (job.getTitleName() == null || job.getTitleName().isBlank()) {
             throw new BadRequestException("Title name is required");
         }
@@ -787,6 +838,26 @@ public class JobService {
                 .productionStartDate(productionStartDate)
                 .processes(processes)
                 .language(job.getLanguage())
+                .workflowId(job.getWorkflow() != null ? job.getWorkflow().getId() : null)
+                .workflowName(job.getWorkflow() != null ? job.getWorkflow().getName() : null)
+                .clientName(job.getProject() != null && job.getProject().getClient() != null
+                        ? job.getProject().getClient().getCompanyName() : null)
+                .clientId(job.getProject() != null && job.getProject().getClient() != null
+                        ? job.getProject().getClient().getId() : null)
                 .build();
     }
+
+    private Map<UUID, List<String>> getProcessesByProjectIds(List<UUID> projectIds) {
+        Map<UUID, List<String>> processesByProjectId = new HashMap<>();
+        if (projectIds == null || projectIds.isEmpty()) return processesByProjectId;
+        List<Object[]> rows = taskRepository.findProcessNamesByProjectIds(projectIds);
+        for (Object[] r : rows) {
+            UUID pid = (UUID) r[0];
+            String procName = (String) r[1];
+            processesByProjectId.computeIfAbsent(pid, k -> new ArrayList<>()).add(procName);
+        }
+        return processesByProjectId;
+    }
 }
+
+

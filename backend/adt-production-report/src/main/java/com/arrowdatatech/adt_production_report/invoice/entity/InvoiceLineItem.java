@@ -3,6 +3,7 @@ package com.arrowdatatech.adt_production_report.invoice.entity;
 import com.arrowdatatech.adt_production_report.job.entity.Job;
 import com.arrowdatatech.adt_production_report.process.entity.Process;
 import com.arrowdatatech.adt_production_report.project.entity.Project;
+import com.arrowdatatech.adt_production_report.project.entity.Workflow;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -48,6 +49,11 @@ public class InvoiceLineItem {
     private Process process;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "workflow_id",
+            foreignKey = @ForeignKey(name = "fk_line_item_workflow"))
+    private Workflow workflow;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "job_id",
             foreignKey = @ForeignKey(name = "fk_line_item_job"))
     @org.hibernate.annotations.NotFound(action = org.hibernate.annotations.NotFoundAction.IGNORE)
@@ -87,6 +93,12 @@ public class InvoiceLineItem {
 
     @Column(name = "end_date")
     private LocalDate endDate;
+
+    @Column(name = "process_names", columnDefinition = "TEXT")
+    private String processNames;
+
+    @Column(name = "workflow_names", columnDefinition = "TEXT")
+    private String workflowNames;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false, nullable = false)

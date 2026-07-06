@@ -177,6 +177,77 @@ public class ChatService {
         }
     }
 
+    @Transactional
+    public void clearConversation(UUID user1Id, UUID user2Id) {
+        log.info("Admin clearing chat history between {} and {}", user1Id, user2Id);
+
+        // 1. Find all media files for this conversation
+        List<ChatMessage> messages = chatMessageRepository.findChatHistory(user1Id, user2Id);
+        List<MediaFile> mediaFilesToDelete = messages.stream()
+                .map(ChatMessage::getMediaFile)
+                .filter(java.util.Objects::nonNull)
+                .collect(Collectors.toList());
+
+        // 2. Delete the messages
+        chatMessageRepository.deleteChatHistory(user1Id, user2Id);
+        chatMessageRepository.flush();
+
+        // 3. Delete the media file records from database and physical files from disk
+        if (!mediaFilesToDelete.isEmpty()) {
+            log.info("Found {} chat attachments to delete from database and disk", mediaFilesToDelete.size());
+            for (MediaFile mediaFile : mediaFilesToDelete) {
+                try {
+                    // Delete from disk
+                    String storagePathStr = mediaFile.getStoragePath();
+                    if (storagePathStr != null) {
+                        java.nio.file.Path path = java.nio.file.Paths.get(storagePathStr).normalize();
+                        if (java.nio.file.Files.deleteIfExists(path)) {
+                            log.info("Deleted chat attachment file from disk: {}", storagePathStr);
+                        }
+                    }
+                    // Delete from database
+                    mediaFileRepository.delete(mediaFile);
+                } catch (Exception e) {
+                    log.error("Failed to delete chat attachment ID {}: {}", mediaFile.getId(), e.getMessage());
+                }
+            }
+            mediaFileRepository.flush();
+        }
+    }
+
+    @Transactional
+    public void clearAllConversations() {
+        log.info("Admin clearing all conversations and chat history in the system");
+
+        // 1. Find all media files belonging to chat
+        List<MediaFile> mediaFilesToDelete = mediaFileRepository.findByEntityType("chat");
+
+        // 2. Delete all chat messages
+        chatMessageRepository.deleteAllInBatch();
+
+        // 3. Delete physical files and media file database records
+        if (!mediaFilesToDelete.isEmpty()) {
+            log.info("Found {} chat attachments to delete from database and disk", mediaFilesToDelete.size());
+            for (MediaFile mediaFile : mediaFilesToDelete) {
+                try {
+                    // Delete from disk
+                    String storagePathStr = mediaFile.getStoragePath();
+                    if (storagePathStr != null) {
+                        java.nio.file.Path path = java.nio.file.Paths.get(storagePathStr).normalize();
+                        if (java.nio.file.Files.deleteIfExists(path)) {
+                            log.info("Deleted chat attachment file from disk: {}", storagePathStr);
+                        }
+                    }
+                    // Delete from database
+                    mediaFileRepository.delete(mediaFile);
+                } catch (Exception e) {
+                    log.error("Failed to delete chat attachment ID {}: {}", mediaFile.getId(), e.getMessage());
+                }
+            }
+            mediaFileRepository.flush();
+        }
+    }
+
     // Helpers
     private ChatContactResponse mapToChatContactResponse(User user) {
         String fullName = user.getEmployeeProfile() != null ? user.getEmployeeProfile().getFullName() : null;
@@ -201,13 +272,19 @@ public class ChatService {
     }
 
     private ChatMessageResponse mapToChatMessageResponse(ChatMessage message) {
-        String senderName = message.getSender().getEmployeeProfile() != null 
-                ? message.getSender().getEmployeeProfile().getFullName() 
-                : message.getSender().getUserCode();
+        String senderName = null;
+        if (message.getSender() != null) {
+            senderName = message.getSender().getEmployeeProfile() != null 
+                    ? message.getSender().getEmployeeProfile().getFullName() 
+                    : message.getSender().getUserCode();
+        }
 
-        String recipientName = message.getRecipient().getEmployeeProfile() != null 
-                ? message.getRecipient().getEmployeeProfile().getFullName() 
-                : message.getRecipient().getUserCode();
+        String recipientName = null;
+        if (message.getRecipient() != null) {
+            recipientName = message.getRecipient().getEmployeeProfile() != null 
+                    ? message.getRecipient().getEmployeeProfile().getFullName() 
+                    : message.getRecipient().getUserCode();
+        }
 
         ChatMessageResponse.MediaFileDetails mediaDetails = null;
         if (message.getMediaFile() != null) {
@@ -223,9 +300,9 @@ public class ChatService {
 
         return ChatMessageResponse.builder()
                 .id(message.getId())
-                .senderId(message.getSender().getId())
+                .senderId(message.getSender() != null ? message.getSender().getId() : null)
                 .senderName(senderName)
-                .recipientId(message.getRecipient().getId())
+                .recipientId(message.getRecipient() != null ? message.getRecipient().getId() : null)
                 .recipientName(recipientName)
                 .message(message.getMessage())
                 .mediaFile(mediaDetails)

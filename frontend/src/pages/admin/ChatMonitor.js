@@ -10,7 +10,7 @@ export default function ChatMonitor() {
   const [searchQuery, setSearchQuery] = useState('');
   const [loadingList, setLoadingList] = useState(true);
   const [loadingThread, setLoadingThread] = useState(false);
-  
+
   const messagesEndRef = useRef(null);
   const pollIntervalRef = useRef(null);
 
@@ -26,8 +26,6 @@ export default function ChatMonitor() {
       if (!silent) setLoadingList(false);
     }
   };
-
-  // Fetch thread message history
   const fetchThreadHistory = async (user1Id, user2Id, silent = false) => {
     if (!silent) setLoadingThread(true);
     try {
@@ -37,6 +35,38 @@ export default function ChatMonitor() {
       console.error('Failed to fetch conversation thread details:', err);
     } finally {
       if (!silent) setLoadingThread(false);
+    }
+  };
+
+  const handleClearConversation = async () => {
+    if (!selectedThread) return;
+    if (!window.confirm(`Are you sure you want to permanently clear all messages between ${selectedThread.user1.fullName} and ${selectedThread.user2.fullName}? This cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await apiCall(`/chat/admin/conversations/${selectedThread.user1.id}/${selectedThread.user2.id}`, 'DELETE');
+      alert('Conversation history cleared successfully.');
+      setThreadMessages([]);
+      setSelectedThread(null);
+      fetchConversations();
+    } catch (err) {
+      alert('Failed to clear conversation: ' + err.message);
+    }
+  };
+
+  const handleClearAllConversations = async () => {
+    if (!window.confirm('WARNING: Are you sure you want to permanently delete ALL conversations, messages, and shared files in the entire system? This action cannot be undone.')) {
+      return;
+    }
+    try {
+      await apiCall('/chat/admin/conversations/all', 'DELETE');
+      alert('All chat histories cleared successfully.');
+      setThreadMessages([]);
+      setSelectedThread(null);
+      fetchConversations();
+    } catch (err) {
+      alert('Failed to clear all conversations: ' + err.message);
     }
   };
 
@@ -94,8 +124,8 @@ export default function ChatMonitor() {
   };
 
   // Filter threads by search query
-  const filteredConversations = conversations.filter(conv => 
-    conv.user1.fullName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+  const filteredConversations = conversations.filter(conv =>
+    conv.user1.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     conv.user2.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     conv.user1.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
     conv.user2.role.toLowerCase().includes(searchQuery.toLowerCase())
@@ -109,11 +139,30 @@ export default function ChatMonitor() {
   return (
     <div className="admin-chat-monitor-container">
       {/* Page Header */}
-      <div className="admin-chat-header-panel">
+      <div className="admin-chat-header-panel" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div className="header-title-block">
           <h2>Chat Audit Logs</h2>
           <p>Monitor, audit, and inspect direct user conversations and shared files</p>
         </div>
+        <button
+          onClick={handleClearAllConversations}
+          style={{
+            background: '#fee2e2',
+            color: '#dc2626',
+            border: '1px solid #fca5a5',
+            padding: '8px 16px',
+            borderRadius: '6px',
+            fontSize: '13px',
+            fontWeight: '700',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px'
+          }}
+        >
+          🗑️ Clear All Chat History
+        </button>
       </div>
 
       <div className="admin-chat-workspace">
@@ -121,8 +170,8 @@ export default function ChatMonitor() {
         <div className="conversations-sidebar">
           <div className="sidebar-search">
             <Search size={18} className="search-icon" />
-            <input 
-              type="text" 
+            <input
+              type="text"
               placeholder="Search by participant name or role..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -137,13 +186,13 @@ export default function ChatMonitor() {
               </div>
             ) : filteredConversations.length > 0 ? (
               filteredConversations.map((conv, index) => {
-                const isSelected = selectedThread && 
+                const isSelected = selectedThread &&
                   ((selectedThread.user1.id === conv.user1.id && selectedThread.user2.id === conv.user2.id) ||
-                   (selectedThread.user1.id === conv.user2.id && selectedThread.user2.id === conv.user1.id));
-                
+                    (selectedThread.user1.id === conv.user2.id && selectedThread.user2.id === conv.user1.id));
+
                 return (
-                  <div 
-                    key={index} 
+                  <div
+                    key={index}
                     className={`conversation-thread-card ${isSelected ? 'active' : ''}`}
                     onClick={() => setSelectedThread({ user1: conv.user1, user2: conv.user2 })}
                   >
@@ -201,7 +250,26 @@ export default function ChatMonitor() {
                     <span className="details">Code: #{selectedThread.user1.userCode} | {selectedThread.user1.role}</span>
                   </div>
                 </div>
-                <div className="connection-pill">Audit Mode</div>
+                <div className="connection-pill" style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
+                  <span>Audit Mode</span>
+                  <button
+                    className="audit-clear-btn"
+                    onClick={handleClearConversation}
+                    style={{
+                      background: '#fee2e2',
+                      color: '#ef4444',
+                      border: '1px solid #fca5a5',
+                      padding: '4px 8px',
+                      borderRadius: '4px',
+                      fontSize: '11px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    🗑️ Clear History
+                  </button>
+                </div>
                 <div className="participant-header-box text-right flex-reverse">
                   <div className="avatar">{getInitials(selectedThread.user2.fullName)}</div>
                   <div className="info">
@@ -223,8 +291,8 @@ export default function ChatMonitor() {
                     {threadMessages.map(msg => {
                       const isUser1 = msg.senderId === selectedThread.user1.id;
                       return (
-                        <div 
-                          key={msg.id} 
+                        <div
+                          key={msg.id}
                           className={`audit-message-row ${isUser1 ? 'left-align' : 'right-align'}`}
                         >
                           <div className="sender-indicator">
@@ -235,10 +303,10 @@ export default function ChatMonitor() {
                               <div className="audit-file-card">
                                 {msg.mediaFile.mimeType.startsWith('image/') ? (
                                   <div className="audit-image-preview">
-                                    <img 
-                                      src={`${process.env.REACT_APP_API_URL || 'https://adt-backend-m4a4.onrender.com/api'}${msg.mediaFile.url}`} 
+                                    <img
+                                      src={`${process.env.REACT_APP_API_URL}${msg.mediaFile.url}`}
                                       alt={msg.mediaFile.originalName}
-                                      onClick={() => window.open(`${process.env.REACT_APP_API_URL || 'https://adt-backend-m4a4.onrender.com/api'}${msg.mediaFile.url}`, '_blank')}
+                                      onClick={() => window.open(`${process.env.REACT_APP_API_URL}${msg.mediaFile.url}`, '_blank')}
                                     />
                                   </div>
                                 ) : (
@@ -250,10 +318,10 @@ export default function ChatMonitor() {
                                     </div>
                                   </div>
                                 )}
-                                <a 
-                                  href={`${process.env.REACT_APP_API_URL || 'https://adt-backend-m4a4.onrender.com/api'}${msg.mediaFile.url}`} 
-                                  download 
-                                  target="_blank" 
+                                <a
+                                  href={`${process.env.REACT_APP_API_URL}${msg.mediaFile.url}`}
+                                  download
+                                  target="_blank"
                                   rel="noreferrer"
                                   className="audit-download-btn"
                                 >

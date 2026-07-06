@@ -94,6 +94,19 @@ public class AttendanceController {
                 ApiResponse.success("Monthly attendance retrieved", data));
     }
 
+    // DELETE /attendance/monthly?year=2026&month=4
+    @DeleteMapping("/monthly")
+    @PreAuthorize("hasRole('Admin')")
+    public ResponseEntity<ApiResponse<Void>>
+    clearMonthly(
+            @RequestParam int year,
+            @RequestParam int month) {
+
+        attendanceService.clearMonthlyAttendance(year, month);
+        return ResponseEntity.ok(
+                ApiResponse.success("Monthly attendance cleared", null));
+    }
+
     // POST /attendance/monthly/save
     // Bulk save entire month's attendance
     @PostMapping("/monthly/save")

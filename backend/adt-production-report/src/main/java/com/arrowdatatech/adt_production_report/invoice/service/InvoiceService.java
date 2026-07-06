@@ -17,7 +17,9 @@ import com.arrowdatatech.adt_production_report.job.repository.JobRepository;
 import com.arrowdatatech.adt_production_report.process.entity.Process;
 import com.arrowdatatech.adt_production_report.process.repository.ProcessRepository;
 import com.arrowdatatech.adt_production_report.project.entity.Project;
+import com.arrowdatatech.adt_production_report.project.entity.Workflow;
 import com.arrowdatatech.adt_production_report.project.repository.ProjectRepository;
+import com.arrowdatatech.adt_production_report.project.repository.WorkflowRepository;
 import com.arrowdatatech.adt_production_report.settings.entity.CompanySettings;
 import com.arrowdatatech.adt_production_report.settings.repository.CompanySettingsRepository;
 import com.arrowdatatech.adt_production_report.user.entity.User;
@@ -51,6 +53,7 @@ public class InvoiceService {
     private final JobRepository jobRepository;
     private final CompanySettingsRepository companySettingsRepository;
     private final UserRepository userRepository;
+    private final WorkflowRepository workflowRepository;
 
     private static final String[] ONES = {"", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"};
     private static final String[] TENS = {"", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"};
@@ -184,6 +187,20 @@ public class InvoiceService {
                 process = processRepository.findById(itemReq.getProcessId()).orElse(null);
             }
 
+            Workflow workflow = null;
+            if (itemReq.getWorkflowId() != null) {
+                workflow = workflowRepository.findById(itemReq.getWorkflowId()).orElse(null);
+            } else if (itemReq.getWorkflowName() != null && !itemReq.getWorkflowName().trim().isEmpty()) {
+                String wfName = itemReq.getWorkflowName().trim();
+                workflow = workflowRepository.findByNameIgnoreCase(wfName).orElse(null);
+                if (workflow == null) {
+                    workflow = Workflow.builder()
+                            .name(wfName)
+                            .build();
+                    workflow = workflowRepository.save(workflow);
+                }
+            }
+
             Job job = null;
             if (itemReq.getJobId() != null) {
                 job = jobRepository.findById(itemReq.getJobId()).orElse(null);
@@ -202,6 +219,7 @@ public class InvoiceService {
                     .sno(itemReq.getSno())
                     .project(project)
                     .process(process)
+                    .workflow(workflow)
                     .job(job)
                     .batchName(itemReq.getBatchName())
                     .pages(pages)
@@ -212,6 +230,8 @@ public class InvoiceService {
                     .uploadedDate(itemReq.getUploadedDate())
                     .startDate(itemReq.getStartDate())
                     .endDate(itemReq.getEndDate())
+                    .processNames(itemReq.getProcessNames())
+                    .workflowNames(itemReq.getWorkflowNames())
                     .build();
 
             lineItems.add(item);
@@ -312,7 +332,8 @@ public class InvoiceService {
                         .id(item.getId())
                         .sno(item.getSno())
                         .projectName(item.getProject() != null ? item.getProject().getName() : null)
-                        .processName(item.getProcess() != null ? item.getProcess().getName() : null)
+                        .processName(item.getProcessNames() != null ? item.getProcessNames() : (item.getProcess() != null ? item.getProcess().getName() : null))
+                        .processNames(item.getProcessNames())
                         .batchName(item.getBatchName())
                         .pages(item.getPages())
                         .ratePerPage(item.getRatePerPage())
@@ -323,6 +344,9 @@ public class InvoiceService {
                         .startDate(item.getStartDate())
                         .endDate(item.getEndDate())
                         .language(item.getJob() != null ? item.getJob().getLanguage() : null)
+                        .workflowId(item.getWorkflow() != null ? item.getWorkflow().getId() : null)
+                        .workflowName(item.getWorkflowNames() != null ? item.getWorkflowNames() : (item.getWorkflow() != null ? item.getWorkflow().getName() : null))
+                        .workflowNames(item.getWorkflowNames())
                         .build())
                 .sorted(Comparator.comparing(InvoiceResponse.LineItemResponse::getSno))
                 .collect(Collectors.toList());
@@ -376,3 +400,4 @@ public class InvoiceService {
         return String.join(", ", parts);
     }
 }
+

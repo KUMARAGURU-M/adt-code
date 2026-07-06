@@ -16,6 +16,7 @@ const emptyForm = {
   ratePerPage: "0.00",
   hourlyRate: "0.00",
   active: true,
+  workflowId: "",
 };
 
 // ── Helpers ───────────────────────────────────────────────────────
@@ -27,16 +28,6 @@ const getComplexityClass = (value) => {
   if (val.includes("complex")) return "complexity-complex";
   if (val.includes("medium")) return "complexity-medium";
   return "";
-};
-
-const getProjectBadgeClass = (projectName) => {
-  if (!projectName) return 'proj-badge-default';
-  let hash = 0;
-  for (let i = 0; i < projectName.length; i++) {
-    hash = projectName.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const index = Math.abs(hash) % 8;
-  return `proj-badge proj-badge-${index}`;
 };
 
 // Map backend response → frontend shape
@@ -53,6 +44,8 @@ const mapProject = (p) => ({
   hourlyRate: p.hourlyRate || "0.00",
   clientId: p.clientId || null,
   clientName: p.clientName || null,
+  workflowId: p.workflowId || "",
+  workflowName: p.workflowName || null,
   status: p.isActive ? "Active" : "Inactive",
 });
 
@@ -71,6 +64,15 @@ export default function Projects() {
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
+  const [showClientModal, setShowClientModal] = useState(false);
+  const [clientDraft, setClientDraft] = useState({ name: "", address: "" });
+
+  // Workflows state
+  const [workflows, setWorkflows] = useState([]);
+  const [showWorkflowModal, setShowWorkflowModal] = useState(false);
+  const [workflowDraftName, setWorkflowDraftName] = useState("");
+  const [editingWorkflowId, setEditingWorkflowId] = useState(null);
+  const [editingWorkflowName, setEditingWorkflowName] = useState("");
 
   const location = useLocation();
 
@@ -97,10 +99,20 @@ export default function Projects() {
     }
   }, []);
 
+  const loadWorkflows = useCallback(async () => {
+    try {
+      const data = await apiCall("/projects/workflows");
+      setWorkflows(data);
+    } catch (err) {
+      console.warn("Could not load workflows:", err.message);
+    }
+  }, []);
+
   useEffect(() => {
     loadProjects();
     loadClients();
-  }, [loadProjects, loadClients]);
+    loadWorkflows();
+  }, [loadProjects, loadClients, loadWorkflows]);
 
   useEffect(() => {
     if (location.state?.openAddProject) {
@@ -117,10 +129,54 @@ export default function Projects() {
     currentPage * itemsPerPage
   );
 
+  // ── Workflow CRUD Handlers ─────────────────────────────────
+  const handleCreateWorkflow = async () => {
+    if (!workflowDraftName.trim()) {
+      alert("Workflow name is required.");
+      return;
+    }
+    try {
+      await apiCall("/projects/workflows", "POST", { name: workflowDraftName.trim() });
+      setWorkflowDraftName("");
+      loadWorkflows();
+    } catch (err) {
+      alert("Error creating workflow: " + err.message);
+    }
+  };
+
+  const handleUpdateWorkflow = async (id) => {
+    if (!editingWorkflowName.trim()) {
+      alert("Workflow name is required.");
+      return;
+    }
+    try {
+      await apiCall(`/projects/workflows/${id}`, "PUT", { name: editingWorkflowName.trim() });
+      setEditingWorkflowId(null);
+      setEditingWorkflowName("");
+      loadWorkflows();
+      loadProjects();
+    } catch (err) {
+      alert("Error updating workflow: " + err.message);
+    }
+  };
+
+  const handleDeleteWorkflow = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this workflow?")) {
+      return;
+    }
+    try {
+      await apiCall(`/projects/workflows/${id}`, "DELETE");
+      loadWorkflows();
+      loadProjects();
+    } catch (err) {
+      alert("Error deleting workflow: " + err.message);
+    }
+  };
+
   // ── Validation ─────────────────────────────────────────────
   const validate = (f) => {
     const e = {};
-    if (!f.name.trim()) e.name = "Name is required.";
+    if (!f.name.trim()) e.name = "Project is required.";
     if (!f.billingType) e.billingType = "Billing Type is required.";
     if (!f.complexity) e.complexity = "Complexity Level is required.";
     if (!f.ratePerPage || isNaN(f.ratePerPage)) {
@@ -149,6 +205,7 @@ export default function Projects() {
         ratePerPage: parseFloat(form.ratePerPage) || 0,
         hourlyRate: parseFloat(form.hourlyRate) || null,
         clientId: form.clientId || null,
+        workflowId: form.workflowId || null,
         isActive: form.active,
       });
       await loadProjects();
@@ -171,6 +228,7 @@ export default function Projects() {
       ratePerPage: parseFloat(project.rateRaw || 0).toFixed(2),
       hourlyRate: parseFloat(project.hourlyRate || 0).toFixed(2),
       clientId: project.clientId || null,
+      workflowId: project.workflowId || "",
       active: project.status === "Active",
     });
     setErrors({});
@@ -190,6 +248,7 @@ export default function Projects() {
         ratePerPage: parseFloat(form.ratePerPage) || 0,
         hourlyRate: parseFloat(form.hourlyRate) || null,
         clientId: form.clientId || null,
+        workflowId: form.workflowId || null,
         isActive: form.active,
       });
       await loadProjects();
@@ -214,6 +273,25 @@ export default function Projects() {
       setShowDeleteConfirm(false);
     } catch (err) {
       alert("Error deleting project: " + err.message);
+    }
+  };
+
+  const handleSaveClient = async () => {
+    if (!clientDraft.name.trim()) {
+      alert("Company Name is required.");
+      return;
+    }
+    try {
+      const created = await apiCall('/clients', 'POST', {
+        companyName: clientDraft.name.trim(),
+        addressLine1: clientDraft.address.trim()
+      });
+      await loadClients();
+      setForm(prev => ({ ...prev, clientId: created.id }));
+      setShowClientModal(false);
+      setClientDraft({ name: "", address: "" });
+    } catch (err) {
+      alert("Error saving client: " + err.message);
     }
   };
 
@@ -260,9 +338,14 @@ export default function Projects() {
           </svg>
           <h1>Project Management</h1>
         </div>
-        <button className="btn-add-project" onClick={handleOpenAdd}>
-          + Add Project
-        </button>
+        <div style={{ display: "flex", gap: "10px" }}>
+          <button className="btn-add-project" style={{ background: "#4a5568" }} onClick={() => setShowWorkflowModal(true)}>
+            ⚙️ Manage Workflows
+          </button>
+          <button className="btn-add-project" onClick={handleOpenAdd}>
+            + Add Project
+          </button>
+        </div>
       </div>
 
       {/* ── Table ── */}
@@ -270,8 +353,9 @@ export default function Projects() {
         <table className="pm-table">
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Description</th>
+              <th>Client</th>
+              <th>Project</th>
+              <th>Workflow</th>
               <th>Type</th>
               <th>Complexity</th>
               <th>Rate</th>
@@ -282,18 +366,23 @@ export default function Projects() {
           <tbody>
             {paginatedProjects.length === 0 ? (
               <tr>
-                <td colSpan={7} className="pm-empty">
+                <td colSpan={8} className="pm-empty">
                   No projects found. Click "+ Add Project" to create one.
                 </td>
               </tr>
             ) : paginatedProjects.map((project) => (
               <tr key={project.id} className="pm-row">
-                <td className="pm-name">
-                  <span className={getProjectBadgeClass(project.name)}>
-                    {project.name}
-                  </span>
+                <td className="pm-client">{project.clientName || "-"}</td>
+                <td className="pm-name">{project.name}</td>
+                <td className="pm-workflow">
+                  {project.workflowName ? (
+                    <span className="badge badge--workflow" style={{ background: "#e0f2fe", color: "#0369a1", border: "1px solid #bae6fd", fontWeight: 700 }}>
+                      {project.workflowName}
+                    </span>
+                  ) : (
+                    "-"
+                  )}
                 </td>
-                <td className="pm-desc">{project.description || "-"}</td>
                 <td>
                   <span className="badge badge--billing">
                     {project.billingType}
@@ -308,8 +397,8 @@ export default function Projects() {
                 <td className="pm-rate">{project.rate}</td>
                 <td>
                   <span className={`badge badge--status ${project.status === "Active"
-                      ? "badge--active"
-                      : "badge--inactive"
+                    ? "badge--active"
+                    : "badge--inactive"
                     }`}>
                     {project.status}
                   </span>
@@ -387,6 +476,11 @@ export default function Projects() {
               onChange={handleFormChange}
               showActive={false}
               clients={clients}
+              workflows={workflows}
+              onAddClient={() => {
+                setClientDraft({ name: "", address: "" });
+                setShowClientModal(true);
+              }}
             />
             <div className="modal-actions">
               <button className="btn-cancel"
@@ -414,6 +508,11 @@ export default function Projects() {
               onChange={handleFormChange}
               showActive={true}
               clients={clients}
+              workflows={workflows}
+              onAddClient={() => {
+                setClientDraft({ name: "", address: "" });
+                setShowClientModal(true);
+              }}
             />
             <div className="modal-actions">
               <button className="btn-cancel"
@@ -455,25 +554,166 @@ export default function Projects() {
           </div>
         </div>
       )}
+
+      {/* ── Client Modal ── */}
+      {showClientModal && (
+        <div className="modal-overlay" onClick={() => setShowClientModal(false)} style={{ zIndex: 3000 }}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <h2 className="modal-title">Add New Client</h2>
+            <div className="form-body">
+              <div className="form-group">
+                <label className="form-label">
+                  Company Name <span className="required">*</span>
+                </label>
+                <input
+                  className="form-input"
+                  value={clientDraft.name}
+                  onChange={e => setClientDraft(d => ({ ...d, name: e.target.value }))}
+                  placeholder="Company name"
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Company Address</label>
+                <textarea
+                  className="form-textarea"
+                  rows={4}
+                  value={clientDraft.address}
+                  onChange={e => setClientDraft(d => ({ ...d, address: e.target.value }))}
+                  placeholder="Full address"
+                />
+              </div>
+            </div>
+            <div className="modal-actions">
+              <button className="btn-cancel" onClick={() => setShowClientModal(false)}>
+                Cancel
+              </button>
+              <button className="btn-submit" onClick={handleSaveClient}>
+                Add Client
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Workflow Management Modal ── */}
+      {showWorkflowModal && (
+        <div className="modal-overlay" onClick={() => setShowWorkflowModal(false)} style={{ zIndex: 2000 }}>
+          <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: "500px" }}>
+            <h2 className="modal-title">Manage Workflows</h2>
+
+            {/* Create new workflow form */}
+            <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
+              <input
+                className="form-input"
+                style={{ flex: 1, marginBottom: 0 }}
+                placeholder="New workflow name..."
+                value={workflowDraftName}
+                onChange={e => setWorkflowDraftName(e.target.value)}
+              />
+              <button className="btn-submit" style={{ marginTop: 0, padding: "8px 16px" }} onClick={handleCreateWorkflow}>
+                Add
+              </button>
+            </div>
+
+            <div style={{ maxHeight: "250px", overflowY: "auto", border: "1px solid #e2e8f0", borderRadius: "6px" }}>
+              {workflows.length === 0 ? (
+                <div style={{ padding: "16px", textAlign: "center", color: "#a0aec0" }}>
+                  No workflows defined yet.
+                </div>
+              ) : (
+                workflows.map(w => (
+                  <div key={w.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", borderBottom: "1px solid #e2e8f0" }}>
+                    {editingWorkflowId === w.id ? (
+                      <input
+                        className="form-input"
+                        style={{ flex: 1, marginBottom: 0, padding: "4px 8px", fontSize: "13px" }}
+                        value={editingWorkflowName}
+                        onChange={e => setEditingWorkflowName(e.target.value)}
+                        autoFocus
+                      />
+                    ) : (
+                      <span style={{ fontSize: "14px", color: "#2d3748" }}>{w.name}</span>
+                    )}
+
+                    <div style={{ display: "flex", gap: "6px" }}>
+                      {editingWorkflowId === w.id ? (
+                        <>
+                          <button
+                            className="action-btn"
+                            onClick={() => handleUpdateWorkflow(w.id)}
+                            style={{ background: "none", border: "none", cursor: "pointer", fontSize: "14px" }}
+                            title="Save"
+                          >
+                            💾
+                          </button>
+                          <button
+                            className="action-btn"
+                            onClick={() => {
+                              setEditingWorkflowId(null);
+                              setEditingWorkflowName("");
+                            }}
+                            style={{ background: "none", border: "none", cursor: "pointer", fontSize: "14px" }}
+                            title="Cancel"
+                          >
+                            ❌
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            className="action-btn"
+                            onClick={() => {
+                              setEditingWorkflowId(w.id);
+                              setEditingWorkflowName(w.name);
+                            }}
+                            style={{ background: "none", border: "none", cursor: "pointer", fontSize: "14px" }}
+                            title="Edit"
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            className="action-btn"
+                            onClick={() => handleDeleteWorkflow(w.id)}
+                            style={{ background: "none", border: "none", cursor: "pointer", fontSize: "14px" }}
+                            title="Delete"
+                          >
+                            🗑️
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="modal-actions" style={{ marginTop: "16px" }}>
+              <button className="btn-cancel" onClick={() => setShowWorkflowModal(false)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 // ── ProjectForm Component ─────────────────────────────────────────
-function ProjectForm({ form, errors, onChange, showActive, clients = [] }) {
+function ProjectForm({ form, errors, onChange, showActive, clients = [], workflows = [], onAddClient }) {
   return (
     <div className="form-body">
 
       {/* Name */}
       <div className="form-group">
         <label className="form-label">
-          Name <span className="required">*</span>
+          Project <span className="required">*</span>
         </label>
         <input
           className={`form-input ${errors.name ? "form-input--error" : ""}`}
           value={form.name}
           onChange={e => onChange("name", e.target.value)}
-          placeholder="Project name"
+          placeholder="Project"
         />
         {errors.name && (
           <span className="form-error">{errors.name}</span>
@@ -493,15 +733,16 @@ function ProjectForm({ form, errors, onChange, showActive, clients = [] }) {
       </div>
 
       {/* Client (optional) */}
-      {clients.length > 0 && (
-        <div className="form-group">
-          <label className="form-label">Client (Optional)</label>
+      <div className="form-group">
+        <label className="form-label">Client (Optional)</label>
+        <div style={{ display: "flex", gap: "8px" }}>
           <select
             className="form-select"
             value={form.clientId || ""}
             onChange={e =>
               onChange("clientId", e.target.value || null)
             }
+            style={{ flex: 1 }}
           >
             <option value="">-- No Client --</option>
             {clients.map(c => (
@@ -510,8 +751,46 @@ function ProjectForm({ form, errors, onChange, showActive, clients = [] }) {
               </option>
             ))}
           </select>
+          <button
+            type="button"
+            className="btn-submit"
+            onClick={onAddClient}
+            style={{
+              padding: "9px 15px",
+              fontSize: "0.82rem",
+              whiteSpace: "nowrap",
+              marginTop: 0,
+              background: "#00a3ff",
+              color: "#fff",
+              border: "none",
+              borderRadius: "6px",
+              cursor: "pointer",
+              fontWeight: 700
+            }}
+          >
+            + Add Client
+          </button>
         </div>
-      )}
+      </div>
+
+      {/* Workflow (optional) */}
+      <div className="form-group">
+        <label className="form-label">Workflow (Optional)</label>
+        <select
+          className="form-select"
+          value={form.workflowId || ""}
+          onChange={e =>
+            onChange("workflowId", e.target.value || null)
+          }
+        >
+          <option value="">-- No Workflow --</option>
+          {workflows.map(w => (
+            <option key={w.id} value={w.id}>
+              {w.name}
+            </option>
+          ))}
+        </select>
+      </div>
 
       {/* Billing Type */}
       <div className="form-group">

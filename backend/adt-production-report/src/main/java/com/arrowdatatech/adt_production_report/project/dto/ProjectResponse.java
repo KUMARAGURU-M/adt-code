@@ -22,4 +22,6 @@ public class ProjectResponse {
     private BigDecimal hourlyRate;
     private Boolean isActive;
     private OffsetDateTime createdAt;
+    private UUID workflowId;
+    private String workflowName;
 }

@@ -14,6 +14,7 @@ CREATE TABLE employee_profiles (
     kyc_document_id UUID REFERENCES media_files(id) ON DELETE SET NULL,
     is_top_performer BOOLEAN NOT NULL DEFAULT FALSE,
     show_calendar_stats BOOLEAN NOT NULL DEFAULT TRUE,
+    exclude_from_hourly_graph BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT uq_employee_profiles_user_id UNIQUE (user_id)

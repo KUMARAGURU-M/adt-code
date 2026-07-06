@@ -208,6 +208,23 @@ public class AttendanceService {
     }
 
     // ─────────────────────────────────────────────
+    // CLEAR MONTHLY ATTENDANCE (delete records & salary details)
+    // ─────────────────────────────────────────────
+    @Transactional
+    public void clearMonthlyAttendance(int year, int month) {
+        log.info("Admin clearing all attendance records and salary details for year: {}, month: {}", year, month);
+
+        LocalDate start = LocalDate.of(year, month + 1, 1);
+        LocalDate end   = start.withDayOfMonth(start.lengthOfMonth());
+
+        // 1. Delete all AttendanceRecord records for this month
+        recordRepository.deleteByAttendanceDateBetween(start, end);
+
+        // 2. Delete all AttendanceSalaryDetail records for this month
+        salaryRepository.deleteByYearAndMonth((short) year, (short) month);
+    }
+
+    // ─────────────────────────────────────────────
     // SAVE MONTHLY ATTENDANCE (bulk upsert)
     // Called when user navigates away or clicks Save
     // ─────────────────────────────────────────────
@@ -224,6 +241,7 @@ public class AttendanceService {
                 recordRepository.findByAttendanceDateBetween(start, end);
 
         Map<String, AttendanceRecord> existingMap = existing.stream()
+                .filter(r -> r != null && r.getEmployee() != null)
                 .collect(Collectors.toMap(
                         r -> r.getEmployee().getId() + "_" + r.getAttendanceDate(),
                         r -> r
@@ -464,6 +482,7 @@ public class AttendanceService {
         List<AttendanceRecord> records = recordRepository.findByAttendanceDateBetween(date, date);
 
         Map<UUID, AttendanceRecord> recordMap = records.stream()
+                .filter(r -> r != null && r.getEmployee() != null)
                 .collect(Collectors.toMap(r -> r.getEmployee().getId(), r -> r));
 
         return employees.stream()

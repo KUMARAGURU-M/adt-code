@@ -8,10 +8,14 @@ import EmpWorkwise from './EmpWorkwise';
 import EmpCalendar from './EmpCalendar';
 import EmpTask from './EmpTask';
 import EmpLeave from './EmpLeave';
-import './EmpDashboard.css';
 
+import DigiConvertor from '../admin/DigiConvertor';
+import HourlyGraph from '../admin/HourlyGraph';
+import './EmpDashboard.css';
 const TABS = [
   { id: 'workwise', label: 'WorkWise', icon: '➤' },
+  { id: 'digiconvertor', label: 'DigiConvertor', icon: '🔄' },
+  { id: 'hourly-graph', label: 'Hourly Graph', icon: '📊' },
   { id: 'calendar', label: 'Calendar', icon: '📅' },
   { id: 'tasks', label: 'Tasks', icon: '✅' },
   { id: 'leaves', label: 'Leaves', icon: '🍃' },
@@ -143,16 +147,20 @@ export default function EmpDashboard() {
 
     const isCheckedIn = !!attendanceToday?.checkInTime;
 
-    if (!isCheckedIn && (activeTab === 'workwise' || activeTab === 'tasks')) {
+    if (!isCheckedIn && (activeTab === 'workwise' || activeTab === 'tasks' || activeTab === 'digiconvertor' || activeTab === 'hourly-graph')) {
       return (
         <div className="emp-locked-container">
           <div className="emp-locked-card">
             <div className="emp-locked-icon">🔒</div>
-            <h3>{activeTab === 'workwise' ? 'WorkWise Locked' : 'Tasks Locked'}</h3>
+            <h3>{activeTab === 'workwise' ? 'WorkWise Locked' : activeTab === 'tasks' ? 'Task Locked' : activeTab === 'digiconvertor' ? 'DigiConvertor Locked' : 'Hourly Graph Locked'}</h3>
             <p>
               {activeTab === 'workwise'
                 ? 'You must Check-In to your shift to access WorkWise and start tracking your work.'
-                : 'You must Check-In to your shift to access tasks.'}
+                : activeTab === 'tasks'
+                  ? 'You must Check-In to your shift to access tasks.'
+                  : activeTab === 'hourly-graph'
+                    ? 'You must Check-In to access Hourly Graph.'
+                    : 'You must Check-In to access DigiConvertor'}
             </p>
             <button className="emp-locked-btn" onClick={handleCheckIn} disabled={checkingInOut}>
               {checkingInOut ? 'Checking In...' : '▶ Check In Now'}
@@ -164,6 +172,8 @@ export default function EmpDashboard() {
 
     switch (activeTab) {
       case 'workwise': return <EmpWorkwise />;
+      case 'digiconvertor': return <DigiConvertor />;
+      case 'hourly-graph': return <HourlyGraph />;
       case 'calendar': return <EmpCalendar />;
       case 'tasks': return <EmpTask />;
       case 'leaves': return <EmpLeave />;
@@ -207,7 +217,7 @@ export default function EmpDashboard() {
               <p>Manual Check-In and Check-Out time logs</p>
             </div>
           </div>
-          
+
           <div className="emp-checkin-status-row">
             <div className="emp-checkin-time-box">
               <span className="time-box-label">Check-In Time</span>
@@ -223,16 +233,16 @@ export default function EmpDashboard() {
             </div>
             <div className="emp-checkin-actions">
               {!attendanceToday?.checkInTime ? (
-                <button 
-                  className="checkin-btn btn-checkin" 
+                <button
+                  className="checkin-btn btn-checkin"
                   onClick={handleCheckIn}
                   disabled={checkingInOut}
                 >
                   {checkingInOut ? 'Processing...' : '▶ Check In'}
                 </button>
               ) : !attendanceToday?.checkOutTime ? (
-                <button 
-                  className="checkin-btn btn-checkout" 
+                <button
+                  className="checkin-btn btn-checkout"
                   onClick={handleCheckOut}
                   disabled={checkingInOut}
                 >
@@ -268,10 +278,10 @@ export default function EmpDashboard() {
                   <div className="emp-stat-status">
                     <span
                       className={`emp-status-dot ${summary.status === 'Running'
-                          ? 'active'
-                          : summary.status === 'Stopped'
-                            ? 'stopped'
-                            : ''
+                        ? 'active'
+                        : summary.status === 'Stopped'
+                          ? 'stopped'
+                          : ''
                         }`}
                     />
                     {summary.status}

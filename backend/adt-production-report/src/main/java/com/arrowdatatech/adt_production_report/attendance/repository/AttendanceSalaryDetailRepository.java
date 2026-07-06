@@ -18,4 +18,8 @@ public interface AttendanceSalaryDetailRepository
     // Load salary detail for one employee for a month
     Optional<AttendanceSalaryDetail> findByEmployeeIdAndYearAndMonth(
             UUID employeeId, Short year, Short month);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.transaction.annotation.Transactional
+    void deleteByYearAndMonth(Short year, Short month);
 }

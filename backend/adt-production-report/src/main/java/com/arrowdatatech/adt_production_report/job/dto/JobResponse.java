@@ -38,4 +38,10 @@ public class JobResponse {
     private OffsetDateTime createdAt;
     private java.util.List<String> processes;
     private String language;
+    private UUID workflowId;
+    private String workflowName;
+    private String clientName;
+    private UUID clientId;
 }
+
+

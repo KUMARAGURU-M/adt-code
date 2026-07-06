@@ -45,6 +45,7 @@ const getComplexityClass = (v) => {
 
 const OPTIONAL_COLUMNS = [
   { key: "projectName", label: "Project Name" },
+  { key: "workflow", label: "Workflow" },
   { key: "process", label: "Process" },
   { key: "bookBatchName", label: "Book/Batch/Article Name" },
   { key: "orderPages", label: "Pages" },
@@ -98,7 +99,7 @@ const formatDate = (s) => { if (!s) return ""; try { return new Date(s).toLocale
 
 const EMPTY_ROW = (o = {}) => ({
   id: Date.now() + Math.random(),
-  projectName: "", process: "", bookBatchName: "",
+  projectName: "", workflow: "", workflowId: "", process: "", bookBatchName: "",
   receivedDate: "", jobId: "", titleName: "", pageCount: "",
   startDate: "", endDate: "", xmlIsbn: "", chapters: "",
   pdfInputType: "", complexity: "", referenceType: "",
@@ -290,6 +291,49 @@ function HistorySection({ onClose, historyList = [], summary = {}, onDelete, onU
 // ─────────────────────────────────────────────────────────────
 export default function Invoice() {
 
+  // rowId + field identify which cell is open; rect gives the anchor for fixed positioning
+  const [activeDropdown, setActiveDropdown] = useState({ rowId: null, field: null, rect: null });
+
+
+  // Close dropdown on outside click or scroll, but NOT when interacting inside the dropdown itself
+  useEffect(() => {
+    const onMouseDown = (e) => {
+      // Ignore clicks that happen inside a multiselect box or its floating dropdown
+      if (e.target.closest(".inv-multiselect-box") || e.target.closest(".inv-multiselect-dropdown")) return;
+      setActiveDropdown({ rowId: null, field: null, rect: null });
+    };
+    const onScroll = (e) => {
+      // Ignore scroll that happens inside the dropdown list itself
+      if (e.target && e.target.closest && e.target.closest(".inv-multiselect-dropdown")) return;
+      setActiveDropdown({ rowId: null, field: null, rect: null });
+    };
+    document.addEventListener("mousedown", onMouseDown);
+    document.addEventListener("scroll", onScroll, true);
+    return () => {
+      document.removeEventListener("mousedown", onMouseDown);
+      document.removeEventListener("scroll", onScroll, true);
+    };
+  }, []);
+
+  const openDropdown = (e, rowId, field) => {
+    e.stopPropagation();
+    const rect = e.currentTarget.closest(".inv-multiselect-box").getBoundingClientRect();
+    setActiveDropdown({ rowId, field, rect });
+  };
+
+  const closeDropdown = () => setActiveDropdown({ rowId: null, field: null, rect: null });
+
+  const toggleListItem = (currentVal, itemToToggle) => {
+    const items = currentVal ? currentVal.split(",").map(s => s.trim()).filter(Boolean) : [];
+    let newItems;
+    if (items.includes(itemToToggle)) {
+      newItems = items.filter(x => x !== itemToToggle);
+    } else {
+      newItems = [...items, itemToToggle];
+    }
+    return newItems.join(", ");
+  };
+
   // ── Invoice Details ─────────────────────────────────────
   const [vendorName, setVendorName] = useState("Arrow Data Tech");
   const [vendorAddress, setVendorAddress] = useState("");
@@ -312,13 +356,14 @@ export default function Invoice() {
   const [unbilledJobs, setUnbilledJobs] = useState([]);
   const [projectRates, setProjectRates] = useState({});
   const [processes, setProcesses] = useState([]);
+  const [workflows, setWorkflows] = useState([]);
 
   // ── Invoice Title ────────────────────────────────────────
   const [titleMonth, setTitleMonth] = useState(MONTHS[new Date().getMonth()]);
   const [titleYear, setTitleYear] = useState(new Date().getFullYear());
 
   // ── Column Config ────────────────────────────────────────
-  const [activeCols, setActiveCols] = useState(["projectName", "process", "bookBatchName", "orderPages", "ratePage"]);
+  const [activeCols, setActiveCols] = useState(["projectName", "workflow", "process", "bookBatchName", "orderPages", "ratePage"]);
   const [colHeaders, setColHeaders] = useState(() =>
     OPTIONAL_COLUMNS.reduce((acc, c) => { acc[c.key] = c.label; return acc; }, {})
   );
@@ -389,18 +434,19 @@ export default function Invoice() {
   const fetchClients = async () => {
     try {
       const list = await apiCall("/clients");
-      const mapped = list.map(c => ({
-        id: c.id,
-        name: c.companyName,
-        address: [
-          c.addressLine1,
-          c.addressLine2,
-          c.city ? `${c.city}, ${c.state || ""} ${c.pinCode || ""}` : null,
-          c.country
-        ].filter(Boolean).join("\n"),
-        panNumber: c.panNumber,
-        gstin: c.gstin
-      }));
+      const mapped = list
+        .map(c => ({
+          id: c.id,
+          name: c.companyName,
+          address: [
+            c.addressLine1,
+            c.addressLine2,
+            c.city ? `${c.city}, ${c.state || ""} ${c.pinCode || ""}` : null,
+            c.country
+          ].filter(Boolean).join("\n"),
+          panNumber: c.panNumber,
+          gstin: c.gstin
+        }));
       setClients(mapped);
       if (mapped.length > 0 && !selectedClientId) {
         setSelectedClientId(mapped[0].id);
@@ -478,13 +524,22 @@ export default function Invoice() {
     }
   };
 
+  const fetchWorkflows = async () => {
+    try {
+      const list = await apiCall("/projects/workflows");
+      setWorkflows(list || []);
+    } catch (err) {
+      console.error("Failed to fetch workflows:", err);
+    }
+  };
+
   const fetchProjectsAndJobs = async (clientId) => {
     if (!clientId) return;
     try {
       const projs = await apiCall(`/projects/by-client/${clientId}`);
       setClientProjects(projs);
       setProjectChoices(["All Projects", ...projs.map(p => p.name)]);
-      
+
       const rates = {};
       projs.forEach(p => {
         rates[p.id] = p.ratePerPage || 5;
@@ -496,7 +551,9 @@ export default function Invoice() {
       const mapped = jobs.map(j => ({
         id: j.id,
         project: j.projectName || "",
-        process: "",
+        workflow: j.workflowName || "",
+        workflowId: j.workflowId || null,
+        process: j.processes && j.processes.length > 0 ? j.processes.join(", ") : "",
         bookBatchName: j.jobIdCode || "",
         jobId: j.jobIdCode || "",
         titleName: j.titleName || "",
@@ -544,6 +601,7 @@ export default function Invoice() {
     fetchSettings();
     fetchHistory();
     fetchProcesses();
+    fetchWorkflows();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -558,7 +616,24 @@ export default function Invoice() {
 
   const openEditClient = () => { setClientDraft({ id: currentClient?.id || "", name: currentClient?.name || "", address: currentClient?.address || "" }); setClientModalMode("edit"); setShowClientModal(true); };
   const openAddClient = () => { setClientDraft({ id: "", name: "", address: "" }); setClientModalMode("add"); setShowClientModal(true); };
-  
+
+  const handleDeleteClient = async () => {
+    if (!currentClient?.id) return;
+    if (!window.confirm(`Are you sure you want to delete client "${currentClient.name}"?`)) return;
+    try {
+      await apiCall(`/clients/${currentClient.id}`, 'DELETE');
+      const filtered = clients.filter(c => c.id !== currentClient.id);
+      setClients(filtered);
+      if (filtered.length > 0) {
+        setSelectedClientId(filtered[0].id);
+      } else {
+        setSelectedClientId("");
+      }
+    } catch (err) {
+      alert("Error deleting client: " + err.message);
+    }
+  };
+
   const saveClientModal = async () => {
     if (!clientDraft.name.trim()) return;
     try {
@@ -587,7 +662,7 @@ export default function Invoice() {
 
   const filteredDPs = unbilledJobs.filter(dp => {
     if (filterProject !== "All Projects" && dp.project !== filterProject) return false;
-    if (filterProcess !== "All Processes" && dp.process && dp.process !== filterProcess) return false;
+    if (filterProcess !== "All Processes" && dp.process && !dp.process.includes(filterProcess)) return false;
     if (filterComplexity !== "All" && dp.complexity && dp.complexity !== filterComplexity) return false;
     if (filterFileStatus !== "All" && dp.fileStatus && dp.fileStatus !== filterFileStatus) return false;
     if (filterStartDate && dp.startDate && dp.startDate < filterStartDate) return false;
@@ -634,11 +709,13 @@ export default function Invoice() {
         diffLevel: dp.complexity, lob: "Service",
         orderPages: dp.pageCount, ratePage: rate, amount: amt, deductionAmount: 0, totalAmount: amt,
         projectId: dp.projectId, jobIdRaw: dp.id,
-        language: dp.language
+        language: dp.language,
+        workflow: dp.workflow,
+        workflowId: dp.workflowId
       });
     });
     setRows(prev => {
-      const nonEmpty = prev.filter(r => r.projectName || r.process || r.orderPages || r.totalAmount);
+      const nonEmpty = prev.filter(r => r.projectName || r.workflow || r.process || r.orderPages || r.totalAmount);
       return [...nonEmpty, ...newRows];
     });
     setSelectedDPIds(new Set());
@@ -650,7 +727,7 @@ export default function Invoice() {
   // ── Bank helpers ──────────────────────────────────────────
   const handleBankSwitch = (key) => { setBankKey(key); setEditingBank(false); };
   const startEditBank = () => { setBankDraft(currentBank ? { ...currentBank } : {}); setEditingBank(true); };
-  
+
   const saveBank = async () => {
     try {
       await apiCall(`/bank-accounts/${bankKey}`, 'PUT', {
@@ -830,7 +907,7 @@ export default function Invoice() {
       alert("Please select a client.");
       return;
     }
-    const filteredRows = rows.filter(r => r.projectName || r.process || r.orderPages || r.totalAmount);
+    const filteredRows = rows.filter(r => r.projectName || r.workflow || r.process || r.orderPages || r.totalAmount);
     if (filteredRows.length === 0) {
       alert("Invoice must have at least one line item.");
       return;
@@ -852,10 +929,15 @@ export default function Invoice() {
         lineItems: filteredRows.map((r, idx) => {
           const matchedProj = clientProjects.find(p => p.name === r.projectName);
           const matchedProc = processes.find(p => p.name === r.process);
+          const matchedWf = workflows.find(w => w.name === r.workflow);
           return {
             sno: idx + 1,
             projectId: r.projectId || matchedProj?.id || null,
             processId: r.processId || matchedProc?.id || null,
+            processNames: r.process || null,
+            workflowId: r.workflowId || matchedWf?.id || null,
+            workflowName: r.workflow ? r.workflow.split(",")[0]?.trim() : null,
+            workflowNames: r.workflow || null,
             jobId: r.jobIdRaw || null,
             batchName: r.bookBatchName,
             pages: Number(r.orderPages) || 0,
@@ -923,13 +1005,15 @@ export default function Invoice() {
     if (h.columnConfig) {
       try {
         setActiveCols(JSON.parse(h.columnConfig));
-      } catch (e) {}
+      } catch (e) { }
     }
 
     const mappedRows = (h.lineItems || []).map(item => ({
       id: item.id || (Date.now() + Math.random()),
       projectName: item.projectName,
-      process: item.processName,
+      process: item.processNames || item.processName || "",
+      workflow: item.workflowNames || item.workflowName || "",
+      workflowId: item.workflowId || "",
       bookBatchName: item.batchName,
       orderPages: item.pages,
       ratePage: item.ratePerPage,
@@ -967,7 +1051,7 @@ export default function Invoice() {
     }, 600);
   };
   const exportExcel = () => {
-    const headers = ["S.No", "Project Name", "Process", "Book/Batch/Article Name", ...enabledOptCols.map(c => colHeaders[c.key] || c.label), "Order Pages", "Rate/Page (₹)", "Amount (₹)", "Deduction (₹)", "Total (₹)"];
+    const headers = ["S.No", "Project Name", "Process", "Book/Batch/Article Name", ...enabledOptCols.map(c => colHeaders[c.key] || c.label), "Order Pages", "Rate/Page (₹)", "Amount (₹)", "Penalty (₹)", "Total (₹)"];
     const dataRows = rows.map((r, i) => [i + 1, r.projectName, r.process, r.bookBatchName, ...enabledOptCols.map(c => r[c.key] || ""), r.orderPages, r.ratePage, r.amount || "", r.deductionAmount || "", r.totalAmount || ""]);
     const summary = [[], ["", "", "", "Sub Total", "", fmt(subTotal)], ["", "", `IGST (${igstPct}%)`, "", fmt(igstAmt)], ["", "", "", "Grand Total", "", fmt(grandTotal)]];
     const csv = [[headers, ...dataRows, ...summary]].flat().map(row => row.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
@@ -1058,484 +1142,707 @@ export default function Invoice() {
         <>
           {/* ── Section 1: Invoice Details ── */}
           <div className="inv-card">
-        <div className="inv-card-header">
-          <span className="inv-card-icon">📋</span>
-          <h2 className="inv-card-title">Invoice Details</h2>
-        </div>
-        <div className="inv-card-body">
-          <div className="inv-details-grid">
-            <div className="inv-details-left">
-              <div className="inv-field-block">
-                <label className="inv-label">Vendor Name</label>
-                <input className="inv-input" value={vendorName} onChange={e => setVendorName(e.target.value)} />
-              </div>
-              <div className="inv-field-block">
-                <label className="inv-label">Vendor Address</label>
-                <textarea className="inv-textarea" rows={3} value={vendorAddress} onChange={e => setVendorAddress(e.target.value)} />
-              </div>
-              <div className="inv-field-block">
-                <label className="inv-label">Invoice To</label>
-                <div className="inv-client-selector-row">
-                  <select className="inv-select inv-select--client" value={selectedClientId} onChange={e => setSelectedClientId(e.target.value)}>
-                    {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
-                  <button className="inv-btn inv-btn--outline inv-btn--sm" onClick={openEditClient}>✏ Edit</button>
-                  <button className="inv-btn inv-btn--primary inv-btn--sm" onClick={openAddClient}>+ New</button>
-                </div>
-                {currentClient && (
-                  <div className="inv-client-preview">
-                    <div className="inv-client-name">{currentClient.name}</div>
-                    <div className="inv-client-addr">{currentClient.address}</div>
+            <div className="inv-card-header">
+              <span className="inv-card-icon">📋</span>
+              <h2 className="inv-card-title">Invoice Details</h2>
+            </div>
+            <div className="inv-card-body">
+              <div className="inv-details-grid">
+                <div className="inv-details-left">
+                  <div className="inv-field-block">
+                    <label className="inv-label">Vendor Name</label>
+                    <input className="inv-input" value={vendorName} onChange={e => setVendorName(e.target.value)} />
                   </div>
-                )}
+                  <div className="inv-field-block">
+                    <label className="inv-label">Vendor Address</label>
+                    <textarea className="inv-textarea" rows={3} value={vendorAddress} onChange={e => setVendorAddress(e.target.value)} />
+                  </div>
+                  <div className="inv-field-block">
+                    <label className="inv-label">Invoice To</label>
+                    <div className="inv-client-selector-row">
+                      <select className="inv-select inv-select--client" value={selectedClientId} onChange={e => setSelectedClientId(e.target.value)}>
+                        {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </select>
+                      <button className="inv-btn inv-btn--outline inv-btn--sm" onClick={openEditClient}>✏ Edit</button>
+                      <button className="inv-btn inv-btn--primary inv-btn--sm" onClick={openAddClient}>+ New</button>
+                      <button className="inv-btn inv-btn--outline inv-btn--sm" onClick={handleDeleteClient} style={{ color: '#dc3545', borderColor: '#dc3545' }}>🗑 Delete</button>
+                    </div>
+                    {currentClient && (
+                      <div className="inv-client-preview">
+                        <div className="inv-client-name">{currentClient.name}</div>
+                        <div className="inv-client-addr">{currentClient.address}</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="inv-details-right">
+                  <div className="inv-meta-grid">
+                    <div className="inv-field-block">
+                      <label className="inv-label">Invoice No.</label>
+                      <input className="inv-input" value={invoiceNo} onChange={e => setInvoiceNo(e.target.value)} />
+                    </div>
+                    <div className="inv-field-block">
+                      <label className="inv-label">Invoice Date</label>
+                      <input type="date" className="inv-input" value={invoiceDate} onChange={e => setInvoiceDate(e.target.value)} />
+                    </div>
+                    <div className="inv-field-block">
+                      <label className="inv-label">PAN No.</label>
+                      <input className="inv-input" value={panNo} onChange={e => setPanNo(e.target.value)} />
+                    </div>
+                    <div className="inv-field-block">
+                      <label className="inv-label">GSTIN No.</label>
+                      <input className="inv-input" value={gstinNo} onChange={e => setGstinNo(e.target.value)} placeholder="GSTIN (if applicable)" />
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="inv-details-right">
-              <div className="inv-meta-grid">
-                <div className="inv-field-block">
-                  <label className="inv-label">Invoice No.</label>
-                  <input className="inv-input" value={invoiceNo} onChange={e => setInvoiceNo(e.target.value)} />
+          </div>
+
+          {/* ── Section 2: Invoice Title ── */}
+          <div className="inv-card">
+            <div className="inv-card-header"><span className="inv-card-icon">📝</span><h2 className="inv-card-title">Invoice Title</h2></div>
+            <div className="inv-card-body">
+              <div className="inv-title-builder">
+                <div className="inv-title-preview">
+                  <b>INVOICE OF {vendorName.toUpperCase()} FOR THE MONTH OF {titleMonth.toUpperCase()} - {titleYear}</b>
                 </div>
-                <div className="inv-field-block">
-                  <label className="inv-label">Invoice Date</label>
-                  <input type="date" className="inv-input" value={invoiceDate} onChange={e => setInvoiceDate(e.target.value)} />
-                </div>
-                <div className="inv-field-block">
-                  <label className="inv-label">PAN No.</label>
-                  <input className="inv-input" value={panNo} onChange={e => setPanNo(e.target.value)} />
-                </div>
-                <div className="inv-field-block">
-                  <label className="inv-label">GSTIN No.</label>
-                  <input className="inv-input" value={gstinNo} onChange={e => setGstinNo(e.target.value)} placeholder="GSTIN (if applicable)" />
+                <div className="inv-title-selectors">
+                  <div className="inv-field-block">
+                    <label className="inv-label">Month</label>
+                    <select className="inv-select" value={titleMonth} onChange={e => setTitleMonth(e.target.value)}>
+                      {MONTHS.map(m => <option key={m}>{m}</option>)}
+                    </select>
+                  </div>
+                  <div className="inv-field-block">
+                    <label className="inv-label">Year</label>
+                    <select className="inv-select" value={titleYear} onChange={e => setTitleYear(Number(e.target.value))}>
+                      {YEARS.map(y => <option key={y}>{y}</option>)}
+                    </select>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* ── Section 2: Invoice Title ── */}
-      <div className="inv-card">
-        <div className="inv-card-header"><span className="inv-card-icon">📝</span><h2 className="inv-card-title">Invoice Title</h2></div>
-        <div className="inv-card-body">
-          <div className="inv-title-builder">
-            <div className="inv-title-preview">
-              <b>INVOICE OF {vendorName.toUpperCase()} FOR THE MONTH OF {titleMonth.toUpperCase()} - {titleYear}</b>
+          {/* ── Section 3: Project Selection ── */}
+          <div className="inv-card">
+            <div className="inv-card-header" style={{ cursor: "pointer" }} onClick={() => setShowProjPanel(p => !p)}>
+              <span className="inv-card-icon">📁</span>
+              <h2 className="inv-card-title">Project Selection</h2>
+              <span className="inv-card-badge">{selectedDPIds.size} selected</span>
+              <span className="inv-chevron">{showProjPanel ? "▲" : "▼"}</span>
             </div>
-            <div className="inv-title-selectors">
-              <div className="inv-field-block">
-                <label className="inv-label">Month</label>
-                <select className="inv-select" value={titleMonth} onChange={e => setTitleMonth(e.target.value)}>
-                  {MONTHS.map(m => <option key={m}>{m}</option>)}
-                </select>
-              </div>
-              <div className="inv-field-block">
-                <label className="inv-label">Year</label>
-                <select className="inv-select" value={titleYear} onChange={e => setTitleYear(Number(e.target.value))}>
-                  {YEARS.map(y => <option key={y}>{y}</option>)}
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Section 3: Project Selection ── */}
-      <div className="inv-card">
-        <div className="inv-card-header" style={{ cursor: "pointer" }} onClick={() => setShowProjPanel(p => !p)}>
-          <span className="inv-card-icon">📁</span>
-          <h2 className="inv-card-title">Project Selection</h2>
-          <span className="inv-card-badge">{selectedDPIds.size} selected</span>
-          <span className="inv-chevron">{showProjPanel ? "▲" : "▼"}</span>
-        </div>
-        {showProjPanel && (
-          <div className="inv-card-body">
-            <div className="inv-proj-filters">
-              {[["Project", projectChoices, filterProject, setFilterProject], ["Process", PROCESS_OPTIONS, filterProcess, setFilterProcess], ["Complexity", COMPLEXITY_OPTIONS, filterComplexity, setFilterComplexity], ["File Status", FILE_STATUS_OPTIONS, filterFileStatus, setFilterFileStatus]].map(([lbl, opts, val, set]) => (
-                <div key={lbl} className="inv-field-block">
-                  <label className="inv-label">{lbl}</label>
-                  <select className="inv-select" value={val} onChange={e => set(e.target.value)}>
-                    {opts.map(o => <option key={o}>{o}</option>)}
-                  </select>
+            {showProjPanel && (
+              <div className="inv-card-body">
+                <div className="inv-proj-filters">
+                  {[["Project", projectChoices, filterProject, setFilterProject], ["Process", PROCESS_OPTIONS, filterProcess, setFilterProcess], ["Complexity", COMPLEXITY_OPTIONS, filterComplexity, setFilterComplexity], ["File Status", FILE_STATUS_OPTIONS, filterFileStatus, setFilterFileStatus]].map(([lbl, opts, val, set]) => (
+                    <div key={lbl} className="inv-field-block">
+                      <label className="inv-label">{lbl}</label>
+                      <select className="inv-select" value={val} onChange={e => set(e.target.value)}>
+                        {opts.map(o => <option key={o}>{o}</option>)}
+                      </select>
+                    </div>
+                  ))}
+                  <div className="inv-field-block"><label className="inv-label">Start From</label><input type="date" className="inv-input" value={filterStartDate} onChange={e => setFilterStartDate(e.target.value)} /></div>
+                  <div className="inv-field-block"><label className="inv-label">End To</label><input type="date" className="inv-input" value={filterEndDate} onChange={e => setFilterEndDate(e.target.value)} /></div>
+                  <div className="inv-field-block inv-field-block--btn">
+                    <label className="inv-label">&nbsp;</label>
+                    <button className="inv-btn inv-btn--outline inv-btn--sm" onClick={() => { setFilterProject("All Projects"); setFilterProcess("All Processes"); setFilterStartDate(""); setFilterEndDate(""); setFilterComplexity("All"); setFilterFileStatus("All"); }}>✕ Clear</button>
+                  </div>
                 </div>
-              ))}
-              <div className="inv-field-block"><label className="inv-label">Start From</label><input type="date" className="inv-input" value={filterStartDate} onChange={e => setFilterStartDate(e.target.value)} /></div>
-              <div className="inv-field-block"><label className="inv-label">End To</label><input type="date" className="inv-input" value={filterEndDate} onChange={e => setFilterEndDate(e.target.value)} /></div>
-              <div className="inv-field-block inv-field-block--btn">
-                <label className="inv-label">&nbsp;</label>
-                <button className="inv-btn inv-btn--outline inv-btn--sm" onClick={() => { setFilterProject("All Projects"); setFilterProcess("All Processes"); setFilterStartDate(""); setFilterEndDate(""); setFilterComplexity("All"); setFilterFileStatus("All"); }}>✕ Clear</button>
+                <div className="inv-proj-table-wrap">
+                  {filteredDPs.length === 0 ? (
+                    <div className="inv-proj-empty">📭 No projects match the current filters.</div>
+                  ) : (
+                    <table className="inv-proj-table">
+                      <thead><tr>
+                        <th style={{ textAlign: "center" }}><input type="checkbox" checked={selectedDPIds.size === filteredDPs.length && filteredDPs.length > 0} onChange={selectAllDPs} /></th>
+                        <th>PROJECT</th><th>WORKFLOW</th><th>PROCESS</th><th>JOB ID</th><th>TITLE</th>
+                        <th>PAGES</th><th>RATE/PG</th><th>AMOUNT</th><th>START DATE</th><th>END DATE</th><th>COMPLEXITY</th><th>FILE STATUS</th>
+                      </tr></thead>
+                      <tbody>
+                        {filteredDPs.map(dp => {
+                          const rate = (dp.process ? PROCESS_RATES[dp.process] : null) || projectRates[dp.projectId] || 5;
+                          const amt = dp.pageCount * rate;
+                          const sel = selectedDPIds.has(dp.id);
+                          const complexityCls = dp.complexity ? dp.complexity.toLowerCase().replace(/\s+/g, "") : "";
+                          const fileStatusCls = dp.fileStatus ? dp.fileStatus.toLowerCase() : "";
+                          return (
+                            <tr key={dp.id} className={`inv-proj-row ${sel ? "inv-proj-row--sel" : ""}`} onClick={() => toggleSelectDP(dp.id)}>
+                              <td style={{ textAlign: "center" }}><input type="checkbox" checked={sel} onChange={() => toggleSelectDP(dp.id)} onClick={e => e.stopPropagation()} /></td>
+                              <td><span className="inv-proj-tag">{dp.project || "—"}</span></td>
+                              <td><span className="badge badge--workflow" style={{ background: '#e0f2fe', color: '#0369a1', border: '1px solid #bae6fd', padding: '2px 6px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: 700 }}>{dp.workflow || "—"}</span></td>
+                              <td><span className="inv-proc-tag">{dp.process || "—"}</span></td>
+                              <td className="inv-td-mono">{dp.jobId}</td>
+                              <td className="inv-td-title" title={dp.titleName}>{dp.titleName}</td>
+                              <td className="inv-td-num">{dp.pageCount}</td>
+                              <td className="inv-td-num">₹{rate}</td>
+                              <td className="inv-td-amt">₹{amt.toLocaleString("en-IN")}</td>
+                              <td className="inv-td-mono">{formatDate(dp.startDate)}</td>
+                              <td className="inv-td-mono">{formatDate(dp.endDate)}</td>
+                              <td>{complexityCls ? <span className={`inv-complexity inv-complexity--${complexityCls}`}>{dp.complexity}</span> : <span className="inv-complexity">—</span>}</td>
+                              <td>{fileStatusCls ? <span className={`inv-fstatus inv-fstatus--${fileStatusCls}`}>{dp.fileStatus}</span> : <span className="inv-fstatus">—</span>}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+                <div className="inv-proj-add-row">
+                  <span className="inv-proj-sel-info">{selectedDPIds.size > 0 ? `${selectedDPIds.size} project${selectedDPIds.size > 1 ? "s" : ""} selected` : "Select projects above"}</span>
+                  <button className={`inv-btn inv-btn--primary ${selectedDPIds.size === 0 ? "inv-btn--disabled" : ""}`} disabled={selectedDPIds.size === 0} onClick={addSelectedToInvoice}>
+                    ➕ Add {selectedDPIds.size > 0 ? selectedDPIds.size : ""} to Invoice Table
+                  </button>
+                </div>
               </div>
+            )}
+          </div>
+
+          {/* ── Section 4: Column Config ── */}
+          <div className="inv-card">
+            <div className="inv-card-header" onClick={() => setShowColPanel(p => !p)} style={{ cursor: "pointer" }}>
+              <span className="inv-card-icon">⚙</span>
+              <h2 className="inv-card-title">Table Column Configuration</h2>
+              <span className="inv-col-count">{enabledOptCols.length} optional columns enabled</span>
+              <span className="inv-chevron">{showColPanel ? "▲" : "▼"}</span>
             </div>
-            <div className="inv-proj-table-wrap">
-              {filteredDPs.length === 0 ? (
-                <div className="inv-proj-empty">📭 No projects match the current filters.</div>
-              ) : (
-                <table className="inv-proj-table">
-                  <thead><tr>
-                    <th style={{ textAlign: "center" }}><input type="checkbox" checked={selectedDPIds.size === filteredDPs.length && filteredDPs.length > 0} onChange={selectAllDPs} /></th>
-                    <th>PROJECT</th><th>PROCESS</th><th>JOB ID</th><th>TITLE</th>
-                    <th>PAGES</th><th>RATE/PG</th><th>AMOUNT</th><th>START DATE</th><th>END DATE</th><th>COMPLEXITY</th><th>FILE STATUS</th>
-                  </tr></thead>
+            {showColPanel && (
+              <div className="inv-card-body">
+                <p className="inv-col-hint">Toggle columns on/off. Order of selection = column order in invoice.</p>
+                <div className="inv-col-grid">
+                  {OPTIONAL_COLUMNS.map(col => {
+                    const isActive = activeCols.includes(col.key);
+                    const priority = isActive ? activeCols.indexOf(col.key) + 1 : null;
+                    return (
+                      <div key={col.key} className={`inv-col-item ${isActive ? "inv-col-item--on" : ""}`}>
+                        <Toggle checked={isActive} onChange={() => toggleCol(col.key)} />
+                        <span className="inv-col-name">{col.label}</span>
+                        {isActive && <span className="inv-col-priority">{priority}</span>}
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="inv-fixed-cols">
+                  <span className="inv-fixed-cols-label">Always shown:</span>
+                  {["S.No", "Amount", "Penalty", "Total"].map(c => <span key={c} className="inv-fixed-col-chip">{c}</span>)}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* ── Section 5: Invoice Table ── */}
+          <div className="inv-card">
+            <div className="inv-card-header">
+              <span className="inv-card-icon">📊</span>
+              <h2 className="inv-card-title">Invoice Table</h2>
+              <button className="inv-btn inv-btn--sm inv-btn--primary inv-btn--ml" onClick={addEmptyRow}>+ Add Row</button>
+            </div>
+            <div className="inv-card-body inv-card-body--noPad">
+              <div className="inv-table-scroll">
+                <table className="inv-table">
+                  <thead>
+                    <tr className="inv-thead-top">
+                      <th className="inv-th inv-th--sno" rowSpan={2}>S.No</th>
+                      {enabledOptCols.map(c => (
+                        <th key={c.key} className={`inv-th inv-th--opt ${c.key === 'orderPages' ? 'inv-th--page' : c.key === 'ratePage' ? 'inv-th--rate' : ''}`} rowSpan={2}>
+                          <input className="inv-th-edit" value={colHeaders[c.key] || c.label} onChange={e => setColHeaders(h => ({ ...h, [c.key]: e.target.value }))} />
+                        </th>
+                      ))}
+                      <th className="inv-th inv-th--fixed" rowSpan={2}>Amount (₹)</th>
+                      <th className="inv-th inv-th--fixed inv-th--penalty" rowSpan={2}>Penalty (₹)</th>
+                      <th className="inv-th inv-th--total" rowSpan={2}>Total (₹)</th>
+                      <th className="inv-th inv-th--action" rowSpan={2}>Del</th>
+                    </tr>
+                    <tr />
+                  </thead>
                   <tbody>
-                    {filteredDPs.map(dp => {
-                      const rate = (dp.process ? PROCESS_RATES[dp.process] : null) || projectRates[dp.projectId] || 5;
-                      const amt = dp.pageCount * rate;
-                      const sel = selectedDPIds.has(dp.id);
-                      const complexityCls = dp.complexity ? dp.complexity.toLowerCase().replace(/\s+/g, "") : "";
-                      const fileStatusCls = dp.fileStatus ? dp.fileStatus.toLowerCase() : "";
-                      return (
-                        <tr key={dp.id} className={`inv-proj-row ${sel ? "inv-proj-row--sel" : ""}`} onClick={() => toggleSelectDP(dp.id)}>
-                          <td style={{ textAlign: "center" }}><input type="checkbox" checked={sel} onChange={() => toggleSelectDP(dp.id)} onClick={e => e.stopPropagation()} /></td>
-                          <td><span className="inv-proj-tag">{dp.project || "—"}</span></td>
-                          <td><span className="inv-proc-tag">{dp.process || "—"}</span></td>
-                          <td className="inv-td-mono">{dp.jobId}</td>
-                          <td className="inv-td-title" title={dp.titleName}>{dp.titleName}</td>
-                          <td className="inv-td-num">{dp.pageCount}</td>
-                          <td className="inv-td-num">₹{rate}</td>
-                          <td className="inv-td-amt">₹{amt.toLocaleString("en-IN")}</td>
-                          <td className="inv-td-mono">{formatDate(dp.startDate)}</td>
-                          <td className="inv-td-mono">{formatDate(dp.endDate)}</td>
-                          <td>{complexityCls ? <span className={`inv-complexity inv-complexity--${complexityCls}`}>{dp.complexity}</span> : <span className="inv-complexity">—</span>}</td>
-                          <td>{fileStatusCls ? <span className={`inv-fstatus inv-fstatus--${fileStatusCls}`}>{dp.fileStatus}</span> : <span className="inv-fstatus">—</span>}</td>
-                        </tr>
-                      );
-                    })}
+                    {rows.map((row, idx) => (
+                      <tr key={row.id} className="inv-tr">
+                        <td className="inv-td inv-td--center">{idx + 1}</td>
+                        {enabledOptCols.map(c => {
+                          const isDate = ["startDate", "endDate", "receivedDate", "uploadedDate"].includes(c.key);
+                          const isComp = c.key === "complexity";
+
+                          if (c.key === "projectName") {
+                            const projListId = `proj-list-${row.id}`;
+                            return (
+                              <td key={c.key} className="inv-td col-left">
+                                <input
+                                  list={projListId}
+                                  className="inv-cell-input inv-cell-input--combo"
+                                  value={row.projectName}
+                                  placeholder="Type project name…"
+                                  onChange={e => {
+                                    const val = e.target.value;
+                                    updateRow(row.id, "projectName", val);
+                                    const matchedProj = clientProjects.find(p => p.name === val);
+                                    if (matchedProj) {
+                                      updateRow(row.id, "projectId", matchedProj.id);
+                                      if (projectRates[matchedProj.id]) {
+                                        updateRow(row.id, "ratePage", projectRates[matchedProj.id]);
+                                      }
+                                      if (matchedProj.workflowId) {
+                                        updateRow(row.id, "workflowId", matchedProj.workflowId);
+                                        updateRow(row.id, "workflowName", matchedProj.workflowName || "");
+                                        updateRow(row.id, "workflow", matchedProj.workflowName || "");
+                                      } else {
+                                        updateRow(row.id, "workflowId", "");
+                                        updateRow(row.id, "workflowName", "");
+                                        updateRow(row.id, "workflow", "");
+                                      }
+                                    }
+                                  }}
+                                />
+                                <datalist id={projListId}>
+                                  {clientProjects.map(p => <option key={p.id} value={p.name} />)}
+                                </datalist>
+                              </td>
+                            );
+                          }
+                          if (c.key === "workflow") {
+                            const isDropdownOpen = activeDropdown.rowId === row.id && activeDropdown.field === "workflow";
+                            const selectedWfs = row.workflow ? row.workflow.split(",").map(s => s.trim()).filter(Boolean) : [];
+
+                            return (
+                              <td key={c.key} className="inv-td" style={{ minWidth: "220px" }}>
+                                <div className="inv-multiselect-box" onMouseDown={e => e.stopPropagation()}>
+                                  {/* Selected Chips */}
+                                  {selectedWfs.length > 0 && (
+                                    <div className="inv-chips-wrap">
+                                      {selectedWfs.map(wf => (
+                                        <span key={wf} className="inv-multiselect-chip">
+                                          {wf}
+                                          <button
+                                            type="button"
+                                            className="inv-chip-remove"
+                                            onMouseDown={(e) => {
+                                              e.preventDefault();
+                                              e.stopPropagation();
+                                              const newVal = toggleListItem(row.workflow, wf);
+                                              updateRow(row.id, "workflow", newVal);
+                                            }}
+                                          >
+                                            &times;
+                                          </button>
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+
+                                  {/* Input + toggle arrow */}
+                                  <div style={{ display: "flex", alignItems: "center", width: "100%" }}>
+                                    <input
+                                      className="inv-multiselect-input"
+                                      value={row.workflow || ""}
+                                      placeholder={selectedWfs.length > 0 ? "" : "Select/type workflow…"}
+                                      onFocus={e => openDropdown(e, row.id, "workflow")}
+                                      onChange={e => {
+                                        const val = e.target.value;
+                                        updateRow(row.id, "workflow", val);
+                                        const firstSelected = val.split(",")[0]?.trim();
+                                        const firstWf = workflows.find(wf => wf.name === firstSelected);
+                                        updateRow(row.id, "workflowId", firstWf ? firstWf.id : "");
+                                      }}
+                                      style={{ border: "none", outline: "none", flex: 1, background: "transparent", minWidth: 0 }}
+                                    />
+                                    <span
+                                      className="inv-multiselect-arrow"
+                                      onMouseDown={e => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        if (isDropdownOpen) {
+                                          closeDropdown();
+                                        } else {
+                                          openDropdown(e, row.id, "workflow");
+                                        }
+                                      }}
+                                      style={{ cursor: "pointer", opacity: 0.55, fontSize: "0.75rem", padding: "0 4px", userSelect: "none" }}
+                                    >
+                                      {isDropdownOpen ? "▲" : "▼"}
+                                    </span>
+                                  </div>
+
+                                  {/* Fixed-position dropdown — escapes overflow clipping */}
+                                  {isDropdownOpen && activeDropdown.rect && (
+                                    <div
+                                      className="inv-multiselect-dropdown"
+                                      onMouseDown={e => e.stopPropagation()}
+                                      style={{
+                                        position: "fixed",
+                                        top: activeDropdown.rect.bottom + 4,
+                                        left: activeDropdown.rect.left,
+                                        width: Math.max(activeDropdown.rect.width, 200),
+                                        zIndex: 99999
+                                      }}
+                                    >
+                                      {workflows.map(w => {
+                                        const isChecked = selectedWfs.includes(w.name);
+                                        return (
+                                          <div
+                                            key={w.id}
+                                            className={`inv-multiselect-option ${isChecked ? "inv-multiselect-option--active" : ""}`}
+                                            onMouseDown={(e) => {
+                                              e.preventDefault();
+                                              const newVal = toggleListItem(row.workflow, w.name);
+                                              updateRow(row.id, "workflow", newVal);
+
+                                              // Resolve first selected option ID
+                                              const firstSelected = newVal.split(",")[0]?.trim();
+                                              const firstWf = workflows.find(wf => wf.name === firstSelected);
+                                              updateRow(row.id, "workflowId", firstWf ? firstWf.id : "");
+                                            }}
+                                          >
+                                            <input
+                                              type="checkbox"
+                                              checked={isChecked}
+                                              readOnly
+                                              style={{ marginRight: "8px", pointerEvents: "none" }}
+                                            />
+                                            <span>{w.name}</span>
+                                          </div>
+                                        );
+                                      })}
+
+                                      <div
+                                        className="inv-multiselect-option inv-multiselect-option--add"
+                                        onMouseDown={async (e) => {
+                                          e.preventDefault();
+                                          const name = window.prompt("Enter new workflow name:");
+                                          if (name && name.trim()) {
+                                            try {
+                                              const created = await apiCall("/projects/workflows", "POST", { name: name.trim() });
+                                              await fetchWorkflows();
+                                              const newVal = toggleListItem(row.workflow, created.name);
+                                              updateRow(row.id, "workflow", newVal);
+                                            } catch (err) {
+                                              alert("Error: " + err.message);
+                                            }
+                                          }
+                                        }}
+                                      >
+                                        ➕ + Add New Custom Workflow...
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                            );
+                          }
+                          if (c.key === "process") {
+                            const isDropdownOpen = activeDropdown.rowId === row.id && activeDropdown.field === "process";
+                            const selectedProcs = row.process ? row.process.split(",").map(s => s.trim()).filter(Boolean) : [];
+
+                            const allProcessOptions = Array.from(new Set([
+                              ...processes.map(p => p.name),
+                              ...PROCESS_OPTIONS.filter(o => o !== "All Processes")
+                            ])).sort();
+
+                            return (
+                              <td key={c.key} className="inv-td" style={{ minWidth: "220px" }}>
+                                <div className="inv-multiselect-box" onMouseDown={e => e.stopPropagation()}>
+                                  {/* Selected Chips */}
+                                  {selectedProcs.length > 0 && (
+                                    <div className="inv-chips-wrap">
+                                      {selectedProcs.map(proc => (
+                                        <span key={proc} className="inv-multiselect-chip">
+                                          {proc}
+                                          <button
+                                            type="button"
+                                            className="inv-chip-remove"
+                                            onMouseDown={(e) => {
+                                              e.preventDefault();
+                                              e.stopPropagation();
+                                              const newVal = toggleListItem(row.process, proc);
+                                              updateRow(row.id, "process", newVal);
+                                            }}
+                                          >
+                                            &times;
+                                          </button>
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+
+                                  {/* Input + toggle arrow */}
+                                  <div style={{ display: "flex", alignItems: "center", width: "100%" }}>
+                                    <input
+                                      className="inv-multiselect-input"
+                                      value={row.process || ""}
+                                      placeholder={selectedProcs.length > 0 ? "" : "Select/type process…"}
+                                      onFocus={e => openDropdown(e, row.id, "process")}
+                                      onChange={e => {
+                                        const val = e.target.value;
+                                        updateRow(row.id, "process", val);
+                                        const firstSelected = val.split(",")[0]?.trim();
+                                        const firstProcObj = processes.find(p => p.name === firstSelected);
+                                        updateRow(row.id, "processId", firstProcObj ? firstProcObj.id : "");
+                                      }}
+                                      style={{ border: "none", outline: "none", flex: 1, background: "transparent", minWidth: 0 }}
+                                    />
+                                    <span
+                                      className="inv-multiselect-arrow"
+                                      onMouseDown={e => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        if (isDropdownOpen) {
+                                          closeDropdown();
+                                        } else {
+                                          openDropdown(e, row.id, "process");
+                                        }
+                                      }}
+                                      style={{ cursor: "pointer", opacity: 0.55, fontSize: "0.75rem", padding: "0 4px", userSelect: "none" }}
+                                    >
+                                      {isDropdownOpen ? "▲" : "▼"}
+                                    </span>
+                                  </div>
+
+                                  {/* Fixed-position dropdown — escapes overflow clipping */}
+                                  {isDropdownOpen && activeDropdown.rect && (
+                                    <div
+                                      className="inv-multiselect-dropdown"
+                                      onMouseDown={e => e.stopPropagation()}
+                                      style={{
+                                        position: "fixed",
+                                        top: activeDropdown.rect.bottom + 4,
+                                        left: activeDropdown.rect.left,
+                                        width: Math.max(activeDropdown.rect.width, 200),
+                                        zIndex: 99999
+                                      }}
+                                    >
+                                      {allProcessOptions.map(o => {
+                                        const isChecked = selectedProcs.includes(o);
+                                        return (
+                                          <div
+                                            key={o}
+                                            className={`inv-multiselect-option ${isChecked ? "inv-multiselect-option--active" : ""}`}
+                                            onMouseDown={(e) => {
+                                              e.preventDefault();
+                                              e.stopPropagation();
+                                              const newVal = toggleListItem(row.process, o);
+                                              updateRow(row.id, "process", newVal);
+                                              const firstSelected = newVal.split(",")[0]?.trim();
+                                              const firstProcObj = processes.find(p => p.name === firstSelected);
+                                              updateRow(row.id, "processId", firstProcObj ? firstProcObj.id : "");
+                                              if (PROCESS_RATES[firstSelected]) {
+                                                updateRow(row.id, "ratePage", PROCESS_RATES[firstSelected]);
+                                              }
+                                            }}
+                                          >
+                                            <input type="checkbox" checked={isChecked} readOnly style={{ marginRight: "8px", pointerEvents: "none", accentColor: "#0284c7" }} />
+                                            <span>{o}</span>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                            );
+                          }
+                          if (c.key === "bookBatchName") {
+                            return <td key={c.key} className="inv-td"><input className="inv-cell-input" value={row.bookBatchName} onChange={e => updateRow(row.id, "bookBatchName", e.target.value)} placeholder="Batch Name" /></td>;
+                          }
+                          if (c.key === "orderPages") {
+                            return <td key={c.key} className="inv-td"><input type="number" className="inv-cell-input inv-cell-input--num" value={row.orderPages} onChange={e => updateRow(row.id, "orderPages", e.target.value)} /></td>;
+                          }
+                          if (c.key === "ratePage") {
+                            return <td key={c.key} className="inv-td"><input type="number" className="inv-cell-input inv-cell-input--num" value={row.ratePage} onChange={e => updateRow(row.id, "ratePage", e.target.value)} /></td>;
+                          }
+
+                          return (
+                            <td key={c.key} className={`inv-td ${c.key === "titleName" ? "col-left" : ""}`}>
+                              {isComp ? (
+                                <select className={`inv-cell-input ${getComplexityClass(row[c.key])}`} value={row[c.key] || ""} onChange={e => updateRow(row.id, c.key, e.target.value)}>
+                                  <option value="">Select...</option>
+                                  {["Simple", "Medium", "Complex", "Heavy Complex"].map(o => <option key={o} value={o}>{o}</option>)}
+                                </select>
+                              ) : isDate ? (
+                                <input type="date" className="inv-cell-input" value={row[c.key] || ""} onChange={e => updateRow(row.id, c.key, e.target.value)} />
+                              ) : (
+                                <input className="inv-cell-input" value={row[c.key] || ""} onChange={e => updateRow(row.id, c.key, e.target.value)} />
+                              )}
+                            </td>
+                          );
+                        })}
+                        <td className="inv-td inv-td--calc">{row.amount ? fmt(row.amount) : ""}</td>
+                        <td className="inv-td"><input type="number" className="inv-cell-input inv-cell-input--num" value={row.deductionAmount} onChange={e => updateRow(row.id, "deductionAmount", e.target.value)} /></td>
+                        <td className="inv-td inv-td--total">{row.totalAmount ? fmt(row.totalAmount) : ""}</td>
+                        <td className="inv-td inv-td--center"><button className="inv-row-del" onClick={() => removeRow(row.id)} title="Remove">✕</button></td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
+              </div>
+            </div>
+            <div className="inv-totals-panel">
+              <div className="inv-totals-left">
+                <div className="inv-amount-words-inline">
+                  <span className="inv-amount-words-label">Amount in Words:</span>
+                  <span className="inv-amount-words-value">{grandTotal > 0 ? numberToWords(grandTotal) : "—"}</span>
+                </div>
+              </div>
+              <div className="inv-totals-right">
+                <div className="inv-total-row"><span className="inv-total-label">Sub Total</span><span className="inv-total-value">{fmt(subTotal)}</span></div>
+                <div className="inv-total-row">
+                  <span className="inv-total-label">IGST <input type="number" min={0} max={100} className="inv-igst-input" value={igstPct} onChange={e => setIgstPct(Number(e.target.value))} />%</span>
+                  <span className="inv-total-value">{fmt(igstAmt)}</span>
+                </div>
+                <div className="inv-total-row inv-total-row--grand"><span className="inv-total-label">Grand Total</span><span className="inv-total-value inv-total-value--grand">{fmt(grandTotal)}</span></div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Section 6: Bank Details ── */}
+          <div className="inv-card">
+            <div className="inv-card-header">
+              <span className="inv-card-icon">🏦</span>
+              <h2 className="inv-card-title">Bank Details</h2>
+            </div>
+            <div className="inv-card-body">
+              <div className="inv-bank-selector-row">
+                <div className="inv-field-block inv-field-block--grow">
+                  <label className="inv-label">Select Bank Account</label>
+                  <select className="inv-select" value={bankKey} onChange={(e) => handleBankSwitch(e.target.value)}>
+                    {Object.entries(bankData).map(([k, b]) => (
+                      <option key={k} value={k}>{b.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div style={{ display: "flex", gap: "8px", alignSelf: "flex-end", flexWrap: "wrap" }}>
+                  {!editingBank && currentBank && <button className="inv-btn inv-btn--outline inv-btn--sm" onClick={startEditBank}>✏ Edit Bank</button>}
+                  <button className="inv-btn inv-btn--success inv-btn--sm" onClick={() => setShowAddBank(true)}>+ Add Bank</button>
+                </div>
+              </div>
+
+              <div style={{ marginBottom: "16px", padding: "10px 14px", background: "#f8fafc", border: "1px solid var(--inv-border)", borderRadius: "var(--inv-radius-sm)" }}>
+                <Toggle checked={showQr} onChange={setShowQr} label="Show QR in Invoice" />
+              </div>
+
+              {editingBank ? (
+                <div className="inv-bank-edit-grid">
+                  {[["label", "Account Label", "text"], ["bankName", "Bank Name", "text"], ["acNo", "Account Number", "text"], ["branch", "Branch", "text"], ["ifsc", "IFSC Code", "text"], ["type", "Account Type", "text"]].map(([key, lbl, type]) => (
+                    <div key={key} className="inv-field-block">
+                      <label className="inv-label">{lbl}</label>
+                      <input className="inv-input" type={type} value={bankDraft[key] || ""} onChange={e => setBankDraft(d => ({ ...d, [key]: e.target.value }))} />
+                    </div>
+                  ))}
+                  <div className="inv-field-block"><label className="inv-label">Name on Account</label><input className="inv-input" value={bankDraft.nameOnAccount || ""} onChange={e => setBankDraft(d => ({ ...d, nameOnAccount: e.target.value }))} /></div>
+                  <div className="inv-field-block"><label className="inv-label">GPay Number</label><input className="inv-input" value={bankDraft.gpay || ""} onChange={e => setBankDraft(d => ({ ...d, gpay: e.target.value }))} /></div>
+                  <div className="inv-field-block inv-qr-edit-block">
+                    <label className="inv-label">Payment QR Code</label>
+                    <div className="inv-qr-upload-box" onClick={() => qrInputRef.current?.click()}>
+                      {bankDraft.qrImage
+                        ? <><img src={bankDraft.qrImage} alt="QR Code" className="inv-qr-img" /><span className="inv-qr-change">✏ Change QR</span></>
+                        : <><span className="inv-qr-icon">📱</span><span className="inv-qr-placeholder-text">Click to upload QR Code</span></>
+                      }
+                    </div>
+                    <input ref={qrInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => {
+                      const f = e.target.files[0]; if (!f) return;
+                      const r = new FileReader(); r.onload = ev => setBankDraft(d => ({ ...d, qrImage: ev.target.result })); r.readAsDataURL(f);
+                    }} />
+                  </div>
+                  <div className="inv-bank-edit-actions">
+                    <button className="inv-btn inv-btn--outline inv-btn--sm" onClick={() => setEditingBank(false)}>Cancel</button>
+                    <button className="inv-btn inv-btn--primary inv-btn--sm" onClick={saveBank}>💾 Save</button>
+                  </div>
+                </div>
+              ) : currentBank ? (
+                <div className="inv-bank-display-with-qr">
+                  <div className="inv-bank-display">
+                    <div className="inv-bank-display-grid">
+                      <div className="inv-bank-field"><span className="inv-bank-lbl">Name in Bank A/c</span><span className="inv-bank-val">{currentBank.nameOnAccount || ""}</span></div>
+                      <div className="inv-bank-field"><span className="inv-bank-lbl">Bank Name</span><span className="inv-bank-val">{currentBank.bankName}</span></div>
+                      <div className="inv-bank-field"><span className="inv-bank-lbl">Account No.</span><span className="inv-bank-val inv-bank-val--mono">{currentBank.acNo}</span></div>
+                      <div className="inv-bank-field"><span className="inv-bank-lbl">Branch</span><span className="inv-bank-val">{currentBank.branch}</span></div>
+                      <div className="inv-bank-field"><span className="inv-bank-lbl">IFSC Code</span><span className="inv-bank-val inv-bank-val--mono">{currentBank.ifsc}</span></div>
+                      <div className="inv-bank-field"><span className="inv-bank-lbl">Account Type</span><span className="inv-bank-val">{currentBank.type}</span></div>
+                      <div className="inv-bank-field"><span className="inv-bank-lbl">GPay</span><span className="inv-bank-val">{currentBank.gpay || ""}</span></div>
+                    </div>
+                  </div>
+                  <div className="inv-qr-section">
+                    <label className="inv-label">Payment QR Code</label>
+                    <div className="inv-qr-upload-box" onClick={() => qrInputRef.current?.click()}>
+                      {currentBank.qrImage
+                        ? <><img src={currentBank.qrImage} alt="QR Code" className="inv-qr-img" /><span className="inv-qr-change">✏ Change QR</span></>
+                        : <><span className="inv-qr-icon">📱</span><span className="inv-qr-placeholder-text">Click to upload QR Code</span><span className="inv-qr-hint">PNG / JPG (square preferred)</span></>
+                      }
+                    </div>
+                    <input ref={qrInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleQrUpload} />
+                    <p className="inv-qr-note">QR appears on invoice between bank details and signature.</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="inv-bank-empty" style={{ padding: "16px", color: "var(--inv-text-muted)", fontSize: "0.85rem", background: "#f8fafc", border: "1px dashed var(--inv-border)", borderRadius: "var(--inv-radius-sm)", textAlign: "center" }}>
+                  No bank account selected. Please select or add a bank account.
+                </div>
               )}
             </div>
-            <div className="inv-proj-add-row">
-              <span className="inv-proj-sel-info">{selectedDPIds.size > 0 ? `${selectedDPIds.size} project${selectedDPIds.size > 1 ? "s" : ""} selected` : "Select projects above"}</span>
-              <button className={`inv-btn inv-btn--primary ${selectedDPIds.size === 0 ? "inv-btn--disabled" : ""}`} disabled={selectedDPIds.size === 0} onClick={addSelectedToInvoice}>
-                ➕ Add {selectedDPIds.size > 0 ? selectedDPIds.size : ""} to Invoice Table
-              </button>
-            </div>
           </div>
-        )}
-      </div>
 
-      {/* ── Section 4: Column Config ── */}
-      <div className="inv-card">
-        <div className="inv-card-header" onClick={() => setShowColPanel(p => !p)} style={{ cursor: "pointer" }}>
-          <span className="inv-card-icon">⚙</span>
-          <h2 className="inv-card-title">Table Column Configuration</h2>
-          <span className="inv-col-count">{enabledOptCols.length} optional columns enabled</span>
-          <span className="inv-chevron">{showColPanel ? "▲" : "▼"}</span>
-        </div>
-        {showColPanel && (
-          <div className="inv-card-body">
-            <p className="inv-col-hint">Toggle columns on/off. Order of selection = column order in invoice.</p>
-            <div className="inv-col-grid">
-              {OPTIONAL_COLUMNS.map(col => {
-                const isActive = activeCols.includes(col.key);
-                const priority = isActive ? activeCols.indexOf(col.key) + 1 : null;
-                return (
-                  <div key={col.key} className={`inv-col-item ${isActive ? "inv-col-item--on" : ""}`}>
-                    <Toggle checked={isActive} onChange={() => toggleCol(col.key)} />
-                    <span className="inv-col-name">{col.label}</span>
-                    {isActive && <span className="inv-col-priority">{priority}</span>}
+          {/* ── Section 7: Signature ── */}
+          <div className="inv-card">
+            <div className="inv-card-header"><span className="inv-card-icon">✍</span><h2 className="inv-card-title">Authorized Signature</h2></div>
+            <div className="inv-card-body">
+              <div style={{ marginBottom: "16px", padding: "10px 14px", background: "#f8fafc", border: "1px solid var(--inv-border)", borderRadius: "var(--inv-radius-sm)" }}>
+                <Toggle checked={showSignature} onChange={setShowSignature} label="Show Signature Image in Invoice" />
+              </div>
+              <div className="inv-sig-layout">
+                <div className="inv-sig-fields">
+                  <div className="inv-field-block"><label className="inv-label">Authorized Person Name</label><input className="inv-input" value={sigName} onChange={e => setSigName(e.target.value)} /></div>
+                  <div className="inv-field-block"><label className="inv-label">Designation</label><input className="inv-input" value={sigDesig} onChange={e => setSigDesig(e.target.value)} /></div>
+                </div>
+                <div className="inv-sig-upload">
+                  <label className="inv-label">Signature Image</label>
+                  <div className="inv-sig-preview-box" onClick={() => sigInputRef.current?.click()}>
+                    {sigImage ? <img src={sigImage} alt="Signature" className="inv-sig-img" /> : <div className="inv-sig-placeholder"><span>📤</span><span>Click to upload signature</span></div>}
+                    <div className="inv-sig-edit-overlay"><span>✏ Change</span></div>
                   </div>
-                );
-              })}
-            </div>
-            <div className="inv-fixed-cols">
-              <span className="inv-fixed-cols-label">Always shown:</span>
-              {["S.No", "Amount", "Deduction", "Total"].map(c => <span key={c} className="inv-fixed-col-chip">{c}</span>)}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* ── Section 5: Invoice Table ── */}
-      <div className="inv-card">
-        <div className="inv-card-header">
-          <span className="inv-card-icon">📊</span>
-          <h2 className="inv-card-title">Invoice Table</h2>
-          <button className="inv-btn inv-btn--sm inv-btn--primary inv-btn--ml" onClick={addEmptyRow}>+ Add Row</button>
-        </div>
-        <div className="inv-card-body inv-card-body--noPad">
-          <div className="inv-table-scroll">
-            <table className="inv-table">
-              <thead>
-                <tr className="inv-thead-top">
-                  <th className="inv-th inv-th--sno" rowSpan={2}>S.No</th>
-                  {enabledOptCols.map(c => (
-                    <th key={c.key} className="inv-th inv-th--opt" rowSpan={2}>
-                      <input className="inv-th-edit" value={colHeaders[c.key] || c.label} onChange={e => setColHeaders(h => ({ ...h, [c.key]: e.target.value }))} />
-                    </th>
-                  ))}
-                  <th className="inv-th inv-th--fixed" rowSpan={2}>Amount (₹)</th>
-                  <th className="inv-th inv-th--fixed" rowSpan={2}>Deduction (₹)</th>
-                  <th className="inv-th inv-th--total" rowSpan={2}>Total (₹)</th>
-                  <th className="inv-th inv-th--action" rowSpan={2}>Del</th>
-                </tr>
-                <tr />
-              </thead>
-              <tbody>
-                {rows.map((row, idx) => (
-                  <tr key={row.id} className="inv-tr">
-                    <td className="inv-td inv-td--center">{idx + 1}</td>
-                    {enabledOptCols.map(c => {
-                      const isDate = ["startDate", "endDate", "receivedDate", "uploadedDate"].includes(c.key);
-                      const isComp = c.key === "complexity";
-
-                      if (c.key === "projectName") {
-                        const projListId = `proj-list-${row.id}`;
-                        return (
-                          <td key={c.key} className="inv-td col-left">
-                            <input
-                              list={projListId}
-                              className="inv-cell-input inv-cell-input--combo"
-                              value={row.projectName}
-                              placeholder="Type project name…"
-                              onChange={e => {
-                                const val = e.target.value;
-                                updateRow(row.id, "projectName", val);
-                                const matchedProj = clientProjects.find(p => p.name === val);
-                                if (matchedProj) {
-                                  updateRow(row.id, "projectId", matchedProj.id);
-                                  if (projectRates[matchedProj.id]) {
-                                    updateRow(row.id, "ratePage", projectRates[matchedProj.id]);
-                                  }
-                                }
-                              }}
-                            />
-                            <datalist id={projListId}>
-                              {clientProjects.map(p => <option key={p.id} value={p.name} />)}
-                            </datalist>
-                          </td>
-                        );
-                      }
-                      if (c.key === "process") {
-                        const procListId = `proc-list-${row.id}`;
-                        return (
-                          <td key={c.key} className="inv-td">
-                            <input
-                              list={procListId}
-                              className="inv-cell-input inv-cell-input--combo"
-                              value={row.process}
-                              placeholder="Type process…"
-                              onChange={e => {
-                                const val = e.target.value;
-                                updateRow(row.id, "process", val);
-                                const matchedProc = processes.find(p => p.name === val);
-                                if (matchedProc) {
-                                  updateRow(row.id, "processId", matchedProc.id);
-                                  if (PROCESS_RATES[val]) {
-                                    updateRow(row.id, "ratePage", PROCESS_RATES[val]);
-                                  }
-                                }
-                              }}
-                            />
-                            <datalist id={procListId}>
-                              {processes.map(p => <option key={p.id} value={p.name} />)}
-                              {PROCESS_OPTIONS.filter(o => o !== "All Processes").map(o => <option key={o} value={o} />)}
-                            </datalist>
-                          </td>
-                        );
-                      }
-                      if (c.key === "bookBatchName") {
-                        return <td key={c.key} className="inv-td"><input className="inv-cell-input" value={row.bookBatchName} onChange={e => updateRow(row.id, "bookBatchName", e.target.value)} placeholder="Batch Name" /></td>;
-                      }
-                      if (c.key === "orderPages") {
-                        return <td key={c.key} className="inv-td"><input type="number" className="inv-cell-input inv-cell-input--num" value={row.orderPages} onChange={e => updateRow(row.id, "orderPages", e.target.value)} /></td>;
-                      }
-                      if (c.key === "ratePage") {
-                        return <td key={c.key} className="inv-td"><input type="number" className="inv-cell-input inv-cell-input--num" value={row.ratePage} onChange={e => updateRow(row.id, "ratePage", e.target.value)} /></td>;
-                      }
-
-                      return (
-                        <td key={c.key} className={`inv-td ${c.key === "titleName" ? "col-left" : ""}`}>
-                          {isComp ? (
-                            <select className={`inv-cell-input ${getComplexityClass(row[c.key])}`} value={row[c.key] || ""} onChange={e => updateRow(row.id, c.key, e.target.value)}>
-                              <option value="">Select...</option>
-                              {["Simple", "Medium", "Complex", "Heavy Complex"].map(o => <option key={o} value={o}>{o}</option>)}
-                            </select>
-                          ) : isDate ? (
-                            <input type="date" className="inv-cell-input" value={row[c.key] || ""} onChange={e => updateRow(row.id, c.key, e.target.value)} />
-                          ) : (
-                            <input className="inv-cell-input" value={row[c.key] || ""} onChange={e => updateRow(row.id, c.key, e.target.value)} />
-                          )}
-                        </td>
-                      );
-                    })}
-                    <td className="inv-td inv-td--calc">{row.amount ? fmt(row.amount) : ""}</td>
-                    <td className="inv-td"><input type="number" className="inv-cell-input inv-cell-input--num" value={row.deductionAmount} onChange={e => updateRow(row.id, "deductionAmount", e.target.value)} /></td>
-                    <td className="inv-td inv-td--total">{row.totalAmount ? fmt(row.totalAmount) : ""}</td>
-                    <td className="inv-td inv-td--center"><button className="inv-row-del" onClick={() => removeRow(row.id)} title="Remove">✕</button></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-        <div className="inv-totals-panel">
-          <div className="inv-totals-left">
-            <div className="inv-amount-words-inline">
-              <span className="inv-amount-words-label">Amount in Words:</span>
-              <span className="inv-amount-words-value">{grandTotal > 0 ? numberToWords(grandTotal) : "—"}</span>
-            </div>
-          </div>
-          <div className="inv-totals-right">
-            <div className="inv-total-row"><span className="inv-total-label">Sub Total</span><span className="inv-total-value">{fmt(subTotal)}</span></div>
-            <div className="inv-total-row">
-              <span className="inv-total-label">IGST <input type="number" min={0} max={100} className="inv-igst-input" value={igstPct} onChange={e => setIgstPct(Number(e.target.value))} />%</span>
-              <span className="inv-total-value">{fmt(igstAmt)}</span>
-            </div>
-            <div className="inv-total-row inv-total-row--grand"><span className="inv-total-label">Grand Total</span><span className="inv-total-value inv-total-value--grand">{fmt(grandTotal)}</span></div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Section 6: Bank Details ── */}
-      <div className="inv-card">
-        <div className="inv-card-header">
-          <span className="inv-card-icon">🏦</span>
-          <h2 className="inv-card-title">Bank Details</h2>
-        </div>
-        <div className="inv-card-body">
-          <div className="inv-bank-selector-row">
-            <div className="inv-field-block inv-field-block--grow">
-              <label className="inv-label">Select Bank Account</label>
-              <select className="inv-select" value={bankKey} onChange={(e) => handleBankSwitch(e.target.value)}>
-                {Object.entries(bankData).map(([k, b]) => (
-                  <option key={k} value={k}>{b.label}</option>
-                ))}
-              </select>
-            </div>
-            <div style={{ display: "flex", gap: "8px", alignSelf: "flex-end", flexWrap: "wrap" }}>
-              {!editingBank && currentBank && <button className="inv-btn inv-btn--outline inv-btn--sm" onClick={startEditBank}>✏ Edit Bank</button>}
-              <button className="inv-btn inv-btn--success inv-btn--sm" onClick={() => setShowAddBank(true)}>+ Add Bank</button>
-            </div>
-          </div>
-
-          <div style={{ marginBottom: "16px", padding: "10px 14px", background: "#f8fafc", border: "1px solid var(--inv-border)", borderRadius: "var(--inv-radius-sm)" }}>
-            <Toggle checked={showQr} onChange={setShowQr} label="Show QR in Invoice" />
-          </div>
-
-          {editingBank ? (
-            <div className="inv-bank-edit-grid">
-              {[["label", "Account Label", "text"], ["bankName", "Bank Name", "text"], ["acNo", "Account Number", "text"], ["branch", "Branch", "text"], ["ifsc", "IFSC Code", "text"], ["type", "Account Type", "text"]].map(([key, lbl, type]) => (
-                <div key={key} className="inv-field-block">
-                  <label className="inv-label">{lbl}</label>
-                  <input className="inv-input" type={type} value={bankDraft[key] || ""} onChange={e => setBankDraft(d => ({ ...d, [key]: e.target.value }))} />
+                  <input ref={sigInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleSigUpload} />
                 </div>
-              ))}
-              <div className="inv-field-block"><label className="inv-label">Name on Account</label><input className="inv-input" value={bankDraft.nameOnAccount || ""} onChange={e => setBankDraft(d => ({ ...d, nameOnAccount: e.target.value }))} /></div>
-              <div className="inv-field-block"><label className="inv-label">GPay Number</label><input className="inv-input" value={bankDraft.gpay || ""} onChange={e => setBankDraft(d => ({ ...d, gpay: e.target.value }))} /></div>
-              <div className="inv-field-block inv-qr-edit-block">
-                <label className="inv-label">Payment QR Code</label>
-                <div className="inv-qr-upload-box" onClick={() => qrInputRef.current?.click()}>
-                  {bankDraft.qrImage
-                    ? <><img src={bankDraft.qrImage} alt="QR Code" className="inv-qr-img" /><span className="inv-qr-change">✏ Change QR</span></>
-                    : <><span className="inv-qr-icon">📱</span><span className="inv-qr-placeholder-text">Click to upload QR Code</span></>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Section 8: Letter Pad ── */}
+          <div className="inv-card">
+            <div className="inv-card-header"><span className="inv-card-icon">🗒</span><h2 className="inv-card-title">Letter Pad Settings</h2></div>
+            <div className="inv-card-body">
+              <div className="inv-letterpad-row">
+                <Toggle checked={useLetterPad} onChange={setUseLetterPad} label="Use Letter Pad Background for Invoice" />
+              </div>
+              {useLetterPad && (
+                <div className="inv-letterpad-upload-row">
+                  <div className="inv-letterpad-upload-box" onClick={() => letterPadInputRef.current?.click()}>
+                    {letterPadImage
+                      ? <><img src={letterPadImage} alt="Letterpad" className="inv-letterpad-thumb" /><span className="inv-letterpad-change">✏ Change</span></>
+                      : <><span className="inv-letterpad-icon">🖼</span><span>Click to upload your letter pad image</span><span className="inv-letterpad-hint">(PNG or JPG)</span></>
+                    }
+                  </div>
+                  <input ref={letterPadInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleLetterPadUpload} />
+                  {letterPadImage
+                    ? <div className="inv-letterpad-info">✅ Letter pad loaded. Invoice content will be overlaid on this background.</div>
+                    : <div className="inv-letterpad-info inv-letterpad-info--warn">⚠ Please upload a letter pad image.</div>
                   }
                 </div>
-                <input ref={qrInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => {
-                  const f = e.target.files[0]; if (!f) return;
-                  const r = new FileReader(); r.onload = ev => setBankDraft(d => ({ ...d, qrImage: ev.target.result })); r.readAsDataURL(f);
-                }} />
-              </div>
-              <div className="inv-bank-edit-actions">
-                <button className="inv-btn inv-btn--outline inv-btn--sm" onClick={() => setEditingBank(false)}>Cancel</button>
-                <button className="inv-btn inv-btn--primary inv-btn--sm" onClick={saveBank}>💾 Save</button>
-              </div>
+              )}
             </div>
-          ) : currentBank ? (
-            <div className="inv-bank-display-with-qr">
-              <div className="inv-bank-display">
-                <div className="inv-bank-display-grid">
-                  <div className="inv-bank-field"><span className="inv-bank-lbl">Name in Bank A/c</span><span className="inv-bank-val">{currentBank.nameOnAccount || ""}</span></div>
-                  <div className="inv-bank-field"><span className="inv-bank-lbl">Bank Name</span><span className="inv-bank-val">{currentBank.bankName}</span></div>
-                  <div className="inv-bank-field"><span className="inv-bank-lbl">Account No.</span><span className="inv-bank-val inv-bank-val--mono">{currentBank.acNo}</span></div>
-                  <div className="inv-bank-field"><span className="inv-bank-lbl">Branch</span><span className="inv-bank-val">{currentBank.branch}</span></div>
-                  <div className="inv-bank-field"><span className="inv-bank-lbl">IFSC Code</span><span className="inv-bank-val inv-bank-val--mono">{currentBank.ifsc}</span></div>
-                  <div className="inv-bank-field"><span className="inv-bank-lbl">Account Type</span><span className="inv-bank-val">{currentBank.type}</span></div>
-                  <div className="inv-bank-field"><span className="inv-bank-lbl">GPay</span><span className="inv-bank-val">{currentBank.gpay || ""}</span></div>
-                </div>
-              </div>
-              <div className="inv-qr-section">
-                <label className="inv-label">Payment QR Code</label>
-                <div className="inv-qr-upload-box" onClick={() => qrInputRef.current?.click()}>
-                  {currentBank.qrImage
-                    ? <><img src={currentBank.qrImage} alt="QR Code" className="inv-qr-img" /><span className="inv-qr-change">✏ Change QR</span></>
-                    : <><span className="inv-qr-icon">📱</span><span className="inv-qr-placeholder-text">Click to upload QR Code</span><span className="inv-qr-hint">PNG / JPG (square preferred)</span></>
-                  }
-                </div>
-                <input ref={qrInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleQrUpload} />
-                <p className="inv-qr-note">QR appears on invoice between bank details and signature.</p>
-              </div>
-            </div>
-          ) : (
-            <div className="inv-bank-empty" style={{ padding: "16px", color: "var(--inv-text-muted)", fontSize: "0.85rem", background: "#f8fafc", border: "1px dashed var(--inv-border)", borderRadius: "var(--inv-radius-sm)", textAlign: "center" }}>
-              No bank account selected. Please select or add a bank account.
-            </div>
-          )}
-        </div>
-      </div>
+          </div>
 
-      {/* ── Section 7: Signature ── */}
-      <div className="inv-card">
-        <div className="inv-card-header"><span className="inv-card-icon">✍</span><h2 className="inv-card-title">Authorized Signature</h2></div>
-        <div className="inv-card-body">
-          <div style={{ marginBottom: "16px", padding: "10px 14px", background: "#f8fafc", border: "1px solid var(--inv-border)", borderRadius: "var(--inv-radius-sm)" }}>
-            <Toggle checked={showSignature} onChange={setShowSignature} label="Show Signature Image in Invoice" />
-          </div>
-          <div className="inv-sig-layout">
-            <div className="inv-sig-fields">
-              <div className="inv-field-block"><label className="inv-label">Authorized Person Name</label><input className="inv-input" value={sigName} onChange={e => setSigName(e.target.value)} /></div>
-              <div className="inv-field-block"><label className="inv-label">Designation</label><input className="inv-input" value={sigDesig} onChange={e => setSigDesig(e.target.value)} /></div>
-            </div>
-            <div className="inv-sig-upload">
-              <label className="inv-label">Signature Image</label>
-              <div className="inv-sig-preview-box" onClick={() => sigInputRef.current?.click()}>
-                {sigImage ? <img src={sigImage} alt="Signature" className="inv-sig-img" /> : <div className="inv-sig-placeholder"><span>📤</span><span>Click to upload signature</span></div>}
-                <div className="inv-sig-edit-overlay"><span>✏ Change</span></div>
+          {/* ── Section 9: Export ── */}
+          <div className="inv-card inv-card--export">
+            <div className="inv-card-header"><span className="inv-card-icon">🚀</span><h2 className="inv-card-title">Preview & Export Invoice</h2></div>
+            <div className="inv-card-body">
+              <div className="inv-export-grid">
+                <button className="inv-export-btn inv-export-btn--preview" onClick={() => setShowPreview(true)}><span className="inv-export-icon">👁</span><span className="inv-export-label">Preview</span><span className="inv-export-sub">View before export</span></button>
+                <button className="inv-export-btn inv-export-btn--pdf" onClick={exportPDF}><span className="inv-export-icon">📄</span><span className="inv-export-label">Export PDF</span><span className="inv-export-sub">Print / Save as PDF</span></button>
+                <button className="inv-export-btn inv-export-btn--image" onClick={exportImage}><span className="inv-export-icon">🖼</span><span className="inv-export-label">Export Image</span><span className="inv-export-sub">Save as PNG file</span></button>
+                <button className="inv-export-btn inv-export-btn--excel" onClick={exportExcel}><span className="inv-export-icon">📊</span><span className="inv-export-label">Export Excel</span><span className="inv-export-sub">Download as CSV</span></button>
               </div>
-              <input ref={sigInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleSigUpload} />
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* ── Section 8: Letter Pad ── */}
-      <div className="inv-card">
-        <div className="inv-card-header"><span className="inv-card-icon">🗒</span><h2 className="inv-card-title">Letter Pad Settings</h2></div>
-        <div className="inv-card-body">
-          <div className="inv-letterpad-row">
-            <Toggle checked={useLetterPad} onChange={setUseLetterPad} label="Use Letter Pad Background for Invoice" />
-          </div>
-          {useLetterPad && (
-            <div className="inv-letterpad-upload-row">
-              <div className="inv-letterpad-upload-box" onClick={() => letterPadInputRef.current?.click()}>
-                {letterPadImage
-                  ? <><img src={letterPadImage} alt="Letterpad" className="inv-letterpad-thumb" /><span className="inv-letterpad-change">✏ Change</span></>
-                  : <><span className="inv-letterpad-icon">🖼</span><span>Click to upload your letter pad image</span><span className="inv-letterpad-hint">(PNG or JPG)</span></>
-                }
-              </div>
-              <input ref={letterPadInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleLetterPadUpload} />
-              {letterPadImage
-                ? <div className="inv-letterpad-info">✅ Letter pad loaded. Invoice content will be overlaid on this background.</div>
-                : <div className="inv-letterpad-info inv-letterpad-info--warn">⚠ Please upload a letter pad image.</div>
-              }
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* ── Section 9: Export ── */}
-      <div className="inv-card inv-card--export">
-        <div className="inv-card-header"><span className="inv-card-icon">🚀</span><h2 className="inv-card-title">Preview & Export Invoice</h2></div>
-        <div className="inv-card-body">
-          <div className="inv-export-grid">
-            <button className="inv-export-btn inv-export-btn--preview" onClick={() => setShowPreview(true)}><span className="inv-export-icon">👁</span><span className="inv-export-label">Preview</span><span className="inv-export-sub">View before export</span></button>
-            <button className="inv-export-btn inv-export-btn--pdf" onClick={exportPDF}><span className="inv-export-icon">📄</span><span className="inv-export-label">Export PDF</span><span className="inv-export-sub">Print / Save as PDF</span></button>
-            <button className="inv-export-btn inv-export-btn--image" onClick={exportImage}><span className="inv-export-icon">🖼</span><span className="inv-export-label">Export Image</span><span className="inv-export-sub">Save as PNG file</span></button>
-            <button className="inv-export-btn inv-export-btn--excel" onClick={exportExcel}><span className="inv-export-icon">📊</span><span className="inv-export-label">Export Excel</span><span className="inv-export-sub">Download as CSV</span></button>
-          </div>
-        </div>
-      </div>
-      </>)}
+        </>)}
 
       {/* ── Overlay Mode Panels ── */}
       {invoiceMode === "overlay" && (
@@ -1588,7 +1895,7 @@ export default function Invoice() {
                     </label>
                     <input type="range" min={0} max={300} className="inv-overlay-slider" value={overlayTopSpacing} onChange={e => setOverlayTopSpacing(Number(e.target.value))} />
                   </div>
-                  
+
                   <div className="inv-overlay-control-group">
                     <label className="inv-overlay-control-label">
                       <span>Bottom Spacer (Footer Gap)</span>
@@ -1714,15 +2021,17 @@ export default function Invoice() {
       {/* ── Add Bank Modal ── */}
       {showAddBank && (
         <div className="inv-modal-overlay" onClick={() => setShowAddBank(false)}>
-          <div className="inv-modal" onClick={e => e.stopPropagation()}>
+          <div className="inv-modal inv-modal--bank" onClick={e => e.stopPropagation()}>
             <div className="inv-modal-header"><h3>Add New Bank Account</h3><button className="inv-modal-close" onClick={() => setShowAddBank(false)}>✕</button></div>
             <div className="inv-modal-body">
-              {[["label", "Account Label (shown in selector)"], ["bankName", "Bank Name"], ["acNo", "Account Number"], ["branch", "Branch"], ["ifsc", "IFSC Code"], ["type", "Account Type (Current/Savings)"], ["nameOnAccount", "Name in Bank A/c"], ["gpay", "GPay Number"]].map(([key, lbl]) => (
-                <div key={key} className="inv-field-block">
-                  <label className="inv-label">{lbl}</label>
-                  <input className="inv-input" value={newBankDraft[key] || ""} onChange={e => setNewBankDraft(d => ({ ...d, [key]: e.target.value }))} />
-                </div>
-              ))}
+              <div className="inv-modal-grid">
+                {[["label", "Account Label (shown in selector)"], ["bankName", "Bank Name"], ["acNo", "Account Number"], ["branch", "Branch"], ["ifsc", "IFSC Code"], ["type", "Account Type (Current/Savings)"], ["nameOnAccount", "Name in Bank A/c"], ["gpay", "GPay Number"]].map(([key, lbl]) => (
+                  <div key={key} className="inv-field-block" style={{ marginBottom: 0 }}>
+                    <label className="inv-label">{lbl}</label>
+                    <input className="inv-input" value={newBankDraft[key] || ""} onChange={e => setNewBankDraft(d => ({ ...d, [key]: e.target.value }))} />
+                  </div>
+                ))}
+              </div>
             </div>
             <div className="inv-modal-footer">
               <button className="inv-btn inv-btn--outline" onClick={() => setShowAddBank(false)}>Cancel</button>
@@ -1763,152 +2072,156 @@ export default function Invoice() {
                   )}
                   {useLetterPad && <div className="inv-doc-letterpad-spacer" />}
 
-                    {/* ── META TABLE ── */}
-                    <table className="inv-doc-meta-table">
-                  <tbody>
-                    <tr>
-                      <td className="inv-doc-meta-lbl" rowSpan={2}><strong>VENDOR NAME:</strong></td>
-                      <td className="inv-doc-meta-val" rowSpan={2}>
-                        <strong>{vendorName.toUpperCase()}</strong>
-                        <small>{vendorAddress}</small>
-                      </td>
-                      <td className="inv-doc-meta-lbl-r"><strong>INVOICE No:</strong></td>
-                      <td className="inv-doc-meta-val-r">{invoiceNo}</td>
-                    </tr>
-                    <tr>
-                      <td className="inv-doc-meta-lbl-r"><strong>INVOICE DATE:</strong></td>
-                      <td className="inv-doc-meta-val-r">{invoiceDate ? new Date(invoiceDate).toLocaleDateString("en-GB").replace(/\//g, "-") : ""}</td>
-                    </tr>
-                    <tr>
-                      <td className="inv-doc-meta-lbl" rowSpan={2}><strong>INVOICE TO:</strong></td>
-                      <td className="inv-doc-meta-val" rowSpan={2}>
-                        <strong>{currentClient?.name}</strong>
-                        <small>{currentClient?.address}</small>
-                      </td>
-                      <td className="inv-doc-meta-lbl-r"><strong>PAN No:</strong></td>
-                      <td className="inv-doc-meta-val-r">{panNo}</td>
-                    </tr>
-                    <tr>
-                      <td className="inv-doc-meta-lbl-r"><strong>GSTIN No:</strong></td>
-                      <td className="inv-doc-meta-val-r">{gstinNo || " "}</td>
-                    </tr>
-                  </tbody>
-                </table>
-
-                {/* Title row */}
-                <div className="inv-doc-title">
-                  <b>INVOICE OF {vendorName.toUpperCase()} FOR THE MONTH OF {titleMonth.toUpperCase()} - {titleYear}</b>
-                </div>
-
-                {/* ── Invoice Table — fully flexible with consistent borders ── */}
-                <div className="inv-doc-table-wrap">
-                  <table className="inv-doc-table">
-                    <thead>
-                      <tr>
-                        <th className="inv-doc-th--sno">S. No</th>
-                        {enabledOptCols.map(c => <th key={c.key}>{colHeaders[c.key] || c.label}</th>)}
-                        <th>Amount (₹)</th>
-                        <th>Deduction Amount (₹)</th>
-                        <th>Total Amount</th>
-                      </tr>
-                    </thead>
+                  {/* ── META TABLE ── */}
+                  <table className="inv-doc-meta-table">
                     <tbody>
-                      {rows.map((row, idx) => (
-                        <tr key={row.id}>
-                          <td className="inv-doc-td--center">{idx + 1}</td>
-                          {enabledOptCols.map(c => (
-                            <td key={c.key} className={["orderPages", "ratePage"].includes(c.key) ? "inv-doc-td--num" : ""}>
-                              {["startDate", "endDate", "receivedDate", "uploadedDate"].includes(c.key) ? formatDate(row[c.key]) : row[c.key]}
-                            </td>
-                          ))}
-                          <td className="inv-doc-td--num">{row.amount ? Number(row.amount).toLocaleString("en-IN") : ""}</td>
-                          <td className="inv-doc-td--num">{row.deductionAmount ? Number(row.deductionAmount).toLocaleString("en-IN") : "-"}</td>
-                          <td className="inv-doc-td--num inv-doc-td--total">{row.totalAmount ? Number(row.totalAmount).toLocaleString("en-IN") : ""}</td>
-                        </tr>
-                      ))}
+                      <tr>
+                        <td className="inv-doc-meta-lbl" rowSpan={2}><strong>VENDOR NAME:</strong></td>
+                        <td className="inv-doc-meta-val" rowSpan={2}>
+                          <strong>{vendorName.toUpperCase()}</strong>
+                          <small>{vendorAddress}</small>
+                        </td>
+                        <td className="inv-doc-meta-lbl-r"><strong>INVOICE No:</strong></td>
+                        <td className="inv-doc-meta-val-r">{invoiceNo}</td>
+                      </tr>
+                      <tr>
+                        <td className="inv-doc-meta-lbl-r"><strong>INVOICE DATE:</strong></td>
+                        <td className="inv-doc-meta-val-r">{invoiceDate ? new Date(invoiceDate).toLocaleDateString("en-GB").replace(/\//g, "-") : ""}</td>
+                      </tr>
+                      <tr>
+                        <td className="inv-doc-meta-lbl" rowSpan={2}><strong>INVOICE TO:</strong></td>
+                        <td className="inv-doc-meta-val" rowSpan={2}>
+                          <strong>{currentClient?.name}</strong>
+                          <small>{currentClient?.address}</small>
+                        </td>
+                        <td className="inv-doc-meta-lbl-r"><strong>PAN No:</strong></td>
+                        <td className="inv-doc-meta-val-r">{panNo}</td>
+                      </tr>
+                      <tr>
+                        <td className="inv-doc-meta-lbl-r"><strong>GSTIN No:</strong></td>
+                        <td className="inv-doc-meta-val-r">{gstinNo || " "}</td>
+                      </tr>
                     </tbody>
                   </table>
-                </div>
 
-                {/* Totals */}
-                <table className="inv-doc-totals-table">
-                  <tbody>
-                    <tr>
-                      <td className="inv-doc-words-cell" rowSpan={3}>
-                        <strong>Amount in Words: </strong>
-                        <span>{grandTotal > 0 ? numberToWords(grandTotal) : "—"}</span>
-                      </td>
-                      <td className="inv-doc-total-label-cell"><strong>TOTAL:</strong></td>
-                      <td className="inv-doc-total-val-cell">{fmt(subTotal)}</td>
-                    </tr>
-                    <tr>
-                      <td className="inv-doc-total-label-cell"><strong>IGST ({igstPct}%):</strong></td>
-                      <td className="inv-doc-total-val-cell">{fmt(igstAmt)}</td>
-                    </tr>
-                    <tr>
-                      <td className="inv-doc-total-label-cell inv-doc-grand-label"><strong>GRAND TOTAL:</strong></td>
-                      <td className="inv-doc-total-val-cell inv-doc-grand-val"><strong>{fmt(grandTotal)}</strong></td>
-                    </tr>
-                  </tbody>
-                </table>
-
-                {/* Bottom: Bank | Signature */}
-                <div className="inv-doc-bottom">
-                  <div className="inv-doc-bank">
-                    <div className="inv-doc-bank-title">BANK DETAILS:</div>
-                    {currentBank ? (
-                      <table className="inv-doc-bank-table">
-                        <tbody>
-                          <tr><td><strong>NAME IN BANK A/C</strong></td><td><strong>:</strong></td><td>{(currentBank.nameOnAccount || "").toUpperCase()}</td></tr>
-                          <tr><td><strong>BANK NAME</strong></td>        <td><strong>:</strong></td><td>{currentBank.bankName}</td></tr>
-                          <tr><td><strong>BANK A/C NO</strong></td>      <td><strong>:</strong></td><td>{currentBank.acNo}</td></tr>
-                          <tr><td><strong>BRANCH</strong></td>           <td><strong>:</strong></td><td>{currentBank.branch}</td></tr>
-                          <tr><td><strong>IFSC CODE</strong></td>        <td><strong>:</strong></td><td>{currentBank.ifsc}</td></tr>
-                          <tr><td><strong>GPAY</strong></td>             <td><strong>:</strong></td><td>{currentBank.gpay || ""}</td></tr>
-                          {showQr && (
-                            <tr>
-                              <td><strong>E-Pay QR</strong></td>
-                              <td><strong>:</strong></td>
-                              <td>
-                                <div className="inv-doc-qr">
-                                  {currentBank.qrImage ? (
-                                    <img src={currentBank.qrImage} alt="Payment QR" className="inv-doc-qr-img" />
-                                  ) : (
-                                    <div className="inv-doc-qr-placeholder">
-                                      <span className="inv-doc-qr-placeholder-icon">📱</span>
-                                      <span className="inv-doc-qr-placeholder-text">E-Pay QR</span>
-                                    </div>
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    ) : (
-                      <div style={{ color: "#ef4444", fontWeight: "bold", padding: "8px 0" }}>
-                        ⚠️ No bank details selected. Please select a bank account.
-                      </div>
-                    )}
+                  {/* Title row */}
+                  <div className="inv-doc-title">
+                    <b>INVOICE OF {vendorName.toUpperCase()} FOR THE MONTH OF {titleMonth.toUpperCase()} - {titleYear}</b>
                   </div>
 
-                  {/* ── SIGNATURE FIX:
+                  {/* ── Invoice Table — fully flexible with consistent borders ── */}
+                  <div className="inv-doc-table-wrap">
+                    <table className="inv-doc-table" style={{ '--inv-doc-font-size': (4 + enabledOptCols.length) >= 10 ? '7.5px' : (4 + enabledOptCols.length) >= 8 ? '8.5px' : (4 + enabledOptCols.length) >= 6 ? '9.2px' : '10px' }}>
+                      <thead>
+                        <tr>
+                          <th className="inv-doc-th--sno">S. No</th>
+                          {enabledOptCols.map(c => (
+                            <th key={c.key} className={c.key === "orderPages" ? "inv-doc-th--page" : c.key === "ratePage" ? "inv-doc-th--rate" : ""}>
+                              {colHeaders[c.key] || c.label}
+                            </th>
+                          ))}
+                          <th>Amount (₹)</th>
+                          <th className="inv-doc-th--penalty">Penalty (₹)</th>
+                          <th>Total Amount</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rows.map((row, idx) => (
+                          <tr key={row.id}>
+                            <td className="inv-doc-td--center">{idx + 1}</td>
+                            {enabledOptCols.map(c => (
+                              <td key={c.key} className={`${["orderPages", "ratePage"].includes(c.key) ? "inv-doc-td--num" : ""} ${c.key === "orderPages" ? "inv-doc-td--page" : c.key === "ratePage" ? "inv-doc-td--rate" : ""}`}>
+                                {["startDate", "endDate", "receivedDate", "uploadedDate"].includes(c.key) ? formatDate(row[c.key]) : row[c.key]}
+                              </td>
+                            ))}
+                            <td className="inv-doc-td--num">{row.amount ? Number(row.amount).toLocaleString("en-IN") : ""}</td>
+                            <td className="inv-doc-td--num inv-doc-td--penalty">{row.deductionAmount ? Number(row.deductionAmount).toLocaleString("en-IN") : "-"}</td>
+                            <td className="inv-doc-td--num inv-doc-td--total">{row.totalAmount ? Number(row.totalAmount).toLocaleString("en-IN") : ""}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Totals */}
+                  <table className="inv-doc-totals-table">
+                    <tbody>
+                      <tr>
+                        <td className="inv-doc-words-cell" rowSpan={3}>
+                          <strong>Amount in Words: </strong>
+                          <span>{grandTotal > 0 ? numberToWords(grandTotal) : "—"}</span>
+                        </td>
+                        <td className="inv-doc-total-label-cell"><strong>TOTAL:</strong></td>
+                        <td className="inv-doc-total-val-cell">{fmt(subTotal)}</td>
+                      </tr>
+                      <tr>
+                        <td className="inv-doc-total-label-cell"><strong>IGST ({igstPct}%):</strong></td>
+                        <td className="inv-doc-total-val-cell">{fmt(igstAmt)}</td>
+                      </tr>
+                      <tr>
+                        <td className="inv-doc-total-label-cell inv-doc-grand-label"><strong>GRAND TOTAL:</strong></td>
+                        <td className="inv-doc-total-val-cell inv-doc-grand-val"><strong>{fmt(grandTotal)}</strong></td>
+                      </tr>
+                    </tbody>
+                  </table>
+
+                  {/* Bottom: Bank | Signature */}
+                  <div className="inv-doc-bottom">
+                    <div className="inv-doc-bank">
+                      <div className="inv-doc-bank-title">BANK DETAILS:</div>
+                      {currentBank ? (
+                        <table className="inv-doc-bank-table">
+                          <tbody>
+                            <tr><td><strong>NAME IN BANK A/C</strong></td><td><strong>:</strong></td><td>{(currentBank.nameOnAccount || "").toUpperCase()}</td></tr>
+                            <tr><td><strong>BANK NAME</strong></td>        <td><strong>:</strong></td><td>{currentBank.bankName}</td></tr>
+                            <tr><td><strong>BANK A/C NO</strong></td>      <td><strong>:</strong></td><td>{currentBank.acNo}</td></tr>
+                            <tr><td><strong>BRANCH</strong></td>           <td><strong>:</strong></td><td>{currentBank.branch}</td></tr>
+                            <tr><td><strong>IFSC CODE</strong></td>        <td><strong>:</strong></td><td>{currentBank.ifsc}</td></tr>
+                            <tr><td><strong>GPAY</strong></td>             <td><strong>:</strong></td><td>{currentBank.gpay || ""}</td></tr>
+                            {showQr && (
+                              <tr>
+                                <td><strong>E-Pay QR</strong></td>
+                                <td><strong>:</strong></td>
+                                <td>
+                                  <div className="inv-doc-qr">
+                                    {currentBank.qrImage ? (
+                                      <img src={currentBank.qrImage} alt="Payment QR" className="inv-doc-qr-img" />
+                                    ) : (
+                                      <div className="inv-doc-qr-placeholder">
+                                        <span className="inv-doc-qr-placeholder-icon">📱</span>
+                                        <span className="inv-doc-qr-placeholder-text">E-Pay QR</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      ) : (
+                        <div style={{ color: "#ef4444", fontWeight: "bold", padding: "8px 0" }}>
+                          ⚠️ No bank details selected. Please select a bank account.
+                        </div>
+                      )}
+                    </div>
+
+                    {/* ── SIGNATURE FIX:
                       - showSignature=true  → show image + label + name + designation
                       - showSignature=false → show label + name + designation ONLY (no image)
                   ── */}
-                  <div className="inv-doc-sig">
-                    {showSignature && sigImage && (
-                      <div className="inv-doc-sig-img-wrap">
-                        <img src={sigImage} alt="Signature" className="inv-doc-sig-img" />
-                      </div>
-                    )}
-                    <div className="inv-doc-sig-label"><strong>AUTHORISED SIGNATORY</strong></div>
-                    <div className="inv-doc-sig-name"><strong>Name:</strong> {sigName}</div>
-                    <div className="inv-doc-sig-desig"><strong>Designation:</strong> {sigDesig}</div>
+                    <div className="inv-doc-sig">
+                      {showSignature && sigImage && (
+                        <div className="inv-doc-sig-img-wrap">
+                          <img src={sigImage} alt="Signature" className="inv-doc-sig-img" />
+                        </div>
+                      )}
+                      <div className="inv-doc-sig-label"><strong>AUTHORISED SIGNATORY</strong></div>
+                      <div className="inv-doc-sig-name"><strong>Name:</strong> {sigName}</div>
+                      <div className="inv-doc-sig-desig"><strong>Designation:</strong> {sigDesig}</div>
+                    </div>
                   </div>
-                </div>
 
-                {useLetterPad && <div className="inv-doc-letterpad-footer-spacer" />}
+                  {useLetterPad && <div className="inv-doc-letterpad-footer-spacer" />}
                 </div>
               ) : overlayFileType === "image" ? (
                 <div className={`inv-document ${useLetterPad ? "inv-document--letterpad" : "inv-document--plain"} inv-document-overlay-page`} id="inv-printable-doc" style={{ minHeight: "1050px" }}>

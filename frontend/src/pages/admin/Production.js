@@ -7,22 +7,11 @@ const STATUS_OPTIONS = [
   'FINISH', 'WIP', 'YTS', 'RTU', 'UPLOADED', 'PENDING', 'HOLD', 'QUERY'
 ];
 
-const COMPLEXITY_OPTIONS = [
-  { label: 'Simple', color: '#22c55e' },
-  { label: 'Medium', color: '#f59e0b' },
-  { label: 'Complex', color: '#ef4444' },
-  { label: 'Heavy Complex', color: '#7c3aed' },
-];
-
 const ComplexityBadge = ({ value }) => {
-  const opt = COMPLEXITY_OPTIONS.find(o => o.label === value);
-  if (!value || !opt) return <span className="cell-dash">-</span>;
+  if (!value) return <span className="cell-dash">-</span>;
+  const complexityKey = value.toLowerCase().replace(/\s+/g, '');
   return (
-    <span className="complexity-badge" style={{
-      background: opt.color + '22',
-      color: opt.color,
-      border: `1px solid ${opt.color}55`
-    }}>
+    <span className={`complexity-badge complexity-${complexityKey}`}>
       {value}
     </span>
   );

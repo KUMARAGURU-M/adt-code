@@ -42,4 +42,7 @@ public class CreateProjectRequest {
 
     @JsonProperty("isActive")
     private Boolean isActive;
+
+    @JsonProperty("workflowId")
+    private UUID workflowId;
 }

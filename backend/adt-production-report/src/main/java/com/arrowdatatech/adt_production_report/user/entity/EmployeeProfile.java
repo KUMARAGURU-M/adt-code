@@ -61,7 +61,11 @@ public class EmployeeProfile {
     @Column(name = "show_calendar_stats", nullable = false)
     @Builder.Default
     private Boolean showCalendarStats = true;
-
+    
+    @Column(name = "exclude_from_hourly_graph", nullable = false)
+    @Builder.Default
+    private Boolean excludeFromHourlyGraph = false;
+    
     @CreationTimestamp
     @Column(name = "created_at", updatable = false, nullable = false)
     private OffsetDateTime createdAt;

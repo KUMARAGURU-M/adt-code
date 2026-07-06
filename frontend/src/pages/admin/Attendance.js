@@ -245,7 +245,6 @@ const Attendance = () => {
     });
   }, [employees, days]);
 
-  // ── Bulk save monthly attendance ───────────────────────────────
   const handleSaveAttendance = useCallback(async () => {
     setSavingAttendance(true);
     try {
@@ -262,6 +261,20 @@ const Attendance = () => {
       setSavingAttendance(false);
     }
   }, [selYear, selMonth, attendance]);
+
+  const handleClearMonthData = useCallback(async () => {
+    if (!window.confirm(`Are you sure you want to permanently clear all attendance records and salary details for ${MONTHS[selMonth]} ${selYear}? This will delete everything for this month in the database and cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await apiCall(`/attendance/monthly?year=${selYear}&month=${selMonth}`, 'DELETE');
+      alert('Attendance month data cleared successfully!');
+      loadMonth(selYear, selMonth);
+    } catch (err) {
+      alert('Failed to clear month data: ' + err.message);
+    }
+  }, [selYear, selMonth, loadMonth]);
 
   // ── Salary detail helpers ─────────────────────────────────────
   const getSalaryDetail = (empId, field, fallback = '') => {
@@ -586,15 +599,24 @@ const Attendance = () => {
           <span className="att-page-icon">🗓️</span>
           <h2>Attendance Management</h2>
         </div>
-        <div className="att-header-actions">
+        <div className="att-header-actions" style={{ display: 'flex', gap: '10px' }}>
           {activeView === 'monthly' && (
-            <button
-              className="att-btn-mark"
-              onClick={handleSaveAttendance}
-              disabled={savingAttendance}
-            >
-              {savingAttendance ? 'Saving...' : '💾 Update Attendance'}
-            </button>
+            <>
+              <button
+                className="att-btn-mark"
+                style={{ backgroundColor: '#dc2626', borderColor: '#b91c1c' }}
+                onClick={handleClearMonthData}
+              >
+                🗑️ Clear Month Data
+              </button>
+              <button
+                className="att-btn-mark"
+                onClick={handleSaveAttendance}
+                disabled={savingAttendance}
+              >
+                {savingAttendance ? 'Saving...' : '💾 Update Attendance'}
+              </button>
+            </>
           )}
         </div>
       </div>

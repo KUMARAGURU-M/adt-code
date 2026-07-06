@@ -48,5 +48,9 @@ public class CreateInvoiceRequest {
         private LocalDate uploadedDate;
         private LocalDate startDate;
         private LocalDate endDate;
+        private UUID workflowId;
+        private String workflowName;
+        private String processNames;
+        private String workflowNames;
     }
 }

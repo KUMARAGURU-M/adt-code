@@ -31,6 +31,12 @@ public class Project extends BaseEntity {
             foreignKey = @ForeignKey(name = "fk_projects_client"))
     private Client client;
 
+    // ManyToOne: many projects -> one workflow
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "workflow_id",
+            foreignKey = @ForeignKey(name = "fk_projects_workflow"))
+    private Workflow workflow;
+
     // Per Page or Hourly
     @Column(name = "type", nullable = false, length = 30)
     @Builder.Default

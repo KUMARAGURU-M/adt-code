@@ -27,6 +27,7 @@ import ShiftManagement from './pages/admin/ShiftManagement';
 import Leaves from './pages/admin/Leave';
 import TaskManagement from './pages/admin/TaskManagement';
 import ReportsAnalytics from './pages/admin/ReportsAnalytics';
+import HourlyGraph from './pages/admin/HourlyGraph';
 import ActivityLogs from './pages/admin/ActivityLogs';
 import RolesPermission from './pages/admin/RolesPermission';
 import Setting from './pages/admin/Setting';
@@ -36,6 +37,8 @@ import TimeLog from './pages/admin/TimeLog';
 import Invoice from './pages/admin/Invoice';
 import ChatMonitor from './pages/admin/ChatMonitor';
 import ChatWidget from './components/layouts/ChatWidget';
+import DigiConvertor from './pages/admin/DigiConvertor';
+import HourlyReminder from './components/layouts/HourlyReminder';
 
 import { getCurrentUser } from './utils/api';
 
@@ -47,6 +50,7 @@ const getAllowedRoutes = (roles) => {
       '/admin/dashboard',
       '/admin/users',
       '/admin/workwise',
+      '/admin/digiconvertor',
       '/admin/attendance',
       '/admin/projects',
       '/admin/books',
@@ -58,6 +62,7 @@ const getAllowedRoutes = (roles) => {
       '/admin/leaves',
       '/admin/roles',
       '/admin/reports',
+      '/admin/hourly-graph',
       '/admin/activity-logs',
       '/admin/timelog',
       '/admin/invoices',
@@ -70,6 +75,7 @@ const getAllowedRoutes = (roles) => {
     return [
       '/manager/dashboard',
       '/manager/workwise',
+      '/manager/digiconvertor',
       '/manager/books',
       '/manager/production',
       '/manager/tasks',
@@ -77,6 +83,7 @@ const getAllowedRoutes = (roles) => {
       '/manager/shifts',
       '/manager/leaves',
       '/manager/reports',
+      '/manager/hourly-graph',
       '/manager/timelog'
     ];
   }
@@ -85,10 +92,12 @@ const getAllowedRoutes = (roles) => {
     return [
       '/team-leader/dashboard',
       '/team-leader/workwise',
+      '/team-leader/digiconvertor',
       '/team-leader/books',
       '/team-leader/production',
       '/team-leader/tasks',
       '/team-leader/reports',
+      '/team-leader/hourly-graph',
       '/team-leader/timelog'
     ];
   }
@@ -96,7 +105,8 @@ const getAllowedRoutes = (roles) => {
   if (roles.includes('Employee')) {
     return [
       '/employee/workwise',
-      '/employee/production'
+      '/employee/production',
+      '/employee/hourly-graph'
     ];
   }
 
@@ -105,6 +115,7 @@ const getAllowedRoutes = (roles) => {
 
 /* ── Admin Layout ── */
 const AdminLayout = ({ children }) => {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   const user = getCurrentUser();
   const location = useLocation();
 
@@ -124,11 +135,19 @@ const AdminLayout = ({ children }) => {
     }
   }
 
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(prev => !prev);
+  };
+
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
+  };
+
   return (
     <div className="app-container">
-      <Sidebar />
+      <Sidebar isMobileOpen={isMobileMenuOpen} onCloseMobile={closeMobileMenu} />
       <div className="main-wrapper">
-        <Header />
+        <Header onToggleMobileMenu={toggleMobileMenu} />
         <div className="content-area">
           {children}
         </div>
@@ -211,6 +230,10 @@ function App() {
           <AdminLayout><ReportsAnalytics /></AdminLayout>
         } />
 
+        <Route path="/:role/hourly-graph" element={
+          <AdminLayout><HourlyGraph /></AdminLayout>
+        } />
+
         <Route path="/:role/activity-logs" element={
           <AdminLayout><ActivityLogs /></AdminLayout>
         } />
@@ -231,11 +254,16 @@ function App() {
           <AdminLayout><ChatMonitor /></AdminLayout>
         } />
 
+        <Route path="/:role/digiconvertor" element={
+          <AdminLayout><DigiConvertor /></AdminLayout>
+        } />
+
         {/* Catch-all */}
         <Route path="*" element={<Navigate to="/login" replace />} />
 
       </Routes>
       <ChatWidget />
+      <HourlyReminder />
     </Router>
   );
 }

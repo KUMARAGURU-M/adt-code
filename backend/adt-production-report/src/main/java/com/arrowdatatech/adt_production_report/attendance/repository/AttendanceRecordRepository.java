@@ -29,11 +29,15 @@ public interface AttendanceRecordRepository
     Optional<AttendanceRecord> findByEmployeeIdAndAttendanceDate(
             UUID employeeId, LocalDate date);
 
-    // Quick-mark: delete existing records for a day before bulk insert
     @Modifying
     @Transactional
     @Query("DELETE FROM AttendanceRecord r WHERE r.attendanceDate = :date")
     void deleteByAttendanceDate(@Param("date") LocalDate date);
+
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM AttendanceRecord r WHERE r.attendanceDate BETWEEN :start AND :end")
+    void deleteByAttendanceDateBetween(@Param("start") LocalDate start, @Param("end") LocalDate end);
 
     @Query("SELECT COUNT(DISTINCT r.employee.id) FROM AttendanceRecord r WHERE r.attendanceDate = :date AND r.checkInTime IS NOT NULL")
     long countActiveEmployeesOnDate(@Param("date") LocalDate date);

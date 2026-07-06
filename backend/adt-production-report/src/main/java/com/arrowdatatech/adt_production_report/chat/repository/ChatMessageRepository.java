@@ -22,6 +22,12 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, UUID> 
            "OR (m.sender.id = :user2Id AND m.recipient.id = :user1Id) " +
            "ORDER BY m.createdAt ASC")
     List<ChatMessage> findChatHistory(@Param("user1Id") UUID user1Id, @Param("user2Id") UUID user2Id);
+ 
+    @Modifying
+    @Query("DELETE FROM ChatMessage m WHERE " +
+           "(m.sender.id = :user1Id AND m.recipient.id = :user2Id) " +
+           "OR (m.sender.id = :user2Id AND m.recipient.id = :user1Id)")
+    void deleteChatHistory(@Param("user1Id") UUID user1Id, @Param("user2Id") UUID user2Id);
 
     @Query("SELECT COUNT(m) FROM ChatMessage m WHERE " +
            "(m.sender.id = :user1Id AND m.recipient.id = :user2Id) " +

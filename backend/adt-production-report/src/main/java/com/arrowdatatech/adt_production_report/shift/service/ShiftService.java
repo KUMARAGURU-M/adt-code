@@ -223,6 +223,7 @@ public class ShiftService {
         return shiftAssignmentRepository
                 .findByShiftIdAndEffectiveToIsNull(shiftId)
                 .stream()
+                .filter(a -> a != null && a.getUser() != null)
                 .map(a -> {
                     String fullName = a.getUser().getEmployeeProfile() != null
                             ? a.getUser().getEmployeeProfile().getFullName()
@@ -330,6 +331,7 @@ public class ShiftService {
             employees = shiftAssignmentRepository
                     .findByShiftIdAndEffectiveToIsNull(shift.getId())
                     .stream()
+                    .filter(a -> a != null && a.getUser() != null)
                     .map(a -> {
                         String fullName =
                                 a.getUser().getEmployeeProfile() != null

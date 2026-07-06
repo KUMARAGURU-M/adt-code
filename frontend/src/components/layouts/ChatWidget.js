@@ -217,7 +217,7 @@ export default function ChatWidget() {
       formData.append('file', file);
       formData.append('entityType', 'chat');
 
-      const API_BASE = process.env.REACT_APP_API_URL || 'https://adt-backend-m4a4.onrender.com/api';
+      const API_BASE = process.env.REACT_APP_API_URL;
       const res = await fetch(`${API_BASE}/media/upload`, {
         method: 'POST',
         headers: {
@@ -393,9 +393,9 @@ export default function ChatWidget() {
                               {msg.mediaFile.mimeType.startsWith('image/') ? (
                                 <div className="shared-image-preview">
                                   <img
-                                    src={`${process.env.REACT_APP_API_URL || 'https://adt-backend-m4a4.onrender.com/api'}${msg.mediaFile.url}`}
+                                    src={`${process.env.REACT_APP_API_URL}${msg.mediaFile.url}`}
                                     alt={msg.mediaFile.originalName}
-                                    onClick={() => window.open(`${process.env.REACT_APP_API_URL || 'https://adt-backend-m4a4.onrender.com/api'}${msg.mediaFile.url}`, '_blank')}
+                                    onClick={() => window.open(`${process.env.REACT_APP_API_URL}${msg.mediaFile.url}`, '_blank')}
                                   />
                                 </div>
                               ) : (
@@ -408,7 +408,7 @@ export default function ChatWidget() {
                                 </div>
                               )}
                               <a
-                                href={`${process.env.REACT_APP_API_URL || 'https://adt-backend-m4a4.onrender.com/api'}${msg.mediaFile.url}`}
+                                href={`${process.env.REACT_APP_API_URL}${msg.mediaFile.url}`}
                                 download
                                 target="_blank"
                                 rel="noreferrer"

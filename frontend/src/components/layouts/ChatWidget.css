@@ -651,3 +651,18 @@
   justify-content: center;
   box-shadow: 0 2px 6px rgba(194, 133, 149, 0.3);
 }
+
+/* Mobile Responsive Chat Widget */
+@media (max-width: 480px) {
+  .adt-chat-widget-container {
+    right: 12px;
+    bottom: 12px;
+  }
+
+  .adt-chat-window {
+    width: calc(100vw - 24px);
+    max-width: 340px;
+    height: 75vh;
+    max-height: 480px;
+  }
+}

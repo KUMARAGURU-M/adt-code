@@ -305,11 +305,11 @@ public class LeaveService {
                         "LeaveRequest", "id", id));
 
         UUID reviewerId = SecurityUtils.getCurrentUserId();
-        if (lr.getUser().getId().equals(reviewerId) && !SecurityUtils.hasRole("Admin")) {
+        if (lr.getUser() != null && lr.getUser().getId().equals(reviewerId) && !SecurityUtils.hasRole("Admin")) {
             throw new BadRequestException("You cannot approve your own leave request.");
         }
 
-        boolean isRequesterManager = lr.getUser().getRoleAssignments().stream()
+        boolean isRequesterManager = lr.getUser() != null && lr.getUser().getRoleAssignments().stream()
                 .anyMatch(ra -> "Manager".equals(ra.getRole().getName()));
         if (isRequesterManager && !SecurityUtils.hasRole("Admin")) {
             throw new BadRequestException("Only an Admin can approve leave requests from a Manager.");
@@ -464,6 +464,7 @@ public class LeaveService {
     private void updateBalancePending(User user, LeaveType lt,
                                       short year, BigDecimal days,
                                       boolean add) {
+        if (user == null) return;
         leaveBalanceRepo
                 .findByUserIdAndLeaveTypeIdAndYear(
                         user.getId(), lt.getId(), year)
@@ -481,6 +482,7 @@ public class LeaveService {
     private void updateBalanceUsed(User user, LeaveType lt,
                                    short year, BigDecimal days,
                                    boolean add) {
+        if (user == null) return;
         leaveBalanceRepo
                 .findByUserIdAndLeaveTypeIdAndYear(
                         user.getId(), lt.getId(), year)
@@ -530,7 +532,7 @@ public class LeaveService {
     private LeaveRequestDto toRequestDto(LeaveRequest r) {
         return LeaveRequestDto.builder()
                 .id(r.getId())
-                .userId(r.getUser().getId())
+                .userId(r.getUser() != null ? r.getUser().getId() : null)
                 .employeeName(getFullName(r.getUser()))
                 .leaveTypeId(r.getLeaveType().getId())
                 .leaveTypeName(r.getLeaveType().getName())
@@ -552,7 +554,7 @@ public class LeaveService {
     private LeaveBalanceDto toBalanceDto(LeaveBalance lb) {
         return LeaveBalanceDto.builder()
                 .id(lb.getId())
-                .userId(lb.getUser().getId())
+                .userId(lb.getUser() != null ? lb.getUser().getId() : null)
                 .employeeName(getFullName(lb.getUser()))
                 .leaveTypeId(lb.getLeaveType().getId())
                 .leaveTypeName(lb.getLeaveType().getName())
@@ -566,6 +568,7 @@ public class LeaveService {
     }
 
     private void updateAttendanceForApprovedLeave(LeaveRequest lr) {
+        if (lr.getUser() == null) return;
         attendanceEmployeeRepo.findByUserId(lr.getUser().getId()).ifPresent(emp -> {
             LocalDate current = lr.getStartDate();
             LocalDate end = lr.getEndDate();
@@ -594,6 +597,7 @@ public class LeaveService {
     }
 
     private void revertAttendanceForCancelledLeave(LeaveRequest lr) {
+        if (lr.getUser() == null) return;
         attendanceEmployeeRepo.findByUserId(lr.getUser().getId()).ifPresent(emp -> {
             LocalDate current = lr.getStartDate();
             LocalDate end = lr.getEndDate();

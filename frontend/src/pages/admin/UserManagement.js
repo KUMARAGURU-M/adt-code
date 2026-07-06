@@ -8,6 +8,12 @@ import { apiCall, getRolePrefix } from '../../utils/api';
 // ── Static fallback data ─────────────────────────────────────────
 const ALL_ROLES = ['Employee', 'Manager', 'Admin', 'Viewer', 'Team Leader'];
 
+const mapRoleName = (roleVal) => {
+  if (!roleVal) return 'Employee';
+  const match = ALL_ROLES.find(r => r.toLowerCase() === roleVal.toLowerCase());
+  return match || (roleVal.charAt(0).toUpperCase() + roleVal.slice(1));
+};
+
 /* ─── Overlay wrapper ───────────────────────────────────────────── */
 const Modal = ({ onClose, children }) => (
   <div className="modal-overlay" onClick={onClose}>
@@ -22,17 +28,17 @@ const Modal = ({ onClose, children }) => (
 ══════════════════════════════════════════════════════════════════ */
 const AddUserModal = ({ onClose, onAdd, shifts }) => {
   const [form, setForm] = useState({
-    id:       '',
-    name:     '',
-    email:    '',
-    phone:    '',
+    id: '',
+    name: '',
+    email: '',
+    phone: '',
     password: '',
-    role:     'employee',
-    shiftId:  '',
+    role: 'employee',
+    shiftId: '',
     timezone: 'Asia/Kolkata',
-    top:      false,
+    top: false,
     calendar: false,
-    active:   true,
+    active: true,
   });
   const [errors, setErrors] = useState({});
 
@@ -43,8 +49,8 @@ const AddUserModal = ({ onClose, onAdd, shifts }) => {
 
   const validate = () => {
     const e = {};
-    if (!form.id.trim())    e.id    = 'ID is required.';
-    if (!form.name.trim())  e.name  = 'Name is required.';
+    if (!form.id.trim()) e.id = 'ID is required.';
+    if (!form.name.trim()) e.name = 'Name is required.';
     if (!form.email.trim()) e.email = 'Email is required.';
     else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = 'Enter a valid email.';
     return e;
@@ -54,16 +60,16 @@ const AddUserModal = ({ onClose, onAdd, shifts }) => {
     const e = validate();
     if (Object.keys(e).length) { setErrors(e); return; }
     onAdd({
-      id:       form.id.trim(),
-      name:     form.name.trim(),
-      email:    form.email.trim(),
-      phone:    form.phone.trim() || '-',
+      id: form.id.trim(),
+      name: form.name.trim(),
+      email: form.email.trim(),
+      phone: form.phone.trim() || '-',
       password: form.password || 'Welcome@123',
-      role:     form.role,
-      shiftId:  form.shiftId || null,
-      top:      form.top,
+      role: form.role,
+      shiftId: form.shiftId || null,
+      top: form.top,
       calendar: form.calendar,
-      active:   form.active,
+      active: form.active,
     });
   };
 
@@ -236,7 +242,7 @@ const AddUserModal = ({ onClose, onAdd, shifts }) => {
    1. ASSIGN PROJECT & PROCESS
 ══════════════════════════════════════════════════════════════════ */
 const AssignProjectModal = ({ user, onClose, projects, processes, onSave }) => {
-  const [selProjects,  setSelProjects]  = useState([]);
+  const [selProjects, setSelProjects] = useState([]);
   const [selProcesses, setSelProcesses] = useState([]);
 
   const toggle = (arr, setArr, val) =>
@@ -387,13 +393,13 @@ const ImpersonateModal = ({ user, onClose, onContinue }) => {
    4. SET PASSWORD
 ══════════════════════════════════════════════════════════════════ */
 const SetPasswordModal = ({ user, onClose, onSet }) => {
-  const [pw,  setPw]  = useState('');
+  const [pw, setPw] = useState('');
   const [cpw, setCpw] = useState('');
   const [err, setErr] = useState('');
 
   const handleSet = () => {
     if (pw.length < 6) { setErr('Password must be at least 6 characters.'); return; }
-    if (pw !== cpw)    { setErr('Passwords do not match.'); return; }
+    if (pw !== cpw) { setErr('Passwords do not match.'); return; }
     onSet(user.id, pw);
   };
 
@@ -473,15 +479,15 @@ const ResetPasswordModal = ({ user, onClose }) => {
 ══════════════════════════════════════════════════════════════════ */
 const EditUserModal = ({ user, onClose, onUpdate, shifts }) => {
   const [form, setForm] = useState({
-    name:     user.name,
-    email:    user.email,
-    phone:    user.phone === '-' ? '' : user.phone,
-    role:     user.role,
-    shiftId:  user.shiftId || '',
+    name: user.name,
+    email: user.email,
+    phone: user.phone === '-' ? '' : user.phone,
+    role: user.role,
+    shiftId: user.shiftId || '',
     timezone: 'Asia/Kolkata',
-    top:      user.top,
+    top: user.top,
     calendar: true,
-    active:   user.status === 'Active',
+    active: user.status === 'Active',
   });
 
   const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
@@ -489,13 +495,13 @@ const EditUserModal = ({ user, onClose, onUpdate, shifts }) => {
   const handleUpdate = () => {
     onUpdate({
       ...user,
-      name:    form.name,
-      email:   form.email,
-      phone:   form.phone || '-',
-      role:    form.role,
+      name: form.name,
+      email: form.email,
+      phone: form.phone || '-',
+      role: form.role,
       shiftId: form.shiftId || null,
-      top:     form.top,
-      status:  form.active ? 'Active' : 'Inactive',
+      top: form.top,
+      status: form.active ? 'Active' : 'Inactive',
       initial: form.name.charAt(0).toUpperCase(),
     });
   };
@@ -612,14 +618,14 @@ const DeleteModal = ({ user, onClose, onDelete }) => {
    MAIN COMPONENT
 ══════════════════════════════════════════════════════════════════ */
 const UserManagement = () => {
-  const [users,       setUsers]       = useState([]);
-  const [projects,    setProjects]    = useState([]);
-  const [processes,   setProcesses]   = useState([]);
-  const [shifts,      setShifts]      = useState([]);
-  const [modal,       setModal]       = useState(null);
+  const [users, setUsers] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [processes, setProcesses] = useState([]);
+  const [shifts, setShifts] = useState([]);
+  const [modal, setModal] = useState(null);
   const [showAddUser, setShowAddUser] = useState(false);
-  const [loading,     setLoading]     = useState(true);
-  const [error,       setError]       = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   const location = useLocation();
 
@@ -629,16 +635,16 @@ const UserManagement = () => {
       setLoading(true);
       const data = await apiCall('/users');
       const mapped = data.map(u => ({
-        id:      u.id,
+        id: u.id,
         initial: u.fullName ? u.fullName.charAt(0).toUpperCase() : '?',
-        name:    u.fullName,
-        email:   u.email,
-        phone:   u.phone || '-',
-        role:    u.role ? u.role.toLowerCase() : 'employee',
+        name: u.fullName,
+        email: u.email,
+        phone: u.phone || '-',
+        role: u.role ? u.role.toLowerCase() : 'employee',
         shiftId: u.shiftId || null,
-        shift:   u.shift || '-',
-        top:     u.isTopPerformer,
-        status:  u.isActive ? 'Active' : 'Inactive',
+        shift: u.shift || '-',
+        top: u.isTopPerformer,
+        status: u.isActive ? 'Active' : 'Inactive',
       }));
       setUsers(mapped);
     } catch (err) {
@@ -676,43 +682,43 @@ const UserManagement = () => {
     }
   }, [location]);
 
-  const open  = (type, user) => setModal({ type, user });
-  const close = ()            => setModal(null);
+  const open = (type, user) => setModal({ type, user });
+  const close = () => setModal(null);
 
   // ── API-backed handlers ──────────────────────────────────────
 
   const handleAdd = async (formData) => {
-  try {
-    await apiCall('/users', 'POST', {
-      userCode:          formData.id,
-      fullName:          formData.name,
-      email:             formData.email,
-      // Fix: treat empty string as null too
-      phone:             formData.phone && formData.phone !== '-' ? formData.phone : null,
-      password:          formData.password || 'Welcome@123',
-      roleName:          formData.role.charAt(0).toUpperCase() + formData.role.slice(1),
-      shiftId:           formData.shiftId || null,
-      isTopPerformer:    formData.top,
-      showCalendarStats: formData.calendar,
-      isActive:          formData.active,
-    });
-    await loadUsers();
-    setShowAddUser(false);
-  } catch (err) {
-    alert('Error creating user: ' + err.message);
-  }
-};
+    try {
+      await apiCall('/users', 'POST', {
+        userCode: formData.id,
+        fullName: formData.name,
+        email: formData.email,
+        // Fix: treat empty string as null too
+        phone: formData.phone && formData.phone !== '-' ? formData.phone : null,
+        password: formData.password || 'Welcome@123',
+        roleName: mapRoleName(formData.role),
+        shiftId: formData.shiftId || null,
+        isTopPerformer: formData.top,
+        showCalendarStats: formData.calendar,
+        isActive: formData.active,
+      });
+      await loadUsers();
+      setShowAddUser(false);
+    } catch (err) {
+      alert('Error creating user: ' + err.message);
+    }
+  };
 
   const handleUpdate = async (updatedUser) => {
     try {
       await apiCall(`/users/${updatedUser.id}`, 'PUT', {
-        fullName:       updatedUser.name,
-        email:          updatedUser.email,
-        phone:          updatedUser.phone !== '-' ? updatedUser.phone : null,
-        roleName:       updatedUser.role.charAt(0).toUpperCase() + updatedUser.role.slice(1),
-        shiftId:        updatedUser.shiftId || null,
+        fullName: updatedUser.name,
+        email: updatedUser.email,
+        phone: updatedUser.phone !== '-' ? updatedUser.phone : null,
+        roleName: mapRoleName(updatedUser.role),
+        shiftId: updatedUser.shiftId || null,
         isTopPerformer: updatedUser.top,
-        isActive:       updatedUser.status === 'Active',
+        isActive: updatedUser.status === 'Active',
       });
       await loadUsers();
       close();
@@ -771,15 +777,18 @@ const UserManagement = () => {
   const handleImpersonate = async (userId) => {
     try {
       const data = await apiCall(`/auth/impersonate/${userId}`, 'POST');
-      localStorage.setItem('impersonateToken',   data.accessToken);
+      localStorage.setItem('impersonateToken', data.accessToken);
       localStorage.setItem('impersonateRefresh', data.refreshToken);
       localStorage.setItem('impersonateUser', JSON.stringify({
-        userId:   data.userId,
+        userId: data.userId,
         fullName: data.fullName,
-        roles:    data.roles,
+        email: data.email,
+        roles: data.roles,
+        permissions: data.permissions
       }));
       const prefix = getRolePrefix(data.roles);
-      window.open(`/${prefix}/dashboard`, '_blank');
+      const baseUrl = window.location.href.split('#')[0];
+      window.open(`${baseUrl}#/${prefix}/dashboard`, '_blank');
       close();
     } catch (err) {
       alert('Error impersonating user: ' + err.message);
@@ -787,11 +796,11 @@ const UserManagement = () => {
   };
 
   // ── Top scroll sync refs ─────────────────────────────────────
-  const topScrollRef    = React.useRef(null);
+  const topScrollRef = React.useRef(null);
   const bottomScrollRef = React.useRef(null);
 
   useEffect(() => {
-    const topEl    = topScrollRef.current;
+    const topEl = topScrollRef.current;
     const bottomEl = bottomScrollRef.current;
     if (!topEl || !bottomEl) return;
 

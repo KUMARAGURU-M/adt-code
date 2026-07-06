@@ -413,6 +413,7 @@ public class TaskService {
         List<TaskResponse.EmployeeInfo> employees = taskEmployeeRepository
                 .findByTaskId(task.getId())
                 .stream()
+                .filter(tea -> tea != null && tea.getUser() != null)
                 .map(tea -> {
                     String fullName = tea.getUser().getEmployeeProfile() != null
                             ? tea.getUser().getEmployeeProfile().getFullName()
@@ -462,3 +463,4 @@ public class TaskService {
                 .build();
     }
 }
+

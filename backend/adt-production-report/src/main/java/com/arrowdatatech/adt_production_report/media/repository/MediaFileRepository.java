@@ -14,4 +14,6 @@ public interface MediaFileRepository extends JpaRepository<MediaFile, UUID> {
 
     @Query("SELECT mf FROM MediaFile mf WHERE mf.entityType = 'chat' AND mf.createdAt < :cutoff")
     List<MediaFile> findChatMediaFilesOlderThan(@Param("cutoff") java.time.OffsetDateTime cutoff);
+
+    List<MediaFile> findByEntityType(String entityType);
 }

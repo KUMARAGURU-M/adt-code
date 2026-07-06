@@ -10,6 +10,7 @@ import com.arrowdatatech.adt_production_report.common.util.SecurityUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -93,4 +94,30 @@ public class ChatController {
         List<ChatMessageResponse> history = chatService.getChatHistory(user1Id, user2Id);
         return ResponseEntity.ok(ApiResponse.success("Conversation history retrieved by admin", history));
     }
+
+    /**
+     * Admin-only: Clear conversation history between two users.
+     */
+    @DeleteMapping("/admin/conversations/{user1Id}/{user2Id}")
+    @PreAuthorize("hasRole('Admin')")
+    public ResponseEntity<ApiResponse<Void>> clearConversation(
+            @PathVariable UUID user1Id,
+            @PathVariable UUID user2Id) {
+        chatService.clearConversation(user1Id, user2Id);
+        return ResponseEntity.ok(ApiResponse.success("Conversation cleared successfully", null));
+    }
+
+    /**
+     * Admin-only: Clear all conversations and chat history in the system.
+     */
+    @DeleteMapping("/admin/conversations/all")
+    @PreAuthorize("hasRole('Admin')")
+    public ResponseEntity<ApiResponse<Void>> clearAllConversations() {
+        chatService.clearAllConversations();
+        return ResponseEntity.ok(ApiResponse.success("All conversations cleared successfully", null));
+    }
 }
+
+
+
+

@@ -24,9 +24,9 @@ const REF_TYPES = ['-', 'BE-REF', 'CH-REF', 'PE-REF', 'CH_BE-REF'];
 
 const ALL_BULK_FIELDS = [
   { key: 'receiveDate', label: 'RECEIVED DATE', mandatory: true },
-  { key: 'jobId', label: 'JOB ID', mandatory: false },
+  { key: 'jobId', label: 'JOB ID', mandatory: true },
   { key: 'title', label: 'TITLE NAME', mandatory: true },
-  { key: 'pageCount', label: 'PAGE COUNT', mandatory: true },
+  { key: 'pageCount', label: 'PAGE COUNT', mandatory: false },
   { key: 'startMonth', label: 'START MONTH', mandatory: false },
   { key: 'endMonth', label: 'END MONTH', mandatory: false },
   { key: 'isbn', label: 'XML ISBN', mandatory: false },
@@ -43,6 +43,8 @@ const ALL_BULK_FIELDS = [
 
 const EMPTY_FORM = {
   project: '', projectId: null,
+  clientId: '', clientName: '',
+  workflowId: '', workflowName: '',
   startMonth: '', endMonth: '', receiveDate: '', jobId: '', isbn: '',
   title: '', pageCount: '', chapters: '', pdfType: '', complexity: '',
   refType: '', status: '', fileStatus: '', uploadDate: '', billing: '', language: '',
@@ -90,27 +92,29 @@ const mapJob = (j) => ({
   uploadDate: j.uploadDate || '',
   billing: j.billingStatus || '',
   language: j.language || '',
+  clientId: j.clientId || '',
+  clientName: j.clientName || '',
+  workflowId: j.workflowId || '',
+  workflowName: j.workflowName || '',
 });
 
 // ── Sub-components ────────────────────────────────────────────────
 const ComplexityBadge = ({ value }) => {
-  const opt = COMPLEXITY_OPTIONS.find(o => o.label === value);
-  if (!value || !opt) return <span className="cell-dash">-</span>;
+  if (!value) return <span className="cell-dash">-</span>;
+  const complexityKey = value.toLowerCase().replace(/\s+/g, '');
   return (
-    <span className="complexity-badge" style={{
-      background: opt.color + '22',
-      color: opt.color,
-    }}>
+    <span className={`complexity-badge complexity-${complexityKey}`}>
       {value}
     </span>
   );
 };
 
 const StatusPill = ({ value, type }) => {
-  if (!value) return <span className="cell-pink">-</span>;
+  if (!value) return <span className="cell-dash">-</span>;
+  const statusKey = value.toLowerCase().replace(/\s+/g, '-');
   const cls = type === 'status'
-    ? `bj-status-pill bj-sp-${value.toLowerCase().replace(/\s+/g, '-')}`
-    : 'filestatus-pill';
+    ? `bj-status-pill bj-sp-${statusKey}`
+    : `filestatus-pill file-sp-${statusKey}`;
   return <span className={cls}>{value}</span>;
 };
 
@@ -126,171 +130,253 @@ const Modal = ({ onClose, children, wide, xl }) => (
 );
 
 // ── JobForm component ─────────────────────────────────────────────
-const JobForm = ({ form, onChange, projects = [] }) => (
-  <div className="bj-form">
-    {/* Project */}
-    <div className="bj-form-group full">
-      <label>Project (Publisher) <span className="req">*</span></label>
-      <select
-        value={form.projectId || ''}
-        onChange={e => {
-          const proj = projects.find(p => p.id === e.target.value);
-          onChange('projectId', e.target.value || null);
-          onChange('project', proj?.name || '');
-        }}
-      >
-        <option value="">-- Select Publisher --</option>
-        {projects.map(p => (
-          <option key={p.id} value={p.id}>{p.name}</option>
-        ))}
-      </select>
-    </div>
+const JobForm = ({ form, onChange, projects = [], clients = [], workflows = [] }) => {
+  const langOptions = ['Tamil', 'English', 'Hindi', 'Malayalam'];
+  const isPresetLang = !form.language || langOptions.includes(form.language);
+  const [customLangActive, setCustomLangActive] = useState(!isPresetLang && form.language !== '');
 
-    <div className="bj-form-row">
-      <div className="bj-form-group">
-        <label>Start Month <span className="req">*</span></label>
-        <input type="date" value={form.startMonth}
-          onChange={e => onChange('startMonth', e.target.value)} />
-      </div>
-      <div className="bj-form-group">
-        <label>End Month <span className="req">*</span></label>
-        <input type="date" value={form.endMonth}
-          onChange={e => onChange('endMonth', e.target.value)} />
-      </div>
-    </div>
+  // Filter projects by selected client
+  const filteredProjects = form.clientId
+    ? projects.filter(p => p.clientId === form.clientId)
+    : projects;
 
-    <div className="bj-form-group full">
-      <label>Receive Date <span className="req">*</span></label>
-      <input type="date" value={form.receiveDate}
-        onChange={e => onChange('receiveDate', e.target.value)} />
-    </div>
-
-    <div className="bj-form-row">
-      <div className="bj-form-group">
-        <label>Job ID <span className="req">*</span></label>
-        <input placeholder="e.g., BM0748" value={form.jobId}
-          onChange={e => onChange('jobId', e.target.value)} />
-      </div>
-      <div className="bj-form-group">
-        <label>XML ISBN</label>
-        <input placeholder="e.g., 9798216386377" value={form.isbn}
-          onChange={e => onChange('isbn', e.target.value)} />
-      </div>
-    </div>
-
-    <div className="bj-form-group full">
-      <label>Title Name <span className="req">*</span></label>
-      <input placeholder="Book/Project Title" value={form.title}
-        onChange={e => onChange('title', e.target.value)} />
-    </div>
-
-    <div className="bj-form-row">
-      <div className="bj-form-group">
-        <label>Page Count <span className="req">*</span></label>
-        <input placeholder="e.g., 540" value={form.pageCount}
-          onChange={e => onChange('pageCount', e.target.value)} />
-      </div>
-      <div className="bj-form-group">
-        <label>Number of Chapters</label>
-        <input placeholder="e.g., 12" value={form.chapters}
-          onChange={e => onChange('chapters', e.target.value)} />
-      </div>
-    </div>
-
-    <div className="bj-form-row">
-      <div className="bj-form-group">
-        <label>PDF / Input Type</label>
-        <select value={form.pdfType}
-          onChange={e => onChange('pdfType', e.target.value)}>
-          <option value="">Select...</option>
-          {PDF_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-        </select>
-      </div>
-      <div className="bj-form-group">
-        <label>Complexity</label>
+  return (
+    <div className="bj-form">
+      {/* Client Dropdown */}
+      <div className="bj-form-group full">
+        <label>Client <span className="req">*</span></label>
         <select
-          className={getComplexityClass(form.complexity)}
-          value={form.complexity}
-          onChange={e => onChange('complexity', e.target.value)}
+          value={form.clientId || ''}
+          onChange={e => {
+            const selectedClientId = e.target.value || null;
+            const selectedClient = clients.find(c => c.id === selectedClientId);
+            onChange('clientId', selectedClientId);
+            onChange('clientName', selectedClient ? selectedClient.companyName : '');
+            // reset project and workflow if client changes
+            onChange('projectId', null);
+            onChange('project', '');
+            onChange('workflowId', null);
+            onChange('workflowName', '');
+          }}
         >
-          <option value="">Select...</option>
-          {COMPLEXITY_OPTIONS.map(c => (
-            <option key={c.label} value={c.label}
-              className={getComplexityClass(c.label)}>
-              {c.label}
-            </option>
+          <option value="">-- Select Client --</option>
+          {clients.map(c => (
+            <option key={c.id} value={c.id}>{c.companyName}</option>
           ))}
         </select>
       </div>
-    </div>
 
-    <div className="bj-form-row">
-      <div className="bj-form-group">
-        <label>Reference Type</label>
-        <select value={form.refType}
-          onChange={e => onChange('refType', e.target.value)}>
-          <option value="">Select...</option>
-          {REF_TYPES.map(r => <option key={r} value={r}>{r}</option>)}
-        </select>
-      </div>
-      <div className="bj-form-group">
-        <label>Status</label>
-        <select value={form.status}
-          onChange={e => onChange('status', e.target.value)}>
-          <option value="">Select...</option>
-          {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
-        </select>
-      </div>
-    </div>
-
-    <div className="bj-form-row">
-      <div className="bj-form-group">
-        <label>File Status</label>
-        <select value={form.fileStatus}
-          onChange={e => onChange('fileStatus', e.target.value)}>
-          <option value="">Select...</option>
-          {FILE_STATUS_OPTIONS.map(f => (
-            <option key={f} value={f}>{f}</option>
+      {/* Project */}
+      <div className="bj-form-group full">
+        <label>Project <span className="req">*</span></label>
+        <select
+          value={form.projectId || ''}
+          onChange={e => {
+            const proj = projects.find(p => p.id === e.target.value);
+            onChange('projectId', e.target.value || null);
+            onChange('project', proj?.name || '');
+            // auto populate client if not selected
+            if (proj && proj.clientId && !form.clientId) {
+              onChange('clientId', proj.clientId);
+              onChange('clientName', proj.clientName || '');
+            }
+            // auto select workflow if project has one
+            if (proj && proj.workflowId) {
+              onChange('workflowId', proj.workflowId);
+              onChange('workflowName', proj.workflowName || '');
+            } else {
+              onChange('workflowId', null);
+              onChange('workflowName', '');
+            }
+          }}
+          disabled={!form.clientId}
+        >
+          <option value="">-- Select Publisher --</option>
+          {filteredProjects.map(p => (
+            <option key={p.id} value={p.id}>{p.name}</option>
           ))}
         </select>
       </div>
-      <div className="bj-form-group">
-        <label>Upload Date</label>
-        <input type="date" value={form.uploadDate}
-          onChange={e => onChange('uploadDate', e.target.value)} />
-      </div>
-    </div>
 
-    <div className="bj-form-row">
-      <div className="bj-form-group">
-        <label>Billing Status</label>
-        <select value={form.billing}
-          onChange={e => onChange('billing', e.target.value)}>
-          <option value="">Select...</option>
-          {BILLING_STATUS_OPTIONS.map(b => (
-            <option key={b} value={b}>{b}</option>
+      {/* Workflow Dropdown */}
+      <div className="bj-form-group full">
+        <label>Workflow</label>
+        <select
+          value={form.workflowId || ''}
+          onChange={e => {
+            const selectedWorkflowId = e.target.value || null;
+            const wf = workflows.find(w => w.id === selectedWorkflowId);
+            onChange('workflowId', selectedWorkflowId);
+            onChange('workflowName', wf?.name || '');
+          }}
+        >
+          <option value="">-- Select Workflow --</option>
+          {workflows.map(w => (
+            <option key={w.id} value={w.id}>{w.name}</option>
           ))}
         </select>
       </div>
-      <div className="bj-form-group">
-        <label>Language</label>
-        <input placeholder="e.g., English, French" value={form.language || ''}
-          onChange={e => onChange('language', e.target.value)} />
+
+      <div className="bj-form-group full">
+        <label>Receive Date <span className="req">*</span></label>
+        <input type="date" value={form.receiveDate}
+          onChange={e => onChange('receiveDate', e.target.value)} />
+      </div>
+
+      <div className="bj-form-row">
+        <div className="bj-form-group">
+          <label>Job ID <span className="req">*</span></label>
+          <input placeholder="e.g., BM0748" value={form.jobId}
+            onChange={e => onChange('jobId', e.target.value)} />
+        </div>
+        <div className="bj-form-group">
+          <label>XML ISBN</label>
+          <input placeholder="e.g., 9798216386377" value={form.isbn}
+            onChange={e => onChange('isbn', e.target.value)} />
+        </div>
+      </div>
+
+      <div className="bj-form-group full">
+        <label>Title Name <span className="req">*</span></label>
+        <input placeholder="Book/Project Title" value={form.title}
+          onChange={e => onChange('title', e.target.value)} />
+      </div>
+
+      <div className="bj-form-row">
+        <div className="bj-form-group">
+          <label>Page Count</label>
+          <input placeholder="e.g., 540" value={form.pageCount}
+            onChange={e => onChange('pageCount', e.target.value)} />
+        </div>
+        <div className="bj-form-group">
+          <label>Number of Chapters</label>
+          <input placeholder="e.g., 12" value={form.chapters}
+            onChange={e => onChange('chapters', e.target.value)} />
+        </div>
+      </div>
+
+      <div className="bj-form-row">
+        <div className="bj-form-group">
+          <label>PDF / Input Type</label>
+          <select value={form.pdfType}
+            onChange={e => onChange('pdfType', e.target.value)}>
+            <option value="">Select...</option>
+            {PDF_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+          </select>
+        </div>
+        <div className="bj-form-group">
+          <label>Complexity</label>
+          <select
+            className={getComplexityClass(form.complexity)}
+            value={form.complexity}
+            onChange={e => onChange('complexity', e.target.value)}
+          >
+            <option value="">Select...</option>
+            {COMPLEXITY_OPTIONS.map(c => (
+              <option key={c.label} value={c.label}
+                className={getComplexityClass(c.label)}>
+                {c.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="bj-form-row">
+        <div className="bj-form-group">
+          <label>Reference Type</label>
+          <select value={form.refType}
+            onChange={e => onChange('refType', e.target.value)}>
+            <option value="">Select...</option>
+            {REF_TYPES.map(r => <option key={r} value={r}>{r}</option>)}
+          </select>
+        </div>
+        <div className="bj-form-group">
+          <label>Status</label>
+          <select value={form.status}
+            onChange={e => onChange('status', e.target.value)}>
+            <option value="">Select...</option>
+            {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </div>
+      </div>
+
+      <div className="bj-form-row">
+        <div className="bj-form-group">
+          <label>File Status</label>
+          <select value={form.fileStatus}
+            onChange={e => onChange('fileStatus', e.target.value)}>
+            <option value="">Select...</option>
+            {FILE_STATUS_OPTIONS.map(f => (
+              <option key={f} value={f}>{f}</option>
+            ))}
+          </select>
+        </div>
+        <div className="bj-form-group">
+          <label>Upload Date</label>
+          <input type="date" value={form.uploadDate}
+            onChange={e => onChange('uploadDate', e.target.value)} />
+        </div>
+      </div>
+
+      <div className="bj-form-row">
+        <div className="bj-form-group">
+          <label>Billing Status</label>
+          <select value={form.billing}
+            onChange={e => onChange('billing', e.target.value)}>
+            <option value="">Select...</option>
+            {BILLING_STATUS_OPTIONS.map(b => (
+              <option key={b} value={b}>{b}</option>
+            ))}
+          </select>
+        </div>
+        <div className="bj-form-group">
+          <label>Language</label>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <select
+              value={customLangActive ? 'Custom' : (form.language || '')}
+              onChange={e => {
+                const val = e.target.value;
+                if (val === 'Custom') {
+                  setCustomLangActive(true);
+                  onChange('language', '');
+                } else {
+                  setCustomLangActive(false);
+                  onChange('language', val);
+                }
+              }}
+              style={{ flex: 1 }}
+            >
+              <option value="">Select...</option>
+              {langOptions.map(l => (
+                <option key={l} value={l}>{l}</option>
+              ))}
+              <option value="Custom">Other / Enter new option...</option>
+            </select>
+            {customLangActive && (
+              <input
+                placeholder="Type custom language"
+                value={form.language || ''}
+                onChange={e => onChange('language', e.target.value)}
+                style={{ flex: 1 }}
+              />
+            )}
+          </div>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 // ── Add Job Modal ─────────────────────────────────────────────────
-const AddJobModal = ({ onClose, onAdd, projects }) => {
+const AddJobModal = ({ onClose, onAdd, projects, clients, workflows }) => {
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [saving, setSaving] = useState(false);
   const change = (k, v) => setForm(p => ({ ...p, [k]: v }));
 
   const handleCreate = async () => {
-    if (!form.receiveDate || !form.title ||
-      !form.pageCount || !form.startMonth || !form.endMonth) {
-      alert('Please fill required fields: Receive Date, Start Month, End Month, Title Name, Page Count.');
+    if (!form.receiveDate || !form.jobId || !form.title) {
+      alert('Please fill required fields: Receive Date, Job ID, Title Name.');
       return;
     }
     setSaving(true);
@@ -307,7 +393,7 @@ const AddJobModal = ({ onClose, onAdd, projects }) => {
   return (
     <Modal onClose={onClose} wide>
       <h2 className="bj-modal-title">Add New Job</h2>
-      <JobForm form={form} onChange={change} projects={projects} />
+      <JobForm form={form} onChange={change} projects={projects} clients={clients} workflows={workflows} />
       <div className="bj-modal-actions">
         <button className="bj-btn-cancel" onClick={onClose}>Cancel</button>
         <button className="bj-btn-primary" onClick={handleCreate}
@@ -320,10 +406,14 @@ const AddJobModal = ({ onClose, onAdd, projects }) => {
 };
 
 // ── Edit Job Modal ────────────────────────────────────────────────
-const EditJobModal = ({ job, onClose, onUpdate, projects }) => {
+const EditJobModal = ({ job, onClose, onUpdate, projects, clients, workflows }) => {
   const [form, setForm] = useState({
     project: job.project,
     projectId: job.projectId,
+    clientId: job.clientId || '',
+    clientName: job.clientName || '',
+    workflowId: job.workflowId || '',
+    workflowName: job.workflowName || '',
     startMonth: job.startMonth || '',
     endMonth: job.endMonth || '',
     receiveDate: job.receiveDate || '',
@@ -345,9 +435,8 @@ const EditJobModal = ({ job, onClose, onUpdate, projects }) => {
   const change = (k, v) => setForm(p => ({ ...p, [k]: v }));
 
   const handleUpdate = async () => {
-    if (!form.receiveDate || !form.title ||
-      !form.pageCount || !form.startMonth || !form.endMonth) {
-      alert('Please fill required fields.');
+    if (!form.receiveDate || !form.jobId || !form.title) {
+      alert('Please fill required fields: Receive Date, Job ID, Title Name.');
       return;
     }
     setSaving(true);
@@ -364,7 +453,7 @@ const EditJobModal = ({ job, onClose, onUpdate, projects }) => {
   return (
     <Modal onClose={onClose} wide>
       <h2 className="bj-modal-title">Edit Job</h2>
-      <JobForm form={form} onChange={change} projects={projects} />
+      <JobForm form={form} onChange={change} projects={projects} clients={clients} workflows={workflows} />
       <div className="bj-modal-actions">
         <button className="bj-btn-cancel" onClick={onClose}>Cancel</button>
         <button className="bj-btn-primary" onClick={handleUpdate}
@@ -454,8 +543,10 @@ const ReconfirmDeleteModal = ({ job, onClose, onDelete }) => {
 };
 
 // ── Bulk Import Modal ─────────────────────────────────────────────
-const BulkImportModal = ({ onClose, onBulkAdd, projects }) => {
+const BulkImportModal = ({ onClose, onBulkAdd, projects, clients = [], workflows = [] }) => {
   const [view, setView] = useState('main');
+  const [selectedClientId, setSelectedClientId] = useState('');
+  const [selectedWorkflowId, setSelectedWorkflowId] = useState('');
   const [selectedProject, setSelectedProject] = useState('');
   const [selectedProjId, setSelectedProjId] = useState(null);
   const [orderedFields, setOrderedFields] = useState([]);
@@ -463,6 +554,11 @@ const BulkImportModal = ({ onClose, onBulkAdd, projects }) => {
   const [parsedJobs, setParsedJobs] = useState([]);
   const [importing, setImporting] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
+
+  // Filter projects by selected client
+  const filteredProjects = selectedClientId
+    ? projects.filter(p => p.clientId === selectedClientId)
+    : projects;
 
   // Load saved field mapping from backend when project changes
   useEffect(() => {
@@ -564,6 +660,8 @@ const BulkImportModal = ({ onClose, onBulkAdd, projects }) => {
         id: Date.now() + idx,
         project: selectedProject,
         projectId: selectedProjId,
+        clientId: selectedClientId,
+        workflowId: selectedWorkflowId || '',
       };
       effectiveFields.forEach((f, colIdx) => {
         if (cols[colIdx] !== undefined) {
@@ -591,8 +689,8 @@ const BulkImportModal = ({ onClose, onBulkAdd, projects }) => {
     }
     for (let i = 0; i < parsedJobs.length; i++) {
       const job = parsedJobs[i];
-      if (!job.receiveDate || !job.jobId || !job.title || !job.pageCount) {
-        alert(`Row ${i + 1} is missing required fields.`);
+      if (!job.receiveDate || !job.jobId || !job.title) {
+        alert(`Row ${i + 1} is missing required fields (Receive Date, Job ID, Title Name).`);
         return;
       }
     }
@@ -606,6 +704,7 @@ const BulkImportModal = ({ onClose, onBulkAdd, projects }) => {
 
       const result = await apiCall('/jobs/bulk-import', 'POST', {
         projectId: selectedProjId,
+        workflowId: selectedWorkflowId || null,
         rows,
         fieldOrder: effectiveFields.map(f => f.key),
       });
@@ -652,22 +751,56 @@ const BulkImportModal = ({ onClose, onBulkAdd, projects }) => {
             )}
           </div>
 
-          <div className="bj-bulk-project-selector">
-            <div className="bj-form-group" style={{ flex: 1, marginBottom: 0 }}>
-              <label>
+          <div className="bj-bulk-selectors-row" style={{ display: 'flex', gap: '16px', marginBottom: '20px', flexWrap: 'wrap', padding: '16px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+            {/* Client Select */}
+            <div className="bj-form-group" style={{ flex: 1, minWidth: '200px', marginBottom: 0 }}>
+              <label style={{ fontWeight: 600, fontSize: '0.85rem', color: '#475569' }}>
+                Client <span className="req">*</span>
+              </label>
+              <select
+                value={selectedClientId || ''}
+                onChange={e => {
+                  const cid = e.target.value;
+                  setSelectedClientId(cid);
+                  setSelectedProjId(null);
+                  setSelectedProject('');
+                  setSelectedWorkflowId('');
+                }}
+                style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '6px' }}
+              >
+                <option value="">-- Select Client --</option>
+                {clients.map(c => (
+                  <option key={c.id} value={c.id}>{c.companyName}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Project Select */}
+            <div className="bj-form-group" style={{ flex: 1, minWidth: '200px', marginBottom: 0 }}>
+              <label style={{ fontWeight: 600, fontSize: '0.85rem', color: '#475569' }}>
                 Project (Publisher) <span className="req">*</span>
               </label>
-              <div style={{ display: 'flex', gap: '10px' }}>
+              <div style={{ display: 'flex', gap: '8px' }}>
                 <select
                   value={selectedProjId || ''}
                   onChange={e => {
                     const proj = projects.find(p => p.id === e.target.value);
                     setSelectedProjId(e.target.value || null);
                     setSelectedProject(proj?.name || '');
+                    if (proj && proj.clientId && !selectedClientId) {
+                      setSelectedClientId(proj.clientId);
+                    }
+                    if (proj && proj.workflowId) {
+                      setSelectedWorkflowId(proj.workflowId);
+                    } else {
+                      setSelectedWorkflowId('');
+                    }
                   }}
+                  disabled={!selectedClientId}
+                  style={{ flex: 1, padding: '8px', border: '1px solid #cbd5e1', borderRadius: '6px' }}
                 >
                   <option value="">-- Select Publisher --</option>
-                  {projects.map(p => (
+                  {filteredProjects.map(p => (
                     <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
                 </select>
@@ -676,10 +809,28 @@ const BulkImportModal = ({ onClose, onBulkAdd, projects }) => {
                   disabled={!selectedProjId}
                   onClick={() => setView('settings')}
                   title="Configure Fields for this Project"
+                  style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: selectedProjId ? 'pointer' : 'not-allowed' }}
                 >
-                  ⚙️ Settings
+                  ⚙️
                 </button>
               </div>
+            </div>
+
+            {/* Workflow Select */}
+            <div className="bj-form-group" style={{ flex: 1, minWidth: '200px', marginBottom: 0 }}>
+              <label style={{ fontWeight: 600, fontSize: '0.85rem', color: '#475569' }}>
+                Workflow <span style={{ color: '#94a3b8', fontWeight: 400 }}>(Optional)</span>
+              </label>
+              <select
+                value={selectedWorkflowId || ''}
+                onChange={e => setSelectedWorkflowId(e.target.value)}
+                style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '6px' }}
+              >
+                <option value="">-- Select Workflow --</option>
+                {workflows.map(w => (
+                  <option key={w.id} value={w.id}>{w.name}</option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -850,6 +1001,8 @@ const BulkImportModal = ({ onClose, onBulkAdd, projects }) => {
 const BooksJobs = () => {
   const [jobs, setJobs] = useState([]);
   const [projects, setProjects] = useState([]);
+  const [clients, setClients] = useState([]);
+  const [workflows, setWorkflows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [modal, setModal] = useState(null);
@@ -875,9 +1028,34 @@ const BooksJobs = () => {
   const loadProjects = useCallback(async () => {
     try {
       const data = await apiCall('/projects');
-      setProjects(data.map(p => ({ id: p.id, name: p.name })));
+      setProjects(data.map(p => ({
+        id: p.id,
+        name: p.name,
+        clientId: p.clientId,
+        clientName: p.clientName,
+        workflowId: p.workflowId,
+        workflowName: p.workflowName,
+      })));
     } catch (err) {
       console.warn('Could not load projects:', err.message);
+    }
+  }, []);
+
+  const loadClients = useCallback(async () => {
+    try {
+      const data = await apiCall('/clients');
+      setClients(data);
+    } catch (err) {
+      console.warn('Could not load clients:', err.message);
+    }
+  }, []);
+
+  const loadWorkflows = useCallback(async () => {
+    try {
+      const data = await apiCall('/projects/workflows');
+      setWorkflows(data);
+    } catch (err) {
+      console.warn('Could not load workflows:', err.message);
     }
   }, []);
 
@@ -916,8 +1094,10 @@ const BooksJobs = () => {
 
   useEffect(() => {
     loadProjects();
+    loadClients();
+    loadWorkflows();
     loadJobs(0);
-  }, [loadProjects, loadJobs]);
+  }, [loadProjects, loadClients, loadWorkflows, loadJobs]);
 
   // All filtering is server-side; rows = already filtered page
   const rows = jobs;
@@ -957,6 +1137,7 @@ const BooksJobs = () => {
   const handleAdd = async (form) => {
     await apiCall('/jobs', 'POST', {
       projectId: form.projectId || null,
+      workflowId: form.workflowId || null,
       jobIdCode: form.jobId,
       xmlIsbn: form.isbn || null,
       titleName: form.title,
@@ -980,6 +1161,7 @@ const BooksJobs = () => {
   const handleUpdate = async (id, form) => {
     await apiCall(`/jobs/${id}`, 'PUT', {
       projectId: form.projectId || null,
+      workflowId: form.workflowId || null,
       jobIdCode: form.jobId,
       xmlIsbn: form.isbn || null,
       titleName: form.title,
@@ -1057,14 +1239,14 @@ const BooksJobs = () => {
       <h2>Job Management Report</h2>
       <p>Generated: ${new Date().toLocaleDateString('en-GB')}</p>
       <table><thead><tr>
-        <th>Project</th><th>Receive Date</th><th>Job ID</th>
+        <th>Client</th><th>Project</th><th>Workflow</th><th>Receive Date</th><th>Job ID</th>
         <th>ISBN</th><th>Language</th><th>Title</th><th>Pages</th>
         <th>PDF Type</th><th>Complexity</th><th>Ref Type</th>
         <th>Status</th><th>File Status</th><th>Upload Date</th>
         <th>Billing</th>
       </tr></thead><tbody>
       ${rows.map(j => `<tr>
-        <td>${j.project || '-'}</td><td>${fmt(j.receiveDate)}</td>
+        <td>${j.clientName || '-'}</td><td>${j.project || '-'}</td><td>${j.workflowName || '-'}</td><td>${fmt(j.receiveDate)}</td>
         <td><b>${j.jobId || '-'}</b></td><td>${j.isbn || '-'}</td>
         <td>${j.language || '-'}</td><td>${j.title || '-'}</td><td>${j.pageCount || '-'}</td>
         <td>${j.pdfType || '-'}</td><td>${j.complexity || '-'}</td>
@@ -1081,12 +1263,12 @@ const BooksJobs = () => {
 
   const exportExcel = () => {
     const headers = [
-      'Project', 'Receive Date', 'Job ID', 'XML ISBN', 'Language', 'Title Name',
+      'Client', 'Project', 'Workflow', 'Receive Date', 'Job ID', 'XML ISBN', 'Language', 'Title Name',
       'Page Count', 'PDF Type', 'Complexity', 'Ref Type', 'Status',
       'File Status', 'Upload Date', 'Billing Status'
     ];
     const csvRows = rows.map(j => [
-      `"${j.project || ''}"`, j.receiveDate ? fmt(j.receiveDate) : '',
+      `"${j.clientName || ''}"`, `"${j.project || ''}"`, `"${j.workflowName || ''}"`, j.receiveDate ? fmt(j.receiveDate) : '',
       `"${j.jobId || ''}"`, `"${j.isbn || ''}"`, `"${j.language || ''}"`, `"${j.title || ''}"`,
       j.pageCount || '', `"${j.pdfType || ''}"`, `"${j.complexity || ''}"`,
       `"${j.refType || ''}"`, `"${j.status || ''}"`,
@@ -1279,7 +1461,9 @@ const BooksJobs = () => {
             <table className="bj-table">
               <thead>
                 <tr>
+                  <th>Client</th>
                   <th>Project</th>
+                  <th>Workflow</th>
                   <th>Receive Date</th>
                   <th>Job ID</th>
                   <th>XML ISBN</th>
@@ -1299,16 +1483,30 @@ const BooksJobs = () => {
               <tbody>
                 {rows.length === 0 ? (
                   <tr>
-                    <td colSpan="15" className="bj-empty">
+                    <td colSpan="17" className="bj-empty">
                       No records found. Try different filters or add a job.
                     </td>
                   </tr>
                 ) : rows.map(job => (
                   <tr key={job.id}>
                     <td>
+                      {job.clientName ? (
+                        <span className="client-badge" style={{ background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', padding: '2px 6px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: 700 }}>
+                          {job.clientName}
+                        </span>
+                      ) : <span className="cell-dash">-</span>}
+                    </td>
+                    <td>
                       {job.project
                         ? <span className={getProjectBadgeClass(job.project)}>{job.project}</span>
                         : <span className="cell-dash">-</span>}
+                    </td>
+                    <td>
+                      {job.workflowName ? (
+                        <span className="badge badge--workflow" style={{ background: '#e0f2fe', color: '#0369a1', border: '1px solid #bae6fd', padding: '2px 6px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: 700 }}>
+                          {job.workflowName}
+                        </span>
+                      ) : <span className="cell-dash">-</span>}
                     </td>
                     <td className="td-date">{fmt(job.receiveDate)}</td>
                     <td><strong>{job.jobId}</strong></td>
@@ -1424,11 +1622,11 @@ const BooksJobs = () => {
       {/* ── Modals ── */}
       {modal?.type === 'add' && (
         <AddJobModal onClose={close} onAdd={handleAdd}
-          projects={projects} />
+          projects={projects} clients={clients} workflows={workflows} />
       )}
       {modal?.type === 'edit' && (
         <EditJobModal job={modal.job} onClose={close}
-          onUpdate={handleUpdate} projects={projects} />
+          onUpdate={handleUpdate} projects={projects} clients={clients} workflows={workflows} />
       )}
       {modal?.type === 'delete' && (
         <DeleteJobModal job={modal.job} onClose={close}
@@ -1440,7 +1638,7 @@ const BooksJobs = () => {
       )}
       {modal?.type === 'bulk' && (
         <BulkImportModal onClose={close} onBulkAdd={handleBulkAdd}
-          projects={projects} />
+          projects={projects} clients={clients} workflows={workflows} />
       )}
     </div>
   );

@@ -21,3 +21,14 @@
   min-height: calc(100vh - 65px);
   box-sizing: border-box;
 }
+
+@media (max-width: 768px) {
+  .main-wrapper {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .content-area {
+    padding: 16px 12px;
+  }
+}

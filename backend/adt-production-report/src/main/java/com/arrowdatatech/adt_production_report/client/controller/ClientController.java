@@ -98,6 +98,18 @@ public class ClientController {
                 ApiResponse.success("Client updated", toResponse(client)));
     }
 
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('Admin')")
+    public ResponseEntity<ApiResponse<Void>> deleteClient(@PathVariable UUID id) {
+        Client client = clientRepository.findById(id)
+                .orElseThrow(() -> new com.arrowdatatech.adt_production_report.common.exception
+                        .ResourceNotFoundException("Client", "id", id));
+        client.setIsActive(false);
+        clientRepository.save(client);
+        return ResponseEntity.ok(
+                ApiResponse.success("Client deleted successfully", null));
+    }
+
     private ClientResponse toResponse(Client c) {
         return ClientResponse.builder()
                 .id(c.getId())

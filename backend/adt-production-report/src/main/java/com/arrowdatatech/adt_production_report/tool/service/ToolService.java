@@ -58,6 +58,7 @@ public class ToolService {
         List<ToolAccessDto> accessList =
                 accessRepository.findByToolIdOrderByUserIdAsc(toolId)
                         .stream()
+                        .filter(ta -> ta != null && ta.getUser() != null)
                         .map(ta -> toAccessDto(ta))
                         .collect(Collectors.toList());
 
@@ -85,6 +86,7 @@ public class ToolService {
 
         // Map userId -> access
         java.util.Map<UUID, ToolAccess> accessMap = existingAccess.stream()
+                .filter(ta -> ta != null && ta.getUser() != null)
                 .collect(java.util.stream.Collectors.toMap(
                         ta -> ta.getUser().getId(),
                         ta -> ta

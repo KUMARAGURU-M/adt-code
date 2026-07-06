@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import './Header.css';
 import { getCurrentUser, clearSession } from '../../utils/api';
 
-const Header = () => {
+const Header = ({ onToggleMobileMenu }) => {
   const navigate = useNavigate();
   const user = getCurrentUser();
   const displayUserName = user?.fullName || 'User';
@@ -17,14 +17,22 @@ const Header = () => {
 
   return (
     <header className="main-header">
-
-      <div className="header-brand">
-        <h1 className="company-title">
-          <span className="text-pink">ARROW</span>
-          <span className="text-gray">DATA</span>
-          <span className="text-cyan">TECH</span>
-        </h1>
-        <p className="company-location">Puducherry</p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <button
+          className="mobile-menu-toggle"
+          onClick={onToggleMobileMenu}
+          aria-label="Toggle Navigation Menu"
+        >
+          ☰
+        </button>
+        <div className="header-brand">
+          <h1 className="company-title">
+            <span className="text-pink">ARROW</span>
+            <span className="text-gray">DATA</span>
+            <span className="text-cyan">TECH</span>
+          </h1>
+          <p className="company-location">Puducherry</p>
+        </div>
       </div>
 
       <div className="header-divider" aria-hidden="true" />

@@ -63,4 +63,7 @@ public class CreateJobRequest {
 
     @JsonProperty("language")
     private String language;
+
+    @JsonProperty("workflowId")
+    private UUID workflowId;
 }
