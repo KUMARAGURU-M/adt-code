@@ -711,7 +711,7 @@ export default function HourlyGraph() {
                                         <td colSpan={totalTargetCols} style={{ padding: "6px 8px" }}>
                                             <div style={{ display: "flex", gap: "10px" }}>
                                                 <button className="hg-add-btn" onClick={addTargetRow}>+ Add Project Row</button>
-                                                <button className="hg-save-btn" onClick={handleSaveTargets}>💾 Save Targets</button>
+                                                <button className="hg-save-btn" onClick={handleSaveTargets}>💾</button>
                                             </div>
                                         </td>
                                     </tr>
