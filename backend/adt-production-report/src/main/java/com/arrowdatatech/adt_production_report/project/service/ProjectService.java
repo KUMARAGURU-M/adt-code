@@ -75,10 +75,11 @@ public class ProjectService {
     @Transactional
     public ProjectResponse createProject(CreateProjectRequest request) {
 
+        String trimmedName = request.getName() != null ? request.getName().trim() : "";
         // Validate unique name
-        if (projectRepository.existsByName(request.getName())) {
+        if (projectRepository.existsByName(trimmedName)) {
             throw new BadRequestException(
-                    "Project '" + request.getName() + "' already exists.");
+                    "Project '" + trimmedName + "' already exists.");
         }
 
         // Validate billing type
@@ -136,11 +137,11 @@ public class ProjectService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Project", "id", id));
 
-        // Check name uniqueness if name changed
-        if (!project.getName().equals(request.getName())
-                && projectRepository.existsByName(request.getName())) {
+        String trimmedName = request.getName() != null ? request.getName().trim() : "";
+        // Check name uniqueness among OTHER projects
+        if (projectRepository.existsByNameAndIdNot(trimmedName, id)) {
             throw new BadRequestException(
-                    "Project '" + request.getName() + "' already exists.");
+                    "Project '" + trimmedName + "' already exists.");
         }
 
         // Validate billing type
@@ -280,7 +281,6 @@ public class ProjectService {
             log.warn("Could not log activity: {}", e.getMessage());
         }
     }
-
     private ProjectResponse toResponse(Project project) {
         return ProjectResponse.builder()
                 .id(project.getId())

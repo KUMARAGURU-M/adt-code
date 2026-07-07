@@ -39,6 +39,9 @@ public class Job extends BaseEntity {
     @Column(name = "xml_isbn", length = 50)
     private String xmlIsbn;
 
+    @Column(name = "batch", length = 100)
+    private String batch;
+
     @Column(name = "title_name", nullable = false, length = 500)
     private String titleName;
 

@@ -16,6 +16,7 @@ public class JobResponse {
     private String projectName;
     private String jobIdCode;
     private String xmlIsbn;
+    private String batch;
     private String titleName;
     private Integer pageCount;
     private Integer numberOfChapters;

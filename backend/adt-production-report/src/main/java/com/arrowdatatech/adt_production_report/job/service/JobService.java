@@ -223,6 +223,7 @@ public class JobService {
                 .workflow(workflow)
                 .jobIdCode(request.getJobIdCode() != null && !request.getJobIdCode().isBlank() ? request.getJobIdCode().trim() : null)
                 .xmlIsbn(request.getXmlIsbn())
+                .batch(request.getBatch())
                 .titleName(request.getTitleName().trim())
                 .pageCount(request.getPageCount())
                 .numberOfChapters(request.getNumberOfChapters())
@@ -279,6 +280,7 @@ public class JobService {
             job.setJobIdCode(request.getJobIdCode().trim().isBlank() ? null : request.getJobIdCode().trim());
         }
         if (request.getXmlIsbn()         != null) job.setXmlIsbn(request.getXmlIsbn());
+        if (request.getBatch()           != null) job.setBatch(request.getBatch());
         if (request.getTitleName()       != null) job.setTitleName(request.getTitleName().trim());
         if (request.getPageCount()       != null) job.setPageCount(request.getPageCount());
         if (request.getNumberOfChapters()!= null) job.setNumberOfChapters(request.getNumberOfChapters());
@@ -692,6 +694,7 @@ public class JobService {
                 case "jobId"       -> builder.jobIdCode(value);
                 case "title"       -> builder.titleName(value);
                 case "isbn"        -> builder.xmlIsbn(value);
+                case "batch"       -> builder.batch(value);
                 case "pageCount"   -> {
                     try { builder.pageCount(Integer.parseInt(
                             value.replace(",", ""))); }
@@ -815,6 +818,7 @@ public class JobService {
                         ? job.getProject().getName() : null)
                 .jobIdCode(job.getJobIdCode())
                 .xmlIsbn(job.getXmlIsbn())
+                .batch(job.getBatch())
                 .titleName(job.getTitleName())
                 .pageCount(job.getPageCount())
                 .numberOfChapters(job.getNumberOfChapters())

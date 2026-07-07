@@ -20,10 +20,10 @@ public class JwtTokenProvider {
     private String jwtSecret;
 
     @Value("${app.jwt.access-token-expiry}")
-    private long accessTokenExpiry; // 15 minutes in ms
+    private long accessTokenExpiry; // 7 days in ms
 
     @Value("${app.jwt.refresh-token-expiry}")
-    private long refreshTokenExpiry; // 7 days in ms
+    private long refreshTokenExpiry; // 30 days in ms
 
     private Key getSigningKey() {
         return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
@@ -116,3 +116,9 @@ public class JwtTokenProvider {
                 .getBody();
     }
 }
+
+
+
+
+
+

@@ -317,6 +317,18 @@
   transition: background 0.18s;
 }
 
+.hg-dd-day-label {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--hg-text);
+  padding: 8px 4px;
+  text-align: center;
+}
+
 .hg-dd-value:hover {
   background: var(--cyan-soft);
 }
@@ -644,8 +656,10 @@
   background: rgba(255, 59, 92, 0.18);
 }
 
-.td-name {
-  min-width: 130px;
+.td-name,
+.th-name {
+  min-width: 180px;
+  width: 180px;
 }
 
 /* ── Hour column body tints ── */
@@ -1246,6 +1260,7 @@
   .hg-target-section-layout {
     flex-direction: column;
   }
+
 
   .hg-summary-container {
     width: 100%;

@@ -22,6 +22,9 @@ public class CreateJobRequest {
     @JsonProperty("xmlIsbn")
     private String xmlIsbn;
 
+    @JsonProperty("batch")
+    private String batch;
+
     @JsonProperty("titleName")
     private String titleName;
 

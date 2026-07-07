@@ -7,6 +7,9 @@ import toolIcon from '../../img/tools.png';
 import timelogIcon from '../../img/timelog.png';
 import invoiceIcon from '../../img/invoice.png';
 
+import productionIcon from '../../img/production.png';
+
+
 const menuItems = [
   { name: 'DASHBOARD', icon: '📊', path: '/admin/dashboard' },
   { name: 'USER', icon: '👥', path: '/admin/users' },
@@ -15,7 +18,7 @@ const menuItems = [
   { name: 'ATTENDANCE', icon: '📅', path: '/admin/attendance' },
   { name: 'PROJECT', icon: '📁', path: '/admin/projects' },
   { name: 'BOOK/JOB', icon: '📖', path: '/admin/books' },
-  { name: 'PRODUCTION', icon: '🏭', path: '/admin/production' },
+  { name: 'PRODUCTION', icon: <img src={productionIcon} alt="Production" className="sidebar-img-icon" />, path: '/admin/production' },
   { name: 'TASK', icon: '✅', path: '/admin/tasks' },
   { name: 'PROCESSE', icon: '⚙️', path: '/admin/processes' },
   { name: 'SHIFT', icon: '🕒', path: '/admin/shifts' },

@@ -668,6 +668,7 @@
   color: rgba(200, 255, 220, 0.95);
   font-style: normal;
   line-height: 1.5;
+  letter-spacing: 1px;
 }
 
 .kural-meaning-text.english {

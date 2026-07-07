@@ -273,7 +273,7 @@
 }
 
 .digi-card:hover .launch-logo {
-  transform: scale(1.2) rotate(8deg);
+  transform: translateX(8px);
 }
 
 

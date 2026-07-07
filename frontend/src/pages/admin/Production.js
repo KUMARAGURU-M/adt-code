@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import './Production.css';
 import { apiCall } from '../../utils/api';
-
+import productionIcon from '../../img/production.png';
 const STATUS_OPTIONS = [
   'FINISH', 'WIP', 'YTS', 'RTU', 'UPLOADED', 'PENDING', 'HOLD', 'QUERY'
 ];
@@ -242,7 +242,9 @@ const Production = () => {
   return (
     <div className="production-container">
       <div className="bj-page-title">
-        <span className="bj-page-icon"></span>
+        <span className="bj-page-icon">
+          <img src={productionIcon} alt="Production" className="bj-page-title-img-icon" />
+        </span>
         <h2>Production Details</h2>
       </div>
 
@@ -330,6 +332,7 @@ const Production = () => {
                     <th>Receive Date</th>
                     <th>Job ID</th>
                     <th>XML ISBN</th>
+                    <th>Batch</th>
                     <th style={{ minWidth: '150px' }}>Title Name</th>
                     <th>Page Count</th>
                     <th>PDF Type</th>
@@ -381,6 +384,9 @@ const Production = () => {
                         </td>
                         <td className="isbn-col">
                           {job.xmlIsbn || '—'}
+                        </td>
+                        <td className="batch-col">
+                          {job.batch || '—'}
                         </td>
                         <td className="title-col" title={job.titleName}>
                           <div className="title-text-trunc">

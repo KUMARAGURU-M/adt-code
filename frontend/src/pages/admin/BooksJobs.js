@@ -30,6 +30,7 @@ const ALL_BULK_FIELDS = [
   { key: 'startMonth', label: 'START MONTH', mandatory: false },
   { key: 'endMonth', label: 'END MONTH', mandatory: false },
   { key: 'isbn', label: 'XML ISBN', mandatory: false },
+  { key: 'batch', label: 'BATCH', mandatory: false },
   { key: 'chapters', label: 'NUMBER OF CHAPTERS', mandatory: false },
   { key: 'pdfType', label: 'PDF INPUT TYPE', mandatory: false },
   { key: 'complexity', label: 'COMPLEXITY', mandatory: false },
@@ -45,7 +46,7 @@ const EMPTY_FORM = {
   project: '', projectId: null,
   clientId: '', clientName: '',
   workflowId: '', workflowName: '',
-  startMonth: '', endMonth: '', receiveDate: '', jobId: '', isbn: '',
+  startMonth: '', endMonth: '', receiveDate: '', jobId: '', isbn: '', batch: '',
   title: '', pageCount: '', chapters: '', pdfType: '', complexity: '',
   refType: '', status: '', fileStatus: '', uploadDate: '', billing: '', language: '',
 };
@@ -81,6 +82,7 @@ const mapJob = (j) => ({
   receiveDate: j.receiveDate || '',
   jobId: j.jobIdCode || '',
   isbn: j.xmlIsbn || '',
+  batch: j.batch || '',
   title: j.titleName || '',
   pageCount: j.pageCount?.toString() || '',
   chapters: j.numberOfChapters?.toString() || '',
@@ -223,7 +225,7 @@ const JobForm = ({ form, onChange, projects = [], clients = [], workflows = [] }
           onChange={e => onChange('receiveDate', e.target.value)} />
       </div>
 
-      <div className="bj-form-row">
+      <div className="bj-form-row" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
         <div className="bj-form-group">
           <label>Job ID <span className="req">*</span></label>
           <input placeholder="e.g., BM0748" value={form.jobId}
@@ -233,6 +235,11 @@ const JobForm = ({ form, onChange, projects = [], clients = [], workflows = [] }
           <label>XML ISBN</label>
           <input placeholder="e.g., 9798216386377" value={form.isbn}
             onChange={e => onChange('isbn', e.target.value)} />
+        </div>
+        <div className="bj-form-group">
+          <label>Batch</label>
+          <input placeholder="e.g., Batch 1" value={form.batch}
+            onChange={e => onChange('batch', e.target.value)} />
         </div>
       </div>
 
@@ -419,6 +426,7 @@ const EditJobModal = ({ job, onClose, onUpdate, projects, clients, workflows }) 
     receiveDate: job.receiveDate || '',
     jobId: job.jobId || '',
     isbn: job.isbn || '',
+    batch: job.batch || '',
     title: job.title || '',
     pageCount: job.pageCount || '',
     chapters: job.chapters || '',
@@ -1140,6 +1148,7 @@ const BooksJobs = () => {
       workflowId: form.workflowId || null,
       jobIdCode: form.jobId,
       xmlIsbn: form.isbn || null,
+      batch: form.batch || null,
       titleName: form.title,
       pageCount: parseInt(form.pageCount) || 0,
       numberOfChapters: parseInt(form.chapters) || null,
@@ -1164,6 +1173,7 @@ const BooksJobs = () => {
       workflowId: form.workflowId || null,
       jobIdCode: form.jobId,
       xmlIsbn: form.isbn || null,
+      batch: form.batch || null,
       titleName: form.title,
       pageCount: parseInt(form.pageCount) || 0,
       numberOfChapters: parseInt(form.chapters) || null,
@@ -1240,14 +1250,14 @@ const BooksJobs = () => {
       <p>Generated: ${new Date().toLocaleDateString('en-GB')}</p>
       <table><thead><tr>
         <th>Client</th><th>Project</th><th>Workflow</th><th>Receive Date</th><th>Job ID</th>
-        <th>ISBN</th><th>Language</th><th>Title</th><th>Pages</th>
+        <th>ISBN</th><th>Batch</th><th>Language</th><th>Title</th><th>Pages</th>
         <th>PDF Type</th><th>Complexity</th><th>Ref Type</th>
         <th>Status</th><th>File Status</th><th>Upload Date</th>
         <th>Billing</th>
       </tr></thead><tbody>
       ${rows.map(j => `<tr>
         <td>${j.clientName || '-'}</td><td>${j.project || '-'}</td><td>${j.workflowName || '-'}</td><td>${fmt(j.receiveDate)}</td>
-        <td><b>${j.jobId || '-'}</b></td><td>${j.isbn || '-'}</td>
+        <td><b>${j.jobId || '-'}</b></td><td>${j.isbn || '-'}</td><td>${j.batch || '-'}</td>
         <td>${j.language || '-'}</td><td>${j.title || '-'}</td><td>${j.pageCount || '-'}</td>
         <td>${j.pdfType || '-'}</td><td>${j.complexity || '-'}</td>
         <td>${j.refType || '-'}</td><td>${j.status || '-'}</td>
@@ -1263,13 +1273,13 @@ const BooksJobs = () => {
 
   const exportExcel = () => {
     const headers = [
-      'Client', 'Project', 'Workflow', 'Receive Date', 'Job ID', 'XML ISBN', 'Language', 'Title Name',
+      'Client', 'Project', 'Workflow', 'Receive Date', 'Job ID', 'XML ISBN', 'Batch', 'Language', 'Title Name',
       'Page Count', 'PDF Type', 'Complexity', 'Ref Type', 'Status',
       'File Status', 'Upload Date', 'Billing Status'
     ];
     const csvRows = rows.map(j => [
       `"${j.clientName || ''}"`, `"${j.project || ''}"`, `"${j.workflowName || ''}"`, j.receiveDate ? fmt(j.receiveDate) : '',
-      `"${j.jobId || ''}"`, `"${j.isbn || ''}"`, `"${j.language || ''}"`, `"${j.title || ''}"`,
+      `"${j.jobId || ''}"`, `"${j.isbn || ''}"`, `"${j.batch || ''}"`, `"${j.language || ''}"`, `"${j.title || ''}"`,
       j.pageCount || '', `"${j.pdfType || ''}"`, `"${j.complexity || ''}"`,
       `"${j.refType || ''}"`, `"${j.status || ''}"`,
       `"${j.fileStatus || ''}"`, j.uploadDate ? fmt(j.uploadDate) : '',
@@ -1467,6 +1477,7 @@ const BooksJobs = () => {
                   <th>Receive Date</th>
                   <th>Job ID</th>
                   <th>XML ISBN</th>
+                  <th>Batch</th>
                   <th>Language</th>
                   <th>Title Name</th>
                   <th>Page Count</th>
@@ -1483,7 +1494,7 @@ const BooksJobs = () => {
               <tbody>
                 {rows.length === 0 ? (
                   <tr>
-                    <td colSpan="17" className="bj-empty">
+                    <td colSpan="18" className="bj-empty">
                       No records found. Try different filters or add a job.
                     </td>
                   </tr>
@@ -1514,6 +1525,9 @@ const BooksJobs = () => {
                       {job.isbn
                         ? <span className="bj-isbn-link">{job.isbn}</span>
                         : <span className="cell-dash">-</span>}
+                    </td>
+                    <td>
+                      {job.batch || <span className="cell-dash">-</span>}
                     </td>
                     <td>
                       {job.language ? <strong>{job.language}</strong> : <span className="cell-dash">-</span>}

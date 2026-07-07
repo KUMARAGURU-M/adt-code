@@ -92,19 +92,34 @@ async function doRefresh() {
   const refreshToken = getRefreshToken();
   if (!refreshToken) throw new Error('No refresh token');
 
-  const res = await fetch(`${API_BASE}/auth/refresh`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refreshToken }),
-  });
-
-  if (!res.ok) {
-    clearSession();
-    window.location.href = '/';
-    throw new Error('Session expired. Please log in again.');
+  let res;
+  try {
+    res = await fetch(`${API_BASE}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+    });
+  } catch (err) {
+    // Network error/CORS/fetch failure: do not log out, just throw error to let caller retry
+    throw new Error('Network error. Failed to refresh session.');
   }
 
-  const json = await res.json();
+  if (!res.ok) {
+    if (res.status === 400 || res.status === 401 || res.status === 403) {
+      clearSession();
+      window.location.href = '/';
+      throw new Error('Session expired. Please log in again.');
+    }
+    throw new Error(`Server error during refresh (HTTP ${res.status})`);
+  }
+
+  let json;
+  try {
+    json = await res.json();
+  } catch (err) {
+    throw new Error('Invalid response from server during refresh');
+  }
+
   if (!json.success) {
     clearSession();
     window.location.href = '/';
@@ -196,3 +211,4 @@ export function getRolePrefix(roles) {
 }
 
 export default apiCall;
+

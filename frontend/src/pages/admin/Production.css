@@ -40,6 +40,15 @@
   margin-bottom: 20px;
 }
 
+
+.bj-page-title-img-icon {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  border-radius: 4px;
+  display: block;
+}
+
 .bj-page-title h2 {
   margin: 0;
   font-size: 1.2rem;
@@ -230,6 +239,11 @@
 }
 
 .isbn-col {
+  color: #475569;
+  font-family: monospace;
+}
+
+.batch-col {
   color: #475569;
   font-family: monospace;
 }
