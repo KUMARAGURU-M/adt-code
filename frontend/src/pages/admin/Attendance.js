@@ -763,7 +763,7 @@ const Attendance = () => {
                     attendance[emp.id] || {}, selYear, selMonth);
                   return (
                     <tr key={emp.id} className="att-row">
-                      <td className="att-td-sno">{idx + 1}</td>
+                      <td className="att-td-sno">{emp.userCode || '—'}</td>
                       <td className="att-td-name col-left">
                         <button className="att-emp-name-btn"
                           onClick={() =>
@@ -771,7 +771,7 @@ const Attendance = () => {
                           {emp.name}
                         </button>
                       </td>
-                      <td className="att-td-cat col-left">
+                      <td className="att-td-cat">
                         <span className={`att-cat-badge att-cat-${emp.category.toLowerCase().replace(/\s+/g, '-')
                           }`}>
                           {emp.category}
@@ -876,11 +876,11 @@ const Attendance = () => {
                       <tr key={s.emp.id}
                         className={`att-summary-row${isHidden ? ' att-row-hidden' : ''
                           }`}>
-                        <td className="att-sum-sticky-id">{idx + 1}</td>
+                        <td className="att-sum-sticky-id">{s.emp.userCode || '—'}</td>
                         <td className="col-left att-sum-sticky-emp">
                           {s.emp.name}
                         </td>
-                        <td className="col-left att-sum-sticky-role">
+                        <td className="att-sum-sticky-role">
                           <span className={`att-cat-badge att-cat-${s.emp.category.toLowerCase().replace(/\s+/g, '-')
                             }`}>
                             {s.emp.category}
@@ -1064,9 +1064,9 @@ const Attendance = () => {
                         (s.totalPresent / s.totalWorking) * 100) : 0;
                     return (
                       <tr key={s.emp.id}>
-                        <td>{idx + 1}</td>
+                        <td>{s.emp.userCode || '—'}</td>
                         <td className="col-left">{s.emp.name}</td>
-                        <td className="col-left">
+                        <td>
                           <span className={`att-cat-badge att-cat-${s.emp.category.toLowerCase().replace(/\s+/g, '-')
                             }`}>
                             {s.emp.category}

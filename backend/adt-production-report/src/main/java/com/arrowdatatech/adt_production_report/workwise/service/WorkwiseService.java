@@ -127,6 +127,7 @@ public class WorkwiseService {
                     .processName(t.getProcess() != null
                             ? t.getProcess().getName() : null)
                     .assignedPages(assignedPages)
+                    .assignedPagesStr(t.getAssignedPagesStr())
                     .pagesCompleted(pagesCompleted)
                     .dueDate(t.getDueDate() != null
                             ? t.getDueDate().toString() : null)
@@ -177,6 +178,7 @@ public class WorkwiseService {
                 .processName(t.getProcess() != null
                         ? t.getProcess().getName() : null)
                 .assignedPages(tea != null ? tea.getAssignedPages() : null)
+                .assignedPagesStr(t.getAssignedPagesStr())
                 .pagesCompleted(tea != null && tea.getPagesCompleted() != null
                         ? tea.getPagesCompleted() : 0)
                 .dueDate(t.getDueDate() != null
@@ -680,6 +682,7 @@ public class WorkwiseService {
                 .assignedPages(assignedPages)
                 .pagesCompletedSoFar(alreadyCompleted)
                 .taskTitle(timeLog.getTask().getTaskTitle())
+                .assignedPagesStr(timeLog.getTask().getAssignedPagesStr())
                 .build();
     }
 
@@ -727,8 +730,10 @@ public class WorkwiseService {
             Task task = log.getTask();
             dueDate   = task.getDueDate() != null
                     ? task.getDueDate().toString() : null;
-            pages     = task.getAssignedPages() != null
-                    ? task.getAssignedPages().toString() : null;
+            pages     = task.getAssignedPagesStr() != null
+                    ? task.getAssignedPagesStr()
+                    : (task.getAssignedPages() != null
+                        ? task.getAssignedPages().toString() : null);
             chapter   = task.getChapterArticleBatch();
             complexity = task.getComplexity();
 

@@ -10,9 +10,12 @@ import java.util.UUID;
 @Builder
 public class AttendanceEmployeeResponse {
     private UUID id;
+    private String userCode;
     private String name;
     private String category;
     private String gpayNumber;
     private BigDecimal baseSalary;
     private Integer sortOrder;
 }
+
+

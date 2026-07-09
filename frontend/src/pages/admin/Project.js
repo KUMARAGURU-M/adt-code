@@ -74,6 +74,14 @@ export default function Projects() {
   const [editingWorkflowId, setEditingWorkflowId] = useState(null);
   const [editingWorkflowName, setEditingWorkflowName] = useState("");
 
+  // Clients management state
+  const [showClientManagerModal, setShowClientManagerModal] = useState(false);
+  const [clientDraftName, setClientDraftName] = useState("");
+  const [clientDraftAddress, setClientDraftAddress] = useState("");
+  const [editingClientId, setEditingClientId] = useState(null);
+  const [editingClientName, setEditingClientName] = useState("");
+  const [editingClientAddress, setEditingClientAddress] = useState("");
+
   const location = useLocation();
 
   // ── Load data ──────────────────────────────────────────────
@@ -132,7 +140,7 @@ export default function Projects() {
   // ── Workflow CRUD Handlers ─────────────────────────────────
   const handleCreateWorkflow = async () => {
     if (!workflowDraftName.trim()) {
-      alert("Workflow name is required.");
+      alert("Task Name is required.");
       return;
     }
     try {
@@ -140,13 +148,13 @@ export default function Projects() {
       setWorkflowDraftName("");
       loadWorkflows();
     } catch (err) {
-      alert("Error creating workflow: " + err.message);
+      alert("Error creating Task Name: " + err.message);
     }
   };
 
   const handleUpdateWorkflow = async (id) => {
     if (!editingWorkflowName.trim()) {
-      alert("Workflow name is required.");
+      alert("Task Name is required.");
       return;
     }
     try {
@@ -156,12 +164,12 @@ export default function Projects() {
       loadWorkflows();
       loadProjects();
     } catch (err) {
-      alert("Error updating workflow: " + err.message);
+      alert("Error updating Task Name: " + err.message);
     }
   };
 
   const handleDeleteWorkflow = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this workflow?")) {
+    if (!window.confirm("Are you sure you want to delete this Task Name?")) {
       return;
     }
     try {
@@ -169,7 +177,59 @@ export default function Projects() {
       loadWorkflows();
       loadProjects();
     } catch (err) {
-      alert("Error deleting workflow: " + err.message);
+      alert("Error deleting Task Name: " + err.message);
+    }
+  };
+
+  // ── Client CRUD Handlers in Manager ────────────────────────
+  const handleCreateClientInManager = async () => {
+    if (!clientDraftName.trim()) {
+      alert("Client name is required.");
+      return;
+    }
+    try {
+      await apiCall("/clients", "POST", {
+        companyName: clientDraftName.trim(),
+        addressLine1: clientDraftAddress.trim()
+      });
+      setClientDraftName("");
+      setClientDraftAddress("");
+      loadClients();
+    } catch (err) {
+      alert("Error creating client: " + err.message);
+    }
+  };
+
+  const handleUpdateClientInManager = async (id) => {
+    if (!editingClientName.trim()) {
+      alert("Client name is required.");
+      return;
+    }
+    try {
+      await apiCall(`/clients/${id}`, "PUT", {
+        companyName: editingClientName.trim(),
+        addressLine1: editingClientAddress.trim()
+      });
+      setEditingClientId(null);
+      setEditingClientName("");
+      setEditingClientAddress("");
+      loadClients();
+      loadProjects();
+    } catch (err) {
+      alert("Error updating client: " + err.message);
+    }
+  };
+
+  const handleDeleteClientInManager = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this client?")) {
+      return;
+    }
+    try {
+      await apiCall(`/clients/${id}`, "DELETE");
+      loadClients();
+      loadProjects();
+    } catch (err) {
+      alert("Error deleting client: " + err.message);
     }
   };
 
@@ -339,8 +399,11 @@ export default function Projects() {
           <h1>Project Management</h1>
         </div>
         <div style={{ display: "flex", gap: "10px" }}>
+          <button className="btn-add-project" style={{ background: "#038e52ff" }} onClick={() => setShowClientManagerModal(true)}>
+            💼 Manage Client
+          </button>
           <button className="btn-add-project" style={{ background: "#4a5568" }} onClick={() => setShowWorkflowModal(true)}>
-            ⚙️ Manage Workflows
+            ⚙️ Manage Task Name
           </button>
           <button className="btn-add-project" onClick={handleOpenAdd}>
             + Add Project
@@ -355,7 +418,7 @@ export default function Projects() {
             <tr>
               <th>Client</th>
               <th>Project</th>
-              <th>Workflow</th>
+              <th>Task Name</th>
               <th>Type</th>
               <th>Complexity</th>
               <th>Rate</th>
@@ -477,10 +540,8 @@ export default function Projects() {
               showActive={false}
               clients={clients}
               workflows={workflows}
-              onAddClient={() => {
-                setClientDraft({ name: "", address: "" });
-                setShowClientModal(true);
-              }}
+              onAddClient={() => setShowClientManagerModal(true)}
+              onAddWorkflow={() => setShowWorkflowModal(true)}
             />
             <div className="modal-actions">
               <button className="btn-cancel"
@@ -509,10 +570,8 @@ export default function Projects() {
               showActive={true}
               clients={clients}
               workflows={workflows}
-              onAddClient={() => {
-                setClientDraft({ name: "", address: "" });
-                setShowClientModal(true);
-              }}
+              onAddClient={() => setShowClientManagerModal(true)}
+              onAddWorkflow={() => setShowWorkflowModal(true)}
             />
             <div className="modal-actions">
               <button className="btn-cancel"
@@ -599,14 +658,14 @@ export default function Projects() {
       {showWorkflowModal && (
         <div className="modal-overlay" onClick={() => setShowWorkflowModal(false)} style={{ zIndex: 2000 }}>
           <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: "500px" }}>
-            <h2 className="modal-title">Manage Workflows</h2>
+            <h2 className="modal-title">Manage Task Name</h2>
 
             {/* Create new workflow form */}
             <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
               <input
                 className="form-input"
                 style={{ flex: 1, marginBottom: 0 }}
-                placeholder="New workflow name..."
+                placeholder="New Task Name..."
                 value={workflowDraftName}
                 onChange={e => setWorkflowDraftName(e.target.value)}
               />
@@ -618,7 +677,7 @@ export default function Projects() {
             <div style={{ maxHeight: "250px", overflowY: "auto", border: "1px solid #e2e8f0", borderRadius: "6px" }}>
               {workflows.length === 0 ? (
                 <div style={{ padding: "16px", textAlign: "center", color: "#a0aec0" }}>
-                  No workflows defined yet.
+                  No Task Names defined yet.
                 </div>
               ) : (
                 workflows.map(w => (
@@ -695,12 +754,138 @@ export default function Projects() {
           </div>
         </div>
       )}
+
+      {/* ── Client Management Modal ── */}
+      {showClientManagerModal && (
+        <div className="modal-overlay" onClick={() => setShowClientManagerModal(false)} style={{ zIndex: 2000 }}>
+          <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: "600px" }}>
+            <h2 className="modal-title">Manage Client</h2>
+
+            {/* Create new client form */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "16px", background: "#f8fafc", padding: "12px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+              <h4 style={{ margin: 0, fontSize: "13px", color: "#475569" }}>Add Client</h4>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <input
+                  className="form-input"
+                  style={{ flex: 1, marginBottom: 0 }}
+                  placeholder="Client Name..."
+                  value={clientDraftName}
+                  onChange={e => setClientDraftName(e.target.value)}
+                />
+                <input
+                  className="form-input"
+                  style={{ flex: 1, marginBottom: 0 }}
+                  placeholder="Client Address (Optional)..."
+                  value={clientDraftAddress}
+                  onChange={e => setClientDraftAddress(e.target.value)}
+                />
+                <button className="btn-submit" style={{ marginTop: 0, padding: "8px 16px" }} onClick={handleCreateClientInManager}>
+                  Add
+                </button>
+              </div>
+            </div>
+
+            <div style={{ maxHeight: "300px", overflowY: "auto", border: "1px solid #e2e8f0", borderRadius: "6px" }}>
+              {clients.length === 0 ? (
+                <div style={{ padding: "16px", textAlign: "center", color: "#a0aec0" }}>
+                  No client defined yet.
+                </div>
+              ) : (
+                clients.map(c => (
+                  <div key={c.id} style={{ display: "flex", flexDirection: "column", padding: "10px 12px", borderBottom: "1px solid #e2e8f0" }}>
+                    {editingClientId === c.id ? (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                        <div style={{ display: "flex", gap: "6px" }}>
+                          <input
+                            className="form-input"
+                            style={{ flex: 1, marginBottom: 0, padding: "4px 8px", fontSize: "13px" }}
+                            value={editingClientName}
+                            onChange={e => setEditingClientName(e.target.value)}
+                            placeholder="Client Name..."
+                            autoFocus
+                          />
+                          <input
+                            className="form-input"
+                            style={{ flex: 1, marginBottom: 0, padding: "4px 8px", fontSize: "13px" }}
+                            value={editingClientAddress}
+                            onChange={e => setEditingClientAddress(e.target.value)}
+                            placeholder="Client Address..."
+                          />
+                          <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                            <button
+                              className="action-btn"
+                              onClick={() => handleUpdateClientInManager(c.id)}
+                              style={{ background: "none", border: "none", cursor: "pointer", fontSize: "14px" }}
+                              title="Save"
+                            >
+                              💾
+                            </button>
+                            <button
+                              className="action-btn"
+                              onClick={() => {
+                                setEditingClientId(null);
+                                setEditingClientName("");
+                                setEditingClientAddress("");
+                              }}
+                              style={{ background: "none", border: "none", cursor: "pointer", fontSize: "14px" }}
+                              title="Cancel"
+                            >
+                              ❌
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div style={{ display: "flex", flexDirection: "column" }}>
+                          <span style={{ fontSize: "14px", fontWeight: 600, color: "#2d3748" }}>{c.companyName}</span>
+                          {c.addressLine1 && (
+                            <span style={{ fontSize: "11px", color: "#718096" }}>{c.addressLine1}</span>
+                          )}
+                        </div>
+                        <div style={{ display: "flex", gap: "6px" }}>
+                          <button
+                            className="action-btn"
+                            onClick={() => {
+                              setEditingClientId(c.id);
+                              setEditingClientName(c.companyName);
+                              setEditingClientAddress(c.addressLine1 || "");
+                            }}
+                            style={{ background: "none", border: "none", cursor: "pointer", fontSize: "14px" }}
+                            title="Edit"
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            className="action-btn"
+                            onClick={() => handleDeleteClientInManager(c.id)}
+                            style={{ background: "none", border: "none", cursor: "pointer", fontSize: "14px" }}
+                            title="Delete"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="modal-actions" style={{ marginTop: "16px" }}>
+              <button className="btn-cancel" onClick={() => setShowClientManagerModal(false)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 // ── ProjectForm Component ─────────────────────────────────────────
-function ProjectForm({ form, errors, onChange, showActive, clients = [], workflows = [], onAddClient }) {
+function ProjectForm({ form, errors, onChange, showActive, clients = [], workflows = [], onAddClient, onAddWorkflow }) {
   return (
     <div className="form-body">
 
@@ -768,28 +953,48 @@ function ProjectForm({ form, errors, onChange, showActive, clients = [], workflo
               fontWeight: 700
             }}
           >
-            + Add Client
+            + Manage Client
           </button>
         </div>
       </div>
 
       {/* Workflow (optional) */}
       <div className="form-group">
-        <label className="form-label">Workflow (Optional)</label>
-        <select
-          className="form-select"
-          value={form.workflowId || ""}
-          onChange={e =>
-            onChange("workflowId", e.target.value || null)
-          }
-        >
-          <option value="">-- No Workflow --</option>
-          {workflows.map(w => (
-            <option key={w.id} value={w.id}>
-              {w.name}
-            </option>
-          ))}
-        </select>
+        <label className="form-label">Task Name (Optional)</label>
+        <div style={{ display: "flex", gap: "8px" }}>
+          <select
+            className={`form-select ${errors.workflowId ? "form-select--error" : ""}`}
+            value={form.workflowId || ""}
+            onChange={e => onChange("workflowId", e.target.value)}
+            style={{ flex: 1 }}
+          >
+            <option value="">-- No Task Name --</option>
+            {workflows.map(w => (
+              <option key={w.id} value={w.id}>
+                {w.name}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            className="btn-submit"
+            onClick={onAddWorkflow}
+            style={{
+              padding: "9px 15px",
+              fontSize: "0.82rem",
+              whiteSpace: "nowrap",
+              marginTop: 0,
+              background: "#4a5568",
+              color: "#fff",
+              border: "none",
+              borderRadius: "6px",
+              cursor: "pointer",
+              fontWeight: 700
+            }}
+          >
+            + Add Task Name
+          </button>
+        </div>
       </div>
 
       {/* Billing Type */}

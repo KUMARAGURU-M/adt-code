@@ -54,6 +54,8 @@ public class TaskService {
     @Transactional(readOnly = true)
     public Page<TaskResponse> searchTasks(
             UUID projectId,
+            UUID clientId,
+            UUID workflowId,
             UUID processId,
             UUID userId,
             String status,
@@ -62,7 +64,7 @@ public class TaskService {
 
         Pageable pageable = PageRequest.of(page, size);
         return taskRepository.searchTasks(
-                projectId, processId, userId, status, search, pageable
+                projectId, clientId, workflowId, processId, userId, status, search, pageable
         ).map(this::toResponse);
     }
 
@@ -140,6 +142,7 @@ public class TaskService {
                 .assignedDate(LocalDate.now())
                 .dueDate(request.getDueDate())
                 .assignedPages(request.getAssignedPages())
+                .assignedPagesStr(request.getAssignedPagesStr())
                 .complexity(request.getComplexity())
                 .chapterArticleBatch(request.getChapterArticleBatch())
                 .estimateHours(request.getEstimateHours() != null
@@ -238,6 +241,9 @@ public class TaskService {
         }
         if (request.getAssignedPages() != null) {
             task.setAssignedPages(request.getAssignedPages());
+        }
+        if (request.getAssignedPagesStr() != null) {
+            task.setAssignedPagesStr(request.getAssignedPagesStr());
         }
         if (request.getComplexity() != null) {
             task.setComplexity(request.getComplexity());
@@ -435,6 +441,21 @@ public class TaskService {
                     : task.getAssignedBy().getEmail();
         }
 
+        UUID clientId = null;
+        String clientName = null;
+        UUID workflowId = null;
+        String workflowName = null;
+        if (task.getProject() != null) {
+            if (task.getProject().getClient() != null) {
+                clientId = task.getProject().getClient().getId();
+                clientName = task.getProject().getClient().getCompanyName();
+            }
+            if (task.getProject().getWorkflow() != null) {
+                workflowId = task.getProject().getWorkflow().getId();
+                workflowName = task.getProject().getWorkflow().getName();
+            }
+        }
+
         return TaskResponse.builder()
                 .id(task.getId())
                 .projectId(task.getProject() != null
@@ -451,6 +472,7 @@ public class TaskService {
                 .assignedDate(task.getAssignedDate())
                 .dueDate(task.getDueDate())
                 .assignedPages(task.getAssignedPages())
+                .assignedPagesStr(task.getAssignedPagesStr())
                 .complexity(task.getComplexity())
                 .chapterArticleBatch(task.getChapterArticleBatch())
                 .estimateHours(task.getEstimateHours())
@@ -458,9 +480,12 @@ public class TaskService {
                 .assignedByName(assignedByName)
                 .totalPages(task.getTotalPages())
                 .createdAt(task.getCreatedAt())
+                .clientId(clientId)
+                .clientName(clientName)
+                .workflowId(workflowId)
+                .workflowName(workflowName)
                 .jobs(jobs)
                 .employees(employees)
                 .build();
     }
 }
-

@@ -45,7 +45,7 @@ const getComplexityClass = (v) => {
 
 const OPTIONAL_COLUMNS = [
   { key: "projectName", label: "Project Name" },
-  { key: "workflow", label: "Workflow" },
+  { key: "workflow", label: "Task Name" },
   { key: "process", label: "Process" },
   { key: "bookBatchName", label: "Book/Batch/Article Name" },
   { key: "orderPages", label: "Pages" },
@@ -95,7 +95,20 @@ function numberToWords(num) {
 const fmt = (n) => `₹${Number(n || 0).toLocaleString("en-IN")}`;
 const today = () => new Date().toISOString().split("T")[0];
 const genInvNo = () => { const d = new Date(); return `ADT-${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`; };
-const formatDate = (s) => { if (!s) return ""; try { return new Date(s).toLocaleDateString("en-GB").replace(/\//g, "-"); } catch { return s; } };
+const formatDate = (s) => {
+  if (!s) return "";
+  try {
+    const d = new Date(s);
+    if (isNaN(d.getTime())) return s;
+    const day = String(d.getDate()).padStart(2, '0');
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const month = months[d.getMonth()];
+    const year = d.getFullYear();
+    return `${day}-${month}-${year}`;
+  } catch {
+    return s;
+  }
+};
 
 const EMPTY_ROW = (o = {}) => ({
   id: Date.now() + Math.random(),
@@ -349,6 +362,7 @@ export default function Invoice() {
   const [clientModalMode, setClientModalMode] = useState("edit");
   const [clientDraft, setClientDraft] = useState({ id: "", name: "", address: "" });
   const currentClient = clients.find(c => c.id === selectedClientId) || null;
+  const [clientName, setClientName] = useState("");
 
   // ── Client Projects and Unbilled Jobs ───────────────────
   const [clientProjects, setClientProjects] = useState([]);
@@ -375,7 +389,7 @@ export default function Invoice() {
 
   // ── Project Filters ──────────────────────────────────────
   const [filterProject, setFilterProject] = useState("All Projects");
-  const [filterProcess, setFilterProcess] = useState("All Processes");
+  const [filterWorkflow, setFilterWorkflow] = useState("All Task Names");
   const [filterStartDate, setFilterStartDate] = useState("");
   const [filterEndDate, setFilterEndDate] = useState("");
   const [filterComplexity, setFilterComplexity] = useState("All");
@@ -614,6 +628,14 @@ export default function Invoice() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedClientId]);
 
+  useEffect(() => {
+    if (currentClient) {
+      setClientName(currentClient.name);
+    } else {
+      setClientName("");
+    }
+  }, [currentClient]);
+
   const openEditClient = () => { setClientDraft({ id: currentClient?.id || "", name: currentClient?.name || "", address: currentClient?.address || "" }); setClientModalMode("edit"); setShowClientModal(true); };
   const openAddClient = () => { setClientDraft({ id: "", name: "", address: "" }); setClientModalMode("add"); setShowClientModal(true); };
 
@@ -662,7 +684,7 @@ export default function Invoice() {
 
   const filteredDPs = unbilledJobs.filter(dp => {
     if (filterProject !== "All Projects" && dp.project !== filterProject) return false;
-    if (filterProcess !== "All Processes" && dp.process && !dp.process.includes(filterProcess)) return false;
+    if (filterWorkflow !== "All Task Names" && dp.workflow && !dp.workflow.includes(filterWorkflow)) return false;
     if (filterComplexity !== "All" && dp.complexity && dp.complexity !== filterComplexity) return false;
     if (filterFileStatus !== "All" && dp.fileStatus && dp.fileStatus !== filterFileStatus) return false;
     if (filterStartDate && dp.startDate && dp.startDate < filterStartDate) return false;
@@ -1036,8 +1058,8 @@ export default function Invoice() {
   // ── Exports ───────────────────────────────────────────────
   const getExportFilename = () => {
     const uniqueProjects = Array.from(new Set(rows.map(r => r.projectName).filter(Boolean)));
-    const projName = uniqueProjects.length > 0 ? uniqueProjects.join("_") : "Invoice";
-    const rawName = `${projName} Invoice of ADT ${titleMonth}`;
+    const projName = uniqueProjects.length > 0 ? uniqueProjects.join("_") : "";
+    const rawName = `${projName}_Invoice_of_ADT_${titleMonth}`;
     return rawName.replace(/[/\\?%*:|"<>\r\n]/g, "").trim();
   };
 
@@ -1051,10 +1073,14 @@ export default function Invoice() {
     }, 600);
   };
   const exportExcel = () => {
+    const clientHeader = ["Client Name:", clientName];
+    const invoiceNoHeader = ["Invoice No:", invoiceNo];
+    const invoiceDateHeader = ["Invoice Date:", invoiceDate];
+    const blankRow = [];
     const headers = ["S.No", "Project Name", "Process", "Book/Batch/Article Name", ...enabledOptCols.map(c => colHeaders[c.key] || c.label), "Order Pages", "Rate/Page (₹)", "Amount (₹)", "Penalty (₹)", "Total (₹)"];
     const dataRows = rows.map((r, i) => [i + 1, r.projectName, r.process, r.bookBatchName, ...enabledOptCols.map(c => r[c.key] || ""), r.orderPages, r.ratePage, r.amount || "", r.deductionAmount || "", r.totalAmount || ""]);
     const summary = [[], ["", "", "", "Sub Total", "", fmt(subTotal)], ["", "", `IGST (${igstPct}%)`, "", fmt(igstAmt)], ["", "", "", "Grand Total", "", fmt(grandTotal)]];
-    const csv = [[headers, ...dataRows, ...summary]].flat().map(row => row.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const csv = [[clientHeader, invoiceNoHeader, invoiceDateHeader, blankRow, headers, ...dataRows, ...summary]].flat().map(row => row.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
     const filename = `${getExportFilename()}.csv`;
     const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" })), download: filename });
     a.click(); URL.revokeObjectURL(a.href);
@@ -1167,13 +1193,19 @@ export default function Invoice() {
                       <button className="inv-btn inv-btn--primary inv-btn--sm" onClick={openAddClient}>+ New</button>
                       <button className="inv-btn inv-btn--outline inv-btn--sm" onClick={handleDeleteClient} style={{ color: '#dc3545', borderColor: '#dc3545' }}>🗑 Delete</button>
                     </div>
-                    {currentClient && (
+                  </div>
+                  <div className="inv-field-block">
+                    <label className="inv-label">Client Name (Editable for Print/Export)</label>
+                    <input className="inv-input" value={clientName} onChange={e => setClientName(e.target.value)} placeholder="Client Name" />
+                  </div>
+                  {currentClient && (
+                    <div className="inv-field-block">
+                      <label className="inv-label">Client Address</label>
                       <div className="inv-client-preview">
-                        <div className="inv-client-name">{currentClient.name}</div>
                         <div className="inv-client-addr">{currentClient.address}</div>
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
                 <div className="inv-details-right">
                   <div className="inv-meta-grid">
@@ -1236,7 +1268,7 @@ export default function Invoice() {
             {showProjPanel && (
               <div className="inv-card-body">
                 <div className="inv-proj-filters">
-                  {[["Project", projectChoices, filterProject, setFilterProject], ["Process", PROCESS_OPTIONS, filterProcess, setFilterProcess], ["Complexity", COMPLEXITY_OPTIONS, filterComplexity, setFilterComplexity], ["File Status", FILE_STATUS_OPTIONS, filterFileStatus, setFilterFileStatus]].map(([lbl, opts, val, set]) => (
+                  {[["Project", projectChoices, filterProject, setFilterProject], ["Task Name", ["All Task Names", ...workflows.map(w => w.name)], filterWorkflow, setFilterWorkflow], ["Complexity", COMPLEXITY_OPTIONS, filterComplexity, setFilterComplexity], ["File Status", FILE_STATUS_OPTIONS, filterFileStatus, setFilterFileStatus]].map(([lbl, opts, val, set]) => (
                     <div key={lbl} className="inv-field-block">
                       <label className="inv-label">{lbl}</label>
                       <select className="inv-select" value={val} onChange={e => set(e.target.value)}>
@@ -1248,7 +1280,7 @@ export default function Invoice() {
                   <div className="inv-field-block"><label className="inv-label">End To</label><input type="date" className="inv-input" value={filterEndDate} onChange={e => setFilterEndDate(e.target.value)} /></div>
                   <div className="inv-field-block inv-field-block--btn">
                     <label className="inv-label">&nbsp;</label>
-                    <button className="inv-btn inv-btn--outline inv-btn--sm" onClick={() => { setFilterProject("All Projects"); setFilterProcess("All Processes"); setFilterStartDate(""); setFilterEndDate(""); setFilterComplexity("All"); setFilterFileStatus("All"); }}>✕ Clear</button>
+                    <button className="inv-btn inv-btn--outline inv-btn--sm" onClick={() => { setFilterProject("All Projects"); setFilterWorkflow("All Task Names"); setFilterStartDate(""); setFilterEndDate(""); setFilterComplexity("All"); setFilterFileStatus("All"); }}>✕ Clear</button>
                   </div>
                 </div>
                 <div className="inv-proj-table-wrap">
@@ -1258,7 +1290,7 @@ export default function Invoice() {
                     <table className="inv-proj-table">
                       <thead><tr>
                         <th style={{ textAlign: "center" }}><input type="checkbox" checked={selectedDPIds.size === filteredDPs.length && filteredDPs.length > 0} onChange={selectAllDPs} /></th>
-                        <th>PROJECT</th><th>WORKFLOW</th><th>PROCESS</th><th>JOB ID</th><th>TITLE</th>
+                        <th>PROJECT</th><th>TASK NAME</th><th>PROCESS</th><th>JOB ID</th><th>TITLE</th>
                         <th>PAGES</th><th>RATE/PG</th><th>AMOUNT</th><th>START DATE</th><th>END DATE</th><th>COMPLEXITY</th><th>FILE STATUS</th>
                       </tr></thead>
                       <tbody>
@@ -1509,7 +1541,7 @@ export default function Invoice() {
                                         className="inv-multiselect-option inv-multiselect-option--add"
                                         onMouseDown={async (e) => {
                                           e.preventDefault();
-                                          const name = window.prompt("Enter new workflow name:");
+                                          const name = window.prompt("Enter new Task Name:");
                                           if (name && name.trim()) {
                                             try {
                                               const created = await apiCall("/projects/workflows", "POST", { name: name.trim() });
@@ -1522,7 +1554,7 @@ export default function Invoice() {
                                           }
                                         }}
                                       >
-                                        ➕ + Add New Custom Workflow...
+                                        ➕ + Add New Custom Task Name...
                                       </div>
                                     </div>
                                   )}
@@ -1680,7 +1712,7 @@ export default function Invoice() {
               <div className="inv-totals-left">
                 <div className="inv-amount-words-inline">
                   <span className="inv-amount-words-label">Amount in Words:</span>
-                  <span className="inv-amount-words-value">{grandTotal > 0 ? numberToWords(grandTotal) : "—"}</span>
+                  <span className="inv-amount-words-value">{grandTotal > 0 ? numberToWords(grandTotal) : "—"} /-</span>
                 </div>
               </div>
               <div className="inv-totals-right">
@@ -2091,7 +2123,7 @@ export default function Invoice() {
                       <tr>
                         <td className="inv-doc-meta-lbl" rowSpan={2}><strong>INVOICE TO:</strong></td>
                         <td className="inv-doc-meta-val" rowSpan={2}>
-                          <strong>{currentClient?.name}</strong>
+                          <strong>{clientName}</strong>
                           <small>{currentClient?.address}</small>
                         </td>
                         <td className="inv-doc-meta-lbl-r"><strong>PAN No:</strong></td>
@@ -2114,14 +2146,14 @@ export default function Invoice() {
                     <table className="inv-doc-table" style={{ '--inv-doc-font-size': (4 + enabledOptCols.length) >= 10 ? '7.5px' : (4 + enabledOptCols.length) >= 8 ? '8.5px' : (4 + enabledOptCols.length) >= 6 ? '9.2px' : '10px' }}>
                       <thead>
                         <tr>
-                          <th className="inv-doc-th--sno">S. No</th>
+                          <th className="inv-doc-th--sno">S.No</th>
                           {enabledOptCols.map(c => (
                             <th key={c.key} className={c.key === "orderPages" ? "inv-doc-th--page" : c.key === "ratePage" ? "inv-doc-th--rate" : ""}>
                               {colHeaders[c.key] || c.label}
                             </th>
                           ))}
-                          <th>Amount (₹)</th>
-                          <th className="inv-doc-th--penalty">Penalty (₹)</th>
+                          <th>Amount(₹)</th>
+                          <th className="inv-doc-th--penalty">Penalty(₹)</th>
                           <th>Total Amount</th>
                         </tr>
                       </thead>
@@ -2149,7 +2181,7 @@ export default function Invoice() {
                       <tr>
                         <td className="inv-doc-words-cell" rowSpan={3}>
                           <strong>Amount in Words: </strong>
-                          <span>{grandTotal > 0 ? numberToWords(grandTotal) : "—"}</span>
+                          <span>{grandTotal > 0 ? numberToWords(grandTotal) : "—"} /-</span>
                         </td>
                         <td className="inv-doc-total-label-cell"><strong>TOTAL:</strong></td>
                         <td className="inv-doc-total-val-cell">{fmt(subTotal)}</td>
@@ -2274,3 +2306,4 @@ export default function Invoice() {
     </div>
   );
 }
+

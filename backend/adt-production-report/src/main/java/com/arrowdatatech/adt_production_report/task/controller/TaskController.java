@@ -30,6 +30,8 @@ public class TaskController {
     @PreAuthorize("hasAnyRole('Admin','Manager','Team Leader')")
     public ResponseEntity<ApiResponse<PagedResponse<TaskResponse>>> searchTasks(
             @RequestParam(required = false) UUID projectId,
+            @RequestParam(required = false) UUID clientId,
+            @RequestParam(required = false) UUID workflowId,
             @RequestParam(required = false) UUID processId,
             @RequestParam(required = false) UUID userId,
             @RequestParam(required = false) String status,
@@ -38,7 +40,7 @@ public class TaskController {
             @RequestParam(defaultValue = "25") int size) {
 
         Page<TaskResponse> result = taskService.searchTasks(
-                projectId, processId, userId, status, search, page, size);
+                projectId, clientId, workflowId, processId, userId, status, search, page, size);
 
         PagedResponse<TaskResponse> response = PagedResponse
                 .<TaskResponse>builder()
@@ -135,3 +137,5 @@ public class TaskController {
                         Map.of("removedCount", removed)));
     }
 }
+
+

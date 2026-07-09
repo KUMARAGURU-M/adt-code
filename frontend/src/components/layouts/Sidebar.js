@@ -63,13 +63,13 @@ const Sidebar = ({ isMobileOpen, onCloseMobile }) => {
         'DASHBOARD',
         'WORKWISE',
         'DIGICONVERTOR',
-        'BOOKS/JOB',
+        'BOOK/JOB',
         'PRODUCTION',
-        'TASKS',
-        'PROCESSES',
-        'SHIFTS',
-        'LEAVES',
-        'REPORTS',
+        'TASK',
+        'PROCESS',
+        'SHIFT',
+        'LEAVE',
+        'REPORT',
         'HOURLY GRAPH',
         'TIME LOG'
       ];
@@ -80,10 +80,10 @@ const Sidebar = ({ isMobileOpen, onCloseMobile }) => {
         'DASHBOARD',
         'WORKWISE',
         'DIGICONVERTOR',
-        'BOOKS/JOB',
+        'BOOK/JOB',
         'PRODUCTION',
-        'TASKS',
-        'REPORTS',
+        'TASK',
+        'REPORT',
         'HOURLY GRAPH',
         'TIME LOG'
       ];

@@ -511,6 +511,11 @@ const EditUserModal = ({ user, onClose, onUpdate, shifts }) => {
       <h2 className="modal-title">Edit User</h2>
 
       <div className="form-group">
+        <label className="form-label">ID</label>
+        <input className="form-input" value={user.userCode} disabled style={{ backgroundColor: '#f1f5f9', cursor: 'not-allowed', color: '#64748b' }} />
+      </div>
+
+      <div className="form-group">
         <label className="form-label">Name <span className="req">*</span></label>
         <input className="form-input" value={form.name} onChange={e => set('name', e.target.value)} />
       </div>
@@ -636,6 +641,7 @@ const UserManagement = () => {
       const data = await apiCall('/users');
       const mapped = data.map(u => ({
         id: u.id,
+        userCode: u.userCode,
         initial: u.fullName ? u.fullName.charAt(0).toUpperCase() : '?',
         name: u.fullName,
         email: u.email,
@@ -646,6 +652,21 @@ const UserManagement = () => {
         top: u.isTopPerformer,
         status: u.isActive ? 'Active' : 'Inactive',
       }));
+      const rolePriority = {
+        'admin': 1,
+        'manager': 2,
+        'team leader': 3,
+        'employee': 4,
+        'viewer': 5
+      };
+      mapped.sort((a, b) => {
+        const priorityA = rolePriority[a.role.toLowerCase()] || 99;
+        const priorityB = rolePriority[b.role.toLowerCase()] || 99;
+        if (priorityA !== priorityB) {
+          return priorityA - priorityB;
+        }
+        return (a.userCode || '').localeCompare(b.userCode || '', undefined, { numeric: true, sensitivity: 'base' });
+      });
       setUsers(mapped);
     } catch (err) {
       setError('Failed to load users: ' + err.message);
@@ -787,8 +808,7 @@ const UserManagement = () => {
         permissions: data.permissions
       }));
       const prefix = getRolePrefix(data.roles);
-      const baseUrl = window.location.href.split('#')[0];
-      window.open(`${baseUrl}#/${prefix}/dashboard`, '_blank');
+      window.open(`/#/${prefix}/dashboard`, '_blank');
       close();
     } catch (err) {
       alert('Error impersonating user: ' + err.message);
@@ -880,6 +900,7 @@ const UserManagement = () => {
           <thead>
             <tr>
               <th>Photo</th>
+              <th>ID</th>
               <th className="th-name">Name</th>
               <th>Email</th>
               <th>Phone</th>
@@ -893,7 +914,7 @@ const UserManagement = () => {
           <tbody>
             {users.length === 0 ? (
               <tr>
-                <td colSpan="9" style={{ textAlign: 'center', padding: '40px', color: '#888' }}>
+                <td colSpan="10" style={{ textAlign: 'center', padding: '40px', color: '#888' }}>
                   No users found. Click "+ Add User" to create one.
                 </td>
               </tr>
@@ -901,6 +922,9 @@ const UserManagement = () => {
               <tr key={user.id}>
                 <td>
                   <div className="avatar-circle">{user.initial}</div>
+                </td>
+                <td className="user-code-col">
+                  <strong>{user.userCode}</strong>
                 </td>
                 <td className="td-name col-left">{user.name}</td>
                 <td>{user.email}</td>

@@ -30,6 +30,7 @@ public class JobController {
     public ResponseEntity<ApiResponse<PagedResponse<JobResponse>>> searchJobs(
             @RequestParam(required = false) UUID projectId,
             @RequestParam(required = false) UUID clientId,
+            @RequestParam(required = false) UUID workflowId,
             @RequestParam(required = false) String jobIdCode,
             @RequestParam(required = false) String xmlIsbn,
             @RequestParam(required = false)
@@ -46,7 +47,7 @@ public class JobController {
             @RequestParam(defaultValue = "50") int size) {
 
         Page<JobResponse> result = jobService.searchJobs(
-                projectId, clientId, jobIdCode, xmlIsbn,
+                projectId, clientId, workflowId, jobIdCode, xmlIsbn,
                 startMonthFrom, startMonthTo,
                 status, billingStatus, complexity, fileStatus,
                 page, size);
@@ -162,6 +163,10 @@ public class JobController {
     @PreAuthorize("hasAnyRole('Admin','Manager','Team Leader')")
     public ResponseEntity<ApiResponse<PagedResponse<JobResponse>>> searchProductionJobs(
             @RequestParam(required = false) UUID projectId,
+            @RequestParam(required = false) UUID clientId,
+            @RequestParam(required = false) UUID workflowId,
+            @RequestParam(required = false) String jobIdCode,
+            @RequestParam(required = false) String complexity,
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
             LocalDate startDate,
@@ -172,7 +177,8 @@ public class JobController {
             @RequestParam(defaultValue = "50") int size) {
 
         Page<JobResponse> result = jobService.searchProductionJobs(
-                projectId, startDate, endDate, page, size);
+                projectId, clientId, workflowId, jobIdCode, complexity,
+                startDate, endDate, page, size);
 
         PagedResponse<JobResponse> response = PagedResponse
                 .<JobResponse>builder()

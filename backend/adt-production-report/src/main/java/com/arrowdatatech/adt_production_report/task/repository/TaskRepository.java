@@ -19,9 +19,13 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
     // ─────────────────────────────────────────────────────────────
     @Query("""
             SELECT DISTINCT t FROM Task t
-            LEFT JOIN t.project p
-            LEFT JOIN t.process proc
+            LEFT JOIN FETCH t.project p
+            LEFT JOIN FETCH p.client c
+            LEFT JOIN FETCH p.workflow w
+            LEFT JOIN FETCH t.process proc
             WHERE (:projectId IS NULL OR p.id = :projectId)
+            AND   (:clientId IS NULL OR c.id = :clientId)
+            AND   (:workflowId IS NULL OR w.id = :workflowId)
             AND   (:processId IS NULL OR proc.id = :processId)
             AND   (:status    IS NULL OR t.status = :status)
             AND   (:search IS NULL OR :search = ''
@@ -29,14 +33,16 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
             AND   (:userId IS NULL OR EXISTS (
                       SELECT tea FROM TaskEmployeeAssignment tea
                       WHERE tea.task = t AND tea.user.id = :userId))
-            ORDER BY t.createdAt DESC
+            ORDER BY t.assignedDate DESC, t.createdAt DESC
             """)
     Page<Task> searchTasks(
-            @Param("projectId") UUID projectId,
-            @Param("processId") UUID processId,
-            @Param("userId")    UUID userId,
-            @Param("status")    String status,
-            @Param("search")    String search,
+            @Param("projectId")  UUID projectId,
+            @Param("clientId")   UUID clientId,
+            @Param("workflowId") UUID workflowId,
+            @Param("processId")  UUID processId,
+            @Param("userId")     UUID userId,
+            @Param("status")     String status,
+            @Param("search")     String search,
             Pageable pageable
     );
 

@@ -27,6 +27,7 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
             SELECT j FROM Job j
             WHERE (:projectId IS NULL OR j.project.id = :projectId)
             AND (:clientId IS NULL OR j.project.client.id = :clientId)
+            AND (:workflowId IS NULL OR j.workflow.id = :workflowId)
             AND (:jobIdCode IS NULL OR LOWER(j.jobIdCode)
                 LIKE LOWER(CONCAT('%', CAST(:jobIdCode AS string), '%')))
             AND (:xmlIsbn IS NULL OR LOWER(j.xmlIsbn)
@@ -37,11 +38,12 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
             AND (:billingStatus IS NULL OR j.billingStatus = :billingStatus)
             AND (:complexity IS NULL OR j.complexity = :complexity)
             AND (:fileStatus IS NULL OR j.fileStatus = :fileStatus)
-            ORDER BY j.receiveDate DESC
+            ORDER BY j.receiveDate DESC NULLS LAST, j.jobIdCode ASC
             """)
     Page<Job> searchJobs(
             @Param("projectId")     UUID projectId,
             @Param("clientId")      UUID clientId,
+            @Param("workflowId")    UUID workflowId,
             @Param("jobIdCode")     String jobIdCode,
             @Param("xmlIsbn")       String xmlIsbn,
             @Param("startMonthFrom") LocalDate startMonthFrom,
@@ -65,19 +67,32 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
     @Query("""
             SELECT DISTINCT j FROM Job j
             WHERE (:projectId IS NULL OR j.project.id = :projectId)
-            AND (:startDate IS NULL OR (
+            AND (:clientId IS NULL OR j.project.client.id = :clientId)
+            AND (:workflowId IS NULL OR j.workflow.id = :workflowId)
+            AND (:jobIdCode IS NULL OR LOWER(j.jobIdCode) LIKE LOWER(CONCAT('%', CAST(:jobIdCode AS string), '%')))
+            AND (:complexity IS NULL OR j.complexity = :complexity)
+            AND (CAST(:startDate AS date) IS NULL OR (
                 SELECT MIN(t2.assignedDate)
                 FROM TaskJobAssignment tja2
                 JOIN tja2.task t2
                 WHERE tja2.job = j
             ) >= :startDate)
-            AND (:endDate IS NULL OR j.endDate <= :endDate)
-            ORDER BY j.receiveDate DESC
+            AND (CAST(:endDate AS date) IS NULL OR (
+                SELECT MIN(t2.assignedDate)
+                FROM TaskJobAssignment tja2
+                JOIN tja2.task t2
+                WHERE tja2.job = j
+            ) <= :endDate)
+            ORDER BY j.receiveDate DESC NULLS LAST, j.jobIdCode ASC
             """)
     Page<Job> searchProductionJobs(
-            @Param("projectId") UUID projectId,
-            @Param("startDate") LocalDate startDate,
-            @Param("endDate") LocalDate endDate,
+            @Param("projectId")  UUID projectId,
+            @Param("clientId")   UUID clientId,
+            @Param("workflowId") UUID workflowId,
+            @Param("jobIdCode")  String jobIdCode,
+            @Param("complexity") String complexity,
+            @Param("startDate")  LocalDate startDate,
+            @Param("endDate")    LocalDate endDate,
             Pageable pageable
     );
 }

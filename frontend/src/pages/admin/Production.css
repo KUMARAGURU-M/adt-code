@@ -35,18 +35,20 @@
 .bj-page-title {
   display: flex;
   align-items: center;
-  gap: 10px;
+  /* gap: 10px; */
   margin-top: 20px;
   margin-bottom: 20px;
 }
 
 
 .bj-page-title-img-icon {
-  width: 28px;
-  height: 28px;
+  width: 70px;
+  height: 70px;
   object-fit: contain;
   border-radius: 4px;
   display: block;
+  /* mix-blend-mode: multiply; */
+  background: transparent;
 }
 
 .bj-page-title h2 {
@@ -280,7 +282,52 @@
 }
 
 .employees-col {
-  min-width: 180px;
+  min-width: 250px;
+  max-width: 300px;
+}
+
+/* Icon wrapper around the employee input */
+.employee-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: #eef2ff;
+  /* light indigo tint */
+  border: 1.5px solid #a5b4fc;
+  /* indigo-300 */
+  border-radius: 8px;
+  padding: 0 8px 0 32px;
+  border-left: 3px solid #6366f1;
+  /* indigo left accent */
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  overflow: hidden;
+}
+
+.employee-input-wrapper::before {
+  content: '👤';
+  position: absolute;
+  left: 9px;
+  font-size: 0.82rem;
+  pointer-events: none;
+  opacity: 0.75;
+  line-height: 1;
+  filter: hue-rotate(210deg);
+  /* gives the icon a cool-blue tint */
+}
+
+.employee-input-wrapper:focus-within {
+  border-color: #6366f1;
+  border-left-color: #4f46e5;
+  background: #f5f3ff;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
+}
+
+.employee-input-wrapper.is-disabled {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+  border-left-color: #cbd5e1;
+  opacity: 0.65;
+  cursor: not-allowed;
 }
 
 .emp-names-list {
@@ -345,22 +392,42 @@
 
 .inline-date-input,
 .inline-employee-input {
-  padding: 6px 10px;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  font-size: 0.8rem;
-  font-family: inherit;
-  color: #334155;
-  background-color: #ffffff;
+  padding: 7px 4px;
+  border: none;
+  background: transparent;
   outline: none;
   width: 100%;
   box-sizing: border-box;
+  font-size: 0.78rem;
+  font-family: inherit;
+  color: #4f46e5;
+  /* indigo-600 — employee text color */
+  font-weight: 500;
+  cursor: text;
+  letter-spacing: 0.01em;
 }
 
-.inline-date-input:focus,
-.inline-employee-input:focus {
-  border-color: #3b82f6;
+.inline-employee-input::placeholder {
+  color: #94a3b8;
+  font-style: italic;
+  font-size: 0.75rem;
+}
+
+.inline-employee-input:disabled {
+  cursor: not-allowed;
+  color: #94a3b8;
+}
+
+.inline-date-input {
+  padding: 6px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
   background-color: #ffffff;
+}
+
+.inline-date-input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
 }
 
 /* Status Pill Colors */

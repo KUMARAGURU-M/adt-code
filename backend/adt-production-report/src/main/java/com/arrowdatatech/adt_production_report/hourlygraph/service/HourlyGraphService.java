@@ -194,6 +194,8 @@ public class HourlyGraphService {
     public void saveDailyLogs(LocalDate date, SaveHourlyLogsRequest request) {
         UUID currentUserId = SecurityUtils.getCurrentUserId();
         boolean isAdmin = SecurityUtils.isAdmin();
+        boolean isManagerOrTL = SecurityUtils.hasRole("Manager") || SecurityUtils.hasRole("Team Leader");
+        boolean canEditOthers = isAdmin || isManagerOrTL;
 
         for (EmployeeRowDto row : request.getRows()) {
             if (row.getUserId() == null) {
@@ -201,8 +203,8 @@ public class HourlyGraphService {
             }
 
             // Employee row edit limit enforcement:
-            // Non-admin users can ONLY modify their own row.
-            if (!isAdmin && !row.getUserId().equals(currentUserId)) {
+            // Non-privileged users can ONLY modify their own row.
+            if (!canEditOthers && !row.getUserId().equals(currentUserId)) {
                 log.warn("User {} attempted to modify hourly log for user {}", currentUserId, row.getUserId());
                 // Skip or throw error. The requirement: "we need limit access to access other user row also".
                 // We will throw UnauthorizedException.
@@ -213,8 +215,8 @@ public class HourlyGraphService {
             Optional<HourlyProductionLog> existingLogOpt = logRepository.findByDateAndUserId(date, row.getUserId());
 
             // Timing constraint checks:
-            // Applicable only for non-admin users.
-            if (!isAdmin) {
+            // Applicable only for non-privileged users.
+            if (!canEditOthers) {
                 // Cannot update logs for past/future days
                 if (!date.equals(LocalDate.now())) {
                     throw new BadRequestException("You can only update hourly logs for the current date.");

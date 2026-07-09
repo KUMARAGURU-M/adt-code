@@ -58,6 +58,9 @@ public class Task extends BaseEntity {
     @Column(name = "assigned_pages")
     private Integer assignedPages;
 
+    @Column(name = "assigned_pages_str", length = 100)
+    private String assignedPagesStr;
+
     // THE FIX: Added the missing totalPages property required by the Service
     @Column(name = "total_pages")
     private Integer totalPages;

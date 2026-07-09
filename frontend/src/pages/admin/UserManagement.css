@@ -20,7 +20,9 @@
   gap: 10px;
 }
 
-.mgmt-icon { font-size: 22px; }
+.mgmt-icon {
+  font-size: 22px;
+}
 
 .mgmt-header h2 {
   margin: 0;
@@ -40,7 +42,10 @@
   cursor: pointer;
   transition: opacity 0.2s;
 }
-.add-user-btn:hover { opacity: 0.88; }
+
+.add-user-btn:hover {
+  opacity: 0.88;
+}
 
 .table-wrapper {
   background: white;
@@ -80,10 +85,28 @@
 .user-table th.th-name,
 .user-table td.td-name {
   text-align: left;
+  padding-left: 45px !important;
 }
 
-.user-table tbody tr:last-child td { border-bottom: none; }
-.user-table tbody tr:hover { background-color: #f8fafc; }
+.user-table th.th-role,
+.user-table td.td-role {
+  text-align: center !important;
+}
+
+.user-table td.user-code-col {
+  font-family: monospace;
+  font-weight: 700;
+  color: #1e3a8a;
+  font-size: 0.9rem;
+}
+
+.user-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.user-table tbody tr:hover {
+  background-color: #f8fafc;
+}
 
 .avatar-circle {
   width: 34px;
@@ -106,17 +129,45 @@
   font-weight: 600;
   text-transform: capitalize;
 }
-.role-badge.employee    { background: #e0e7ff; color: #4338ca; }
-.role-badge.manager     { background: #dcfce7; color: #15803d; }
-.role-badge.admin       { background: #fee2e2; color: #b91c1c; }
-.role-badge.team-leader { background: #f3e8ff; color: #6b21a8; }
-.role-badge.viewer      { background: #f1f5f9; color: #475569; }
+
+.role-badge.employee {
+  background: #e0e7ff;
+  color: #4338ca;
+}
+
+.role-badge.manager {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.role-badge.admin {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.role-badge.team-leader {
+  background: #f3e8ff;
+  color: #6b21a8;
+}
+
+.role-badge.viewer {
+  background: #f1f5f9;
+  color: #475569;
+}
+
 .status-badge {
   font-weight: 600;
   text-transform: capitalize;
 }
-.status-badge.active   { color: #38a169; text-transform: uppercase; }
-.status-badge.inactive { color: #e53e3e; }
+
+.status-badge.active {
+  color: #38a169;
+  text-transform: uppercase;
+}
+
+.status-badge.inactive {
+  color: #e53e3e;
+}
 
 .top-performer {
   background: #fef3c7;
@@ -140,10 +191,12 @@
   min-width: 160px;
   transition: background 0.15s, border-color 0.15s;
 }
+
 .action-dropdown:hover {
   background: #f1f5f9;
   border-color: #cbd5e0;
 }
+
 .action-dropdown:focus {
   background: #f1f5f9;
   border-color: #00a3ff;
@@ -178,8 +231,15 @@
 }
 
 @keyframes modal-in {
-  from { opacity: 0; transform: scale(0.95) translateY(10px); }
-  to   { opacity: 1; transform: scale(1)    translateY(0); }
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 .modal-title {
@@ -214,7 +274,10 @@
   cursor: pointer;
   transition: background 0.18s;
 }
-.btn-cancel:hover { background: #e2e8f0; }
+
+.btn-cancel:hover {
+  background: #e2e8f0;
+}
 
 .btn-primary-modal {
   background: #00a3ff;
@@ -227,7 +290,10 @@
   cursor: pointer;
   transition: opacity 0.18s;
 }
-.btn-primary-modal:hover { opacity: 0.88; }
+
+.btn-primary-modal:hover {
+  opacity: 0.88;
+}
 
 .btn-danger-modal {
   background: #ef4444;
@@ -240,7 +306,10 @@
   cursor: pointer;
   transition: opacity 0.18s;
 }
-.btn-danger-modal:hover { opacity: 0.88; }
+
+.btn-danger-modal:hover {
+  opacity: 0.88;
+}
 
 /* ══════════════════════════════════════════════
    ASSIGN PROJECTS & PROCESSES MODAL
@@ -269,7 +338,9 @@
   color: #2d3748;
 }
 
-.assign-col-icon { font-size: 1rem; }
+.assign-col-icon {
+  font-size: 1rem;
+}
 
 .assign-list {
   max-height: 240px;
@@ -288,8 +359,16 @@
   border-radius: 4px;
   transition: background 0.15s;
 }
-.assign-check:hover { background: #f1f5f9; }
-.assign-check input { cursor: pointer; accent-color: #00a3ff; }
+
+.assign-check:hover {
+  background: #f1f5f9;
+}
+
+.assign-check input {
+  cursor: pointer;
+  accent-color: #00a3ff;
+}
+
 .assign-check.select-all {
   font-weight: 700;
   color: #2d3748;
@@ -324,7 +403,9 @@
   margin-bottom: 6px;
 }
 
-.req { color: #e53e3e; }
+.req {
+  color: #e53e3e;
+}
 
 .form-input {
   width: 100%;
@@ -337,7 +418,10 @@
   transition: border-color 0.18s;
   box-sizing: border-box;
 }
-.form-input:focus  { border-color: #00a3ff; }
+
+.form-input:focus {
+  border-color: #00a3ff;
+}
 
 .form-select {
   width: 100%;
@@ -352,7 +436,10 @@
   transition: border-color 0.18s;
   box-sizing: border-box;
 }
-.form-select:focus { border-color: #00a3ff; }
+
+.form-select:focus {
+  border-color: #00a3ff;
+}
 
 .form-hint {
   margin: 5px 0 0;
@@ -368,7 +455,9 @@
   font-weight: 600;
 }
 
-.file-input { cursor: pointer; }
+.file-input {
+  cursor: pointer;
+}
 
 .form-check-group {
   margin-bottom: 14px;
@@ -383,7 +472,11 @@
   color: #2d3748;
   cursor: pointer;
 }
-.check-label input { accent-color: #00a3ff; cursor: pointer; }
+
+.check-label input {
+  accent-color: #00a3ff;
+  cursor: pointer;
+}
 
 /* ══════════════════════════════════════════════
    IMPERSONATE / RESET PASSWORD MODAL
@@ -409,10 +502,12 @@
   border: 1px solid #e2e8f0;
   border-radius: 8px;
 }
+
 .impersonate-user-card strong {
   font-size: 0.95rem;
   color: #1a202c;
 }
+
 .impersonate-user-card span {
   font-size: 0.80rem;
   color: #718096;
@@ -449,12 +544,24 @@
 }
 
 /* ── Assign list scrollbar ── */
-.assign-list::-webkit-scrollbar { width: 4px; }
-.assign-list::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 4px; }
+.assign-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.assign-list::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 4px;
+}
 
 /* ── Modal scrollbar ── */
-.modal-box::-webkit-scrollbar { width: 5px; }
-.modal-box::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 6px; }
+.modal-box::-webkit-scrollbar {
+  width: 5px;
+}
+
+.modal-box::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 6px;
+}
 
 /* ══════════════════════════════════════════════
    ADD USER MODAL — form rows side by side

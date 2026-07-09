@@ -52,7 +52,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/users", "/api/users/**").hasAnyRole("Admin", "Manager", "Team Leader")
                 .requestMatchers("/api/users", "/api/users/**").hasAnyRole("Admin", "Manager")
                 .requestMatchers("/api/attendance/summary/**", "/api/invoices/**", "/api/bank-accounts/**", "/api/roles/**", "/api/settings/**").hasRole("Admin")
-                .requestMatchers(HttpMethod.GET, "/api/projects", "/api/projects/**").hasAnyRole("Admin", "Manager", "Team Leader")
+                .requestMatchers(HttpMethod.GET, "/api/projects", "/api/projects/**", "/api/processes", "/api/processes/**", "/api/shifts", "/api/shifts/**").authenticated()
                 .requestMatchers("/api/projects", "/api/projects/**", "/api/processes/**", "/api/shifts/**", "/api/activity-logs/**").hasAnyRole("Admin", "Manager")
                 .requestMatchers("/api/tasks/my-tasks").authenticated()
                 .requestMatchers("/api/tasks/**", "/api/jobs/**", "/api/reports/**").hasAnyRole("Admin", "Manager", "Team Leader")

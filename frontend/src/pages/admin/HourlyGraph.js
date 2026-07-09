@@ -80,8 +80,10 @@ export default function HourlyGraph() {
     const isAdmin = currentUser?.roles?.includes("Admin");
     const isPrivileged = currentUser?.roles?.some(r => r === "Admin" || r === "Manager" || r === "Team Leader");
     const currentUserId = currentUser?.userId;
+    const showTargetGraph = true;
 
     const [periodDate, setPeriodDate] = useState(TODAY);
+    const [selectedUserId, setSelectedUserId] = useState(null);
     const [activeDay, setActiveDay] = useState("");
     const [hourCount, setHourCount] = useState(8);
     const [rows, setRows] = useState([]);
@@ -244,10 +246,21 @@ export default function HourlyGraph() {
         return `hsl(${h}, 65%, 40%)`;
     };
 
+    const targetUserRow = useMemo(() => {
+        let targetUserId = currentUserId;
+        if (isPrivileged && selectedUserId) {
+            targetUserId = selectedUserId;
+        }
+        return rows.find(r => r.userId?.toString().toLowerCase() === targetUserId?.toString().toLowerCase());
+    }, [rows, currentUserId, isPrivileged, selectedUserId]);
+
     const userSummaries = useMemo(() => {
         let baseRows = rows.filter(r => !r.excluded);
-        // Only show the card of the currently logged-in user
-        baseRows = baseRows.filter(r => r.userId?.toString().toLowerCase() === currentUserId?.toString().toLowerCase());
+        let targetUserId = currentUserId;
+        if (isPrivileged && selectedUserId) {
+            targetUserId = selectedUserId;
+        }
+        baseRows = baseRows.filter(r => r.userId?.toString().toLowerCase() === targetUserId?.toString().toLowerCase());
         return baseRows
             .map(r => {
                 const processesMap = {};
@@ -272,7 +285,7 @@ export default function HourlyGraph() {
                 };
             })
             .filter(s => s.hasWork);
-    }, [rows, currentUserId]);
+    }, [rows, currentUserId, isPrivileged, selectedUserId]);
 
     // ── Hourly edit timing helper (employees can only edit during active window) ──
     const isHourActive = (hourIdx, shiftName, checkInTimeStr) => {
@@ -303,7 +316,7 @@ export default function HourlyGraph() {
     };
 
     const canEditHour = (row, hIdx) => {
-        if (isAdmin) return true;
+        if (isPrivileged) return true;
         if (row.userId !== currentUserId) return false;
         return isHourActive(hIdx, row.shift, row.inTime);
     };
@@ -321,7 +334,7 @@ export default function HourlyGraph() {
             }
 
             // Save daily logs
-            const filteredToSave = isAdmin ? rows : rows.filter(r => r.userId === currentUserId);
+            const filteredToSave = isPrivileged ? rows : rows.filter(r => r.userId === currentUserId);
             if (filteredToSave.length > 0) {
                 await apiCall("/hourly-graph/logs", "POST", {
                     date: periodDate,
@@ -506,12 +519,8 @@ export default function HourlyGraph() {
     };
 
     const filteredRows = useMemo(() => {
-        let base = rows;
-        if (!isPrivileged) {
-            base = rows.filter(r => r.userId?.toString().toLowerCase() === currentUserId?.toString().toLowerCase());
-        }
-        return base.filter((r) => (search ? r.name.toLowerCase().includes(search.toLowerCase()) : true));
-    }, [rows, isPrivileged, currentUserId, search]);
+        return rows.filter((r) => (search ? r.name.toLowerCase().includes(search.toLowerCase()) : true));
+    }, [rows, search]);
     const totalTargetCols = 2 + columnGroups.reduce((a, g) => a + g.columns.length, 0) + (isAdmin ? 1 : 0);
     const totalEmployeeCols = 6 + hourLabels.length * 2 + (isAdmin ? 1 : 0);
 
@@ -544,45 +553,74 @@ export default function HourlyGraph() {
             </div>
 
             {/* ── Daily Production Target Graph ── */}
-            <div className="hg-target-head">
-                <div className="hg-target-banner">
-                    Arrow Data-Tech Daily Production Target Graph - {monthYearLabel}
+            {showTargetGraph && (
+                <div className="hg-target-head">
+                    <div className="hg-target-banner">
+                        Arrow Data-Tech Daily Production Target Graph - {monthYearLabel}
+                    </div>
                 </div>
-            </div>
+            )}
 
             <div className="hg-target-section-layout">
-                <div className="hg-sheet-card hg-target-card">
-                    <div className="hg-table-container">
-                        <table className="hg-table hg-target-table">
-                            <thead>
-                                <tr>
-                                    <th rowSpan={2} className="th-fixed th-sno">S.No</th>
-                                    <th rowSpan={2} className="th-fixed th-project">Project Name</th>
-                                    {columnGroups.map((group) => (
-                                        <th key={group.key} colSpan={group.columns.length} className={`th-group th-group-${group.tint}`}>
-                                            <div className="hg-group-header">
-                                                <EditableHeader
-                                                    value={group.label}
-                                                    onChange={(v) => updateGroupLabel(group.key, v)}
-                                                    className="hg-group-label"
-                                                    placeholder="Group name"
-                                                    disabled={!isAdmin}
-                                                />
-                                                {isAdmin && columnGroups.length > 1 && (
-                                                    <button
-                                                        className="hg-del-col-btn"
-                                                        onClick={() => removeGroup(group.key)}
-                                                        title={`Remove ${group.label} group`}
-                                                    >
-                                                        ✕
-                                                    </button>
-                                                )}
-                                                {isAdmin && (addingGroup === group.key ? (
+                {showTargetGraph && (
+                    <div className="hg-sheet-card hg-target-card">
+                        <div className="hg-table-container">
+                            <table className="hg-table hg-target-table">
+                                <thead>
+                                    <tr>
+                                        <th rowSpan={2} className="th-fixed th-sno">S.No</th>
+                                        <th rowSpan={2} className="th-fixed th-project">Project Name</th>
+                                        {columnGroups.map((group) => (
+                                            <th key={group.key} colSpan={group.columns.length} className={`th-group th-group-${group.tint}`}>
+                                                <div className="hg-group-header">
+                                                    <EditableHeader
+                                                        value={group.label}
+                                                        onChange={(v) => updateGroupLabel(group.key, v)}
+                                                        className="hg-group-label"
+                                                        placeholder="Group name"
+                                                        disabled={!isAdmin}
+                                                    />
+                                                    {isAdmin && columnGroups.length > 1 && (
+                                                        <button
+                                                            className="hg-del-col-btn"
+                                                            onClick={() => removeGroup(group.key)}
+                                                            title={`Remove ${group.label} group`}
+                                                        >
+                                                            ✕
+                                                        </button>
+                                                    )}
+                                                    {isAdmin && (addingGroup === group.key ? (
+                                                        <span className="hg-add-col-inline" onClick={(e) => e.stopPropagation()}>
+                                                            <input
+                                                                autoFocus
+                                                                className="hg-add-col-input"
+                                                                placeholder="Column name"
+                                                                value={newColName}
+                                                                onChange={(e) => setNewColName(e.target.value)}
+                                                                onKeyDown={(e) => {
+                                                                    if (e.key === "Enter") confirmAddColumn();
+                                                                    if (e.key === "Escape") cancelAddColumn();
+                                                                }}
+                                                            />
+                                                            <button className="hg-add-col-ok" onClick={confirmAddColumn} title="Add">✓</button>
+                                                            <button className="hg-add-col-cancel" onClick={cancelAddColumn} title="Cancel">✕</button>
+                                                        </span>
+                                                    ) : (
+                                                        <button className="hg-add-col-btn" onClick={() => startAddColumn(group.key)} title={`Add column to ${group.label}`}>
+                                                            +
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </th>
+                                        ))}
+                                        {isAdmin && (
+                                            <th rowSpan={2} className="th-add-group">
+                                                {addingGroup === "__new__" ? (
                                                     <span className="hg-add-col-inline" onClick={(e) => e.stopPropagation()}>
                                                         <input
                                                             autoFocus
                                                             className="hg-add-col-input"
-                                                            placeholder="Column name"
+                                                            placeholder="Group name"
                                                             value={newColName}
                                                             onChange={(e) => setNewColName(e.target.value)}
                                                             onKeyDown={(e) => {
@@ -590,146 +628,121 @@ export default function HourlyGraph() {
                                                                 if (e.key === "Escape") cancelAddColumn();
                                                             }}
                                                         />
-                                                        <button className="hg-add-col-ok" onClick={confirmAddColumn} title="Add">✓</button>
+                                                        <button className="hg-add-col-ok" onClick={confirmAddColumn} title="Add group">✓</button>
                                                         <button className="hg-add-col-cancel" onClick={cancelAddColumn} title="Cancel">✕</button>
                                                     </span>
                                                 ) : (
-                                                    <button className="hg-add-col-btn" onClick={() => startAddColumn(group.key)} title={`Add column to ${group.label}`}>
-                                                        +
+                                                    <button className="hg-add-group-btn" onClick={() => startAddColumn("__new__")} title="Add a new column group">
+                                                        + Group
                                                     </button>
-                                                ))}
-                                            </div>
-                                        </th>
-                                    ))}
-                                    {isAdmin && (
-                                        <th rowSpan={2} className="th-add-group">
-                                            {addingGroup === "__new__" ? (
-                                                <span className="hg-add-col-inline" onClick={(e) => e.stopPropagation()}>
-                                                    <input
-                                                        autoFocus
-                                                        className="hg-add-col-input"
-                                                        placeholder="Group name"
-                                                        value={newColName}
-                                                        onChange={(e) => setNewColName(e.target.value)}
-                                                        onKeyDown={(e) => {
-                                                            if (e.key === "Enter") confirmAddColumn();
-                                                            if (e.key === "Escape") cancelAddColumn();
-                                                        }}
-                                                    />
-                                                    <button className="hg-add-col-ok" onClick={confirmAddColumn} title="Add group">✓</button>
-                                                    <button className="hg-add-col-cancel" onClick={cancelAddColumn} title="Cancel">✕</button>
-                                                </span>
-                                            ) : (
-                                                <button className="hg-add-group-btn" onClick={() => startAddColumn("__new__")} title="Add a new column group">
-                                                    + Group
-                                                </button>
-                                            )}
-                                        </th>
-                                    )}
-                                </tr>
-                                <tr>
-                                    {columnGroups.map((group) =>
-                                        group.columns.map((c) => (
-                                            <th key={`${group.key}-${c.id}`} className={`th-group th-group-${group.tint}`}>
-                                                <div className="hg-col-header">
-                                                    <EditableHeader
-                                                        value={c.label}
-                                                        onChange={(v) => updateColumnLabel(group.key, c.id, v)}
-                                                        placeholder="Column name"
-                                                        disabled={!isAdmin}
-                                                    />
-                                                    {isAdmin && (
-                                                        <button
-                                                            className="hg-del-col-btn hg-del-col-btn--sm"
-                                                            onClick={() => removeColumn(group.key, c.id)}
-                                                            title={`Remove ${c.label} column`}
-                                                        >
-                                                            ✕
-                                                        </button>
-                                                    )}
-                                                </div>
+                                                )}
                                             </th>
-                                        ))
-                                    )}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {targetRows.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={totalTargetCols} className="hg-empty">No project targets configured.</td>
+                                        )}
                                     </tr>
-                                ) : (
-                                    targetRows.map((row, idx) => (
-                                        <tr key={row.id} className={`hg-row ${ROW_BANDS[idx % ROW_BANDS.length]}`}>
-                                            <td className="td-sno">
-                                                <span className="hg-sno-num">{idx + 1}</span>
-                                                {isAdmin && (
-                                                    <button className="hg-sno-remove" onClick={() => removeTargetRow(row.id)} title="Remove row">✕</button>
-                                                )}
-                                            </td>
-                                            <td className="td-project">
-                                                {!row.isNew ? (
-                                                    <span style={{ fontWeight: 700, paddingLeft: "5px" }}>{row.project}</span>
-                                                ) : (
-                                                    <select
-                                                        className="hg-cell-select tgt-project-select"
-                                                        value={row.project}
-                                                        onChange={(e) => updateTargetProject(row.id, e.target.value)}
-                                                        disabled={!isAdmin}
-                                                    >
-                                                        <option value="">Select project…</option>
-                                                        {projects.map((p) => {
-                                                            const formatted = p.clientName ? `${p.clientName}_${p.name}` : p.name;
-                                                            return <option key={p.id} value={formatted}>{formatted}</option>;
-                                                        })}
-                                                    </select>
-                                                )}
-                                            </td>
-                                            {columnGroups.map((group) =>
-                                                group.columns.map((c) => (
-                                                    <td key={`${group.key}-${c.id}`}>
-                                                        <input
-                                                            type="number"
-                                                            min="0"
-                                                            className="hg-cell-input hg-cell-input--value"
-                                                            placeholder="-"
-                                                            value={row.values[vk(group.key, c.id)] ?? ""}
-                                                            onChange={(e) => updateTargetValue(row.id, group.key, c.id, e.target.value)}
+                                    <tr>
+                                        {columnGroups.map((group) =>
+                                            group.columns.map((c) => (
+                                                <th key={`${group.key}-${c.id}`} className={`th-group th-group-${group.tint}`}>
+                                                    <div className="hg-col-header">
+                                                        <EditableHeader
+                                                            value={c.label}
+                                                            onChange={(v) => updateColumnLabel(group.key, c.id, v)}
+                                                            placeholder="Column name"
                                                             disabled={!isAdmin}
                                                         />
-                                                    </td>
-                                                ))
-                                            )}
-                                            {isAdmin && <td className="td-add-col-spacer" />}
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                            {isAdmin && (
-                                <tfoot>
-                                    <tr>
-                                        <td colSpan={totalTargetCols} style={{ padding: "6px 8px" }}>
-                                            <div style={{ display: "flex", gap: "10px" }}>
-                                                <button className="hg-add-btn" onClick={addTargetRow}>+ Add Project Row</button>
-                                                <button className="hg-save-btn" onClick={handleSaveTargets}>💾</button>
-                                            </div>
-                                        </td>
+                                                        {isAdmin && (
+                                                            <button
+                                                                className="hg-del-col-btn hg-del-col-btn--sm"
+                                                                onClick={() => removeColumn(group.key, c.id)}
+                                                                title={`Remove ${c.label} column`}
+                                                            >
+                                                                ✕
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </th>
+                                            ))
+                                        )}
                                     </tr>
-                                </tfoot>
-                            )}
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {targetRows.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={totalTargetCols} className="hg-empty">No project targets configured.</td>
+                                        </tr>
+                                    ) : (
+                                        targetRows.map((row, idx) => (
+                                            <tr key={row.id} className={`hg-row ${ROW_BANDS[idx % ROW_BANDS.length]}`}>
+                                                <td className="td-sno">
+                                                    <span className="hg-sno-num">{idx + 1}</span>
+                                                    {isAdmin && (
+                                                        <button className="hg-sno-remove" onClick={() => removeTargetRow(row.id)} title="Remove row">✕</button>
+                                                    )}
+                                                </td>
+                                                <td className="td-project">
+                                                    {!row.isNew ? (
+                                                        <span style={{ fontWeight: 700, paddingLeft: "5px" }}>{row.project}</span>
+                                                    ) : (
+                                                        <select
+                                                            className="hg-cell-select tgt-project-select"
+                                                            value={row.project}
+                                                            onChange={(e) => updateTargetProject(row.id, e.target.value)}
+                                                            disabled={!isAdmin}
+                                                        >
+                                                            <option value="">Select project…</option>
+                                                            {projects.map((p) => {
+                                                                const formatted = p.clientName ? `${p.clientName}_${p.name}` : p.name;
+                                                                return <option key={p.id} value={formatted}>{formatted}</option>;
+                                                            })}
+                                                        </select>
+                                                    )}
+                                                </td>
+                                                {columnGroups.map((group) =>
+                                                    group.columns.map((c) => (
+                                                        <td key={`${group.key}-${c.id}`}>
+                                                            <input
+                                                                type="number"
+                                                                min="0"
+                                                                className="hg-cell-input hg-cell-input--value"
+                                                                placeholder="-"
+                                                                value={row.values[vk(group.key, c.id)] ?? ""}
+                                                                onChange={(e) => updateTargetValue(row.id, group.key, c.id, e.target.value)}
+                                                                disabled={!isAdmin}
+                                                            />
+                                                        </td>
+                                                    ))
+                                                )}
+                                                {isAdmin && <td className="td-add-col-spacer" />}
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                                {isAdmin && (
+                                    <tfoot>
+                                        <tr>
+                                            <td colSpan={totalTargetCols} style={{ padding: "6px 8px" }}>
+                                                <div style={{ display: "flex", gap: "10px" }}>
+                                                    <button className="hg-add-btn" onClick={addTargetRow}>+ Add Project Row</button>
+                                                    <button className="hg-save-btn" onClick={handleSaveTargets}>💾</button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tfoot>
+                                )}
+                            </table>
+                        </div>
                     </div>
-                </div>
+                )}
 
                 {/* ── Daily Productivity Summaries by User ── */}
-                <div className="hg-summary-container">
+                <div className="hg-summary-container" style={!showTargetGraph ? { width: "100%", maxWidth: "100%" } : {}}>
                     <div className="hg-summary-header">
                         <span className="hg-summary-icon">✨</span>
                         <h3>Daily Production Card</h3>
                     </div>
                     <div className="hg-summary-scroll">
                         {userSummaries.length === 0 ? (
-                            <div className="hg-summary-empty">No work recorded for this day.</div>
+                            <div className="hg-summary-empty">No work recorded today for {targetUserRow?.name || "this user"}.</div>
                         ) : (
                             userSummaries.map((summary) => (
                                 <div key={summary.userId || summary.name} className="hg-summary-card">
@@ -825,11 +838,10 @@ export default function HourlyGraph() {
                                 <th className="th-time">IN TIME</th>
                                 <th className="th-time">OUT TIME</th>
                                 <th className="th-project">PROJECT NAME</th>
-                                <th className="th-process" style={{ width: "140px", minWidth: "140px" }}>PROCESS</th>
                                 {hourLabels.map((h, i) => (
                                     <React.Fragment key={i}>
-                                        <th className={`th-${hourAccent(i)}`}>{h} HOUR</th>
                                         <th className={`th-${hourAccent(i)} th-hour-process`}>PROCESS</th>
+                                        <th className={`th-${hourAccent(i)}`}>{h} HOUR</th>
                                     </React.Fragment>
                                 ))}
                                 {isAdmin && (
@@ -849,19 +861,23 @@ export default function HourlyGraph() {
                             ) : (
                                 filteredRows.map((row, idx) => {
                                     const isSelf = row.userId === currentUserId;
-                                    const canEditRow = isAdmin || isSelf;
+                                    const canEditRow = isPrivileged || isSelf;
 
                                     return (
                                         <tr
                                             key={row.id}
-                                            className={`hg-row ${ROW_BANDS[idx % ROW_BANDS.length]}`}
+                                            className={`hg-row ${ROW_BANDS[idx % ROW_BANDS.length]} ${selectedUserId === row.userId ? "hg-row--selected" : ""}`}
                                             style={row.excluded ? { opacity: 0.55, border: "2px dashed rgba(255, 255, 255, 0.4)" } : {}}
                                         >
                                             <td className="td-sno">
                                                 <span className="hg-sno-num">{idx + 1}</span>
                                             </td>
 
-                                            <td className="td-name">
+                                            <td className="td-name" style={{ cursor: isPrivileged ? "pointer" : "default" }} onClick={() => {
+                                                if (isPrivileged) {
+                                                    setSelectedUserId(row.userId === selectedUserId ? null : row.userId);
+                                                }
+                                            }}>
                                                 <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                                                     {isAdmin && row.userId && (
                                                         <button
@@ -924,20 +940,6 @@ export default function HourlyGraph() {
                                                 </select>
                                             </td>
 
-                                            <td>
-                                                <select
-                                                    className="hg-cell-select hg-cell-select--process"
-                                                    value={row.process || ""}
-                                                    onChange={(e) => updateRow(row.id, "process", e.target.value)}
-                                                    disabled={!canEditRow}
-                                                >
-                                                    <option value="">—</option>
-                                                    {processes.map((p) => (
-                                                        <option key={p.id} value={p.name}>{p.name}</option>
-                                                    ))}
-                                                </select>
-                                            </td>
-
                                             {Array.from({ length: hourLabels.length }).map((_, hIdx) => {
                                                 const hData = row.hours?.[hIdx] || { process: "", value: "" };
                                                 const hValue = typeof hData === "object" && hData !== null ? (hData.value || "") : (hData || "");
@@ -946,17 +948,6 @@ export default function HourlyGraph() {
 
                                                 return (
                                                     <React.Fragment key={hIdx}>
-                                                        <td className={`td-${hourAccent(hIdx)}`}>
-                                                            <input
-                                                                type="number"
-                                                                min="0"
-                                                                className="hg-cell-input hg-cell-input--value"
-                                                                placeholder=""
-                                                                value={hValue}
-                                                                onChange={(e) => updateHour(row.id, hIdx, "value", e.target.value)}
-                                                                disabled={!isEditable}
-                                                            />
-                                                        </td>
                                                         <td className={`td-${hourAccent(hIdx)} td-hour-process`}>
                                                             <select
                                                                 className="hg-cell-select hg-cell-select--process"
@@ -969,6 +960,17 @@ export default function HourlyGraph() {
                                                                     <option key={p.id} value={p.name}>{p.name}</option>
                                                                 ))}
                                                             </select>
+                                                        </td>
+                                                        <td className={`td-${hourAccent(hIdx)}`}>
+                                                            <input
+                                                                type="number"
+                                                                min="0"
+                                                                className="hg-cell-input hg-cell-input--value"
+                                                                placeholder=""
+                                                                value={hValue}
+                                                                onChange={(e) => updateHour(row.id, hIdx, "value", e.target.value)}
+                                                                disabled={!isEditable}
+                                                            />
                                                         </td>
                                                     </React.Fragment>
                                                 );

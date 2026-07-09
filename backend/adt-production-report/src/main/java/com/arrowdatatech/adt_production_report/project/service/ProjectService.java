@@ -76,10 +76,13 @@ public class ProjectService {
     public ProjectResponse createProject(CreateProjectRequest request) {
 
         String trimmedName = request.getName() != null ? request.getName().trim() : "";
-        // Validate unique name
-        if (projectRepository.existsByName(trimmedName)) {
+        // Validate unique name per client
+        boolean nameExists = request.getClientId() != null
+                ? projectRepository.existsByNameAndClientId(trimmedName, request.getClientId())
+                : projectRepository.existsByNameAndClientIdIsNull(trimmedName);
+        if (nameExists) {
             throw new BadRequestException(
-                    "Project '" + trimmedName + "' already exists.");
+                    "Project '" + trimmedName + "' already exists for this client.");
         }
 
         // Validate billing type
@@ -138,10 +141,13 @@ public class ProjectService {
                         "Project", "id", id));
 
         String trimmedName = request.getName() != null ? request.getName().trim() : "";
-        // Check name uniqueness among OTHER projects
-        if (projectRepository.existsByNameAndIdNot(trimmedName, id)) {
+        // Check name uniqueness among OTHER projects for this client
+        boolean nameExists = request.getClientId() != null
+                ? projectRepository.existsByNameAndClientIdAndIdNot(trimmedName, request.getClientId(), id)
+                : projectRepository.existsByNameAndClientIdIsNullAndIdNot(trimmedName, id);
+        if (nameExists) {
             throw new BadRequestException(
-                    "Project '" + trimmedName + "' already exists.");
+                    "Project '" + trimmedName + "' already exists for this client.");
         }
 
         // Validate billing type

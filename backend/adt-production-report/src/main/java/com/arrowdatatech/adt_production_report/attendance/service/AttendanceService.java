@@ -8,6 +8,8 @@ import com.arrowdatatech.adt_production_report.attendance.repository.*;
 import com.arrowdatatech.adt_production_report.role.repository.UserRoleAssignmentRepository;
 import com.arrowdatatech.adt_production_report.common.exception.BadRequestException;
 import com.arrowdatatech.adt_production_report.common.exception.ResourceNotFoundException;
+import com.arrowdatatech.adt_production_report.user.repository.UserRepository;
+import com.arrowdatatech.adt_production_report.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -28,6 +30,7 @@ public class AttendanceService {
     private final AttendanceRecordRepository   recordRepository;
     private final AttendanceSalaryDetailRepository salaryRepository;
     private final UserRoleAssignmentRepository roleAssignmentRepository;
+    private final UserRepository userRepository;
 
     // ─────────────────────────────────────────────
     // GET ALL EMPLOYEES (active)
@@ -526,10 +529,20 @@ public class AttendanceService {
         return e.getCategory();
     }
 
+    private String getEmployeeUserCode(AttendanceEmployee e) {
+        if (e.getUserId() != null) {
+            return userRepository.findById(e.getUserId())
+                    .map(User::getUserCode)
+                    .orElse("—");
+        }
+        return "—";
+    }
+
     private AttendanceEmployeeResponse toEmployeeResponse(
             AttendanceEmployee e) {
         return AttendanceEmployeeResponse.builder()
                 .id(e.getId())
+                .userCode(getEmployeeUserCode(e))
                 .name(e.getName())
                 .category(getEmployeeRoleName(e))
                 .gpayNumber(e.getGpayNumber())

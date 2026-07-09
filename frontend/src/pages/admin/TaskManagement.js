@@ -7,69 +7,82 @@ import { apiCall } from "../../utils/api";
 
 // ── Constants ─────────────────────────────────────────────────────
 const ALL_STATUSES = [
-  "FINISH","WIP","YTS","RTU","UPLOADED","PENDING","HOLD","QUERY"
+  "FINISH", "WIP", "YTS", "RTU", "UPLOADED", "PENDING", "HOLD", "QUERY"
 ];
 
 // ── Helpers ───────────────────────────────────────────────────────
 const fmtDue = (d) => {
   if (!d) return "-";
-  const [y, m, day] = d.split("-");
-  return `${day}.${m}.${y}`;
+  try {
+    const parts = d.split("-");
+    if (parts.length < 3) return d;
+    const [y, m, day] = parts;
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const monthIdx = parseInt(m, 10) - 1;
+    const monthName = months[monthIdx] || m;
+    return `${day}-${monthName}-${y}`;
+  } catch {
+    return d;
+  }
 };
 
 const badgeClass = (s) => {
   const lower = s?.toLowerCase() || "";
-  if (["finish","completed","uploaded"].includes(lower))  return "completed";
-  if (["wip","inprogress","rtu"].includes(lower))         return "inprogress";
-  if (["yts","pending"].includes(lower))                  return "pending";
-  if (["hold","query","cancelled"].includes(lower))       return "cancelled";
-  if (lower === "archived")                               return "archived";
+  if (["finish", "completed", "uploaded"].includes(lower)) return "completed";
+  if (["wip", "inprogress", "rtu"].includes(lower)) return "inprogress";
+  if (["yts", "pending"].includes(lower)) return "pending";
+  if (["hold", "query", "cancelled"].includes(lower)) return "cancelled";
+  if (lower === "archived") return "archived";
   return "pending";
 };
 
 // Map backend response → frontend shape
 const mapTask = (t) => ({
-  id:          t.id,
-  title:       t.taskTitle || "",
-  projectId:   t.projectId || null,
-  project:     t.projectName || "",
-  processId:   t.processId || null,
-  processes:   t.processName ? [t.processName] : [],
-  processIds:  t.processId ? [t.processId] : [],
-  jobs:        (t.jobs || []).map(j => ({
-    id:    j.jobId,
+  id: t.id,
+  title: t.taskTitle || "",
+  projectId: t.projectId || null,
+  project: t.projectName || "",
+  clientId: t.clientId || null,
+  client: t.clientName || "",
+  workflowId: t.workflowId || null,
+  workflow: t.workflowName || "",
+  processId: t.processId || null,
+  processes: t.processName ? [t.processName] : [],
+  processIds: t.processId ? [t.processId] : [],
+  jobs: (t.jobs || []).map(j => ({
+    id: j.jobId,
     label: [j.jobIdCode, j.titleName, j.xmlIsbn]
-             .filter(Boolean).join(" / "),
-    isbn:  j.xmlIsbn,
+      .filter(Boolean).join(" / "),
+    isbn: j.xmlIsbn,
     pages: j.pageCount,
     assignedPages: j.assignedPages,
   })),
-  employees:   (t.employees || []).map(e => ({
-    id:       e.userId,
-    name:     e.fullName,
+  employees: (t.employees || []).map(e => ({
+    id: e.userId,
+    name: e.fullName,
     assignedPages: e.assignedPages,
-    status:   e.status,
+    status: e.status,
   })),
-  status:      t.status || "PENDING",
-  date:        t.assignedDate || "",
-  dueDate:     t.dueDate || "",
-  pages:       t.assignedPages?.toString() || "",
-  chapter:     t.chapterArticleBatch || "",
+  status: t.status || "PENDING",
+  date: t.assignedDate || "",
+  dueDate: t.dueDate || "",
+  pages: t.assignedPagesStr || t.assignedPages?.toString() || "",
+  chapter: t.chapterArticleBatch || "",
   estimateHours: t.estimateHours?.toString() || "0.0",
   description: t.description || "",
-  complexity:  t.complexity || "",
-  totalPages:  t.totalPages || "",
-  serverPath:  t.serverPath || "",
-  assignedBy:  t.assignedByName || "",
+  complexity: t.complexity || "",
+  totalPages: t.totalPages || "",
+  serverPath: t.serverPath || "",
+  assignedBy: t.assignedByName || "",
 });
 
 // ── CheckboxList ──────────────────────────────────────────────────
 function CheckboxList({ title, icon, items, selected, onChange,
-                        allowDeselect, labelKey = null, valueKey = null }) {
+  allowDeselect, labelKey = null, valueKey = null }) {
   const getValue = (item) => valueKey ? item[valueKey] : item;
   const getLabel = (item) => labelKey ? item[labelKey] : item;
-  const allSel   = items.length > 0 &&
-                   items.every(i => selected.includes(getValue(i)));
+  const allSel = items.length > 0 &&
+    items.every(i => selected.includes(getValue(i)));
 
   const toggle = (item) => {
     const val = getValue(item);
@@ -90,7 +103,7 @@ function CheckboxList({ title, icon, items, selected, onChange,
             </span>
           )}
         </div>
-        <div style={{ display:"flex", gap:10 }}>
+        <div style={{ display: "flex", gap: 10 }}>
           {allowDeselect && selected.length > 0 && (
             <button className="tm-deselect-btn" onClick={() => onChange([])}>
               Deselect All
@@ -116,7 +129,7 @@ function CheckboxList({ title, icon, items, selected, onChange,
                 checked={selected.includes(val)}
                 onChange={() => toggle(item)}
               />
-              <span style={{ lineHeight:1.3 }}>
+              <span style={{ lineHeight: 1.3 }}>
                 {typeof lbl === "string"
                   ? lbl.replace("\n", " ")
                   : lbl}
@@ -125,7 +138,7 @@ function CheckboxList({ title, icon, items, selected, onChange,
           );
         })}
         {items.length === 0 && (
-          <div style={{ color:"#a0aec0", padding:"8px", fontSize:"0.8rem" }}>
+          <div style={{ color: "#a0aec0", padding: "8px", fontSize: "0.8rem" }}>
             No items available
           </div>
         )}
@@ -143,7 +156,7 @@ const Overlay = ({ onClose, children }) => (
 
 // ── TaskModal ─────────────────────────────────────────────────────
 function TaskModal({ mode, task, onClose, onSave,
-                     projects, processes, employees }) {
+  projects = [], clients = [], workflows = [], processes = [], employees = [] }) {
 
   const emptyForm = {
     title: "", projectId: null, processIds: [],
@@ -154,50 +167,57 @@ function TaskModal({ mode, task, onClose, onSave,
     chapterType: "", chapterStart: "", chapterEnd: "",
     assignedBy: null, totalPages: "", complexity: "",
     serverPath: "",
+    clientId: "",
+    workflowId: "",
   };
 
   const [form, setForm] = useState(() => {
     if (!task) return { ...emptyForm };
+    const proj = projects.find(p => p.id === task.projectId);
     return {
-      title:        task.title,
-      projectId:    task.projectId,
-      processIds:   task.processIds || [],
-      jobIds:       task.jobs.map(j => j.id),
-      employeeIds:  task.employees.map(e => e.id),
-      status:       task.status,
-      date:         task.date,
-      dueDate:      task.dueDate,
+      title: task.title,
+      projectId: task.projectId,
+      processIds: task.processIds || [],
+      jobIds: task.jobs ? task.jobs.map(j => j.id) : [],
+      employeeIds: task.employees ? task.employees.map(e => e.id) : [],
+      status: task.status,
+      date: task.date,
+      dueDate: task.dueDate,
       estimateHours: task.estimateHours,
-      description:  task.description,
-      pagesType:    task.pages === "All Pages"
-                      ? "All Pages"
-                      : task.pages?.includes(" - ")
-                      ? "Start Page - End Page"
-                      : task.pages ? "Start Page - End Page" : "",
-      pagesStart:   task.pages?.includes(" - ")
-                      ? task.pages.split(" - ")[0] : task.pages || "",
-      pagesEnd:     task.pages?.includes(" - ")
-                      ? task.pages.split(" - ")[1] : "",
-      chapterType:  ["Full Book","All Article","All Batch","All Chapter"]
-                      .includes(task.chapter)
-                      ? task.chapter
-                      : task.chapter?.includes(" - ")
-                      ? "Start Page - End Page"
-                      : task.chapter ? "Start Page - End Page" : "",
+      description: task.description,
+      pagesType: task.pages === "All Pages"
+        ? "All Pages"
+        : task.pages?.includes(" - ")
+          ? "Start Page - End Page"
+          : task.pages ? "Start Page - End Page" : "",
+      pagesStart: task.pages?.includes(" - ")
+        ? task.pages.split(" - ")[0] : task.pages || "",
+      pagesEnd: task.pages?.includes(" - ")
+        ? task.pages.split(" - ")[1] : "",
+      chapterType: ["Full Book", "All Article", "All Batch", "All Chapter"]
+        .includes(task.chapter)
+        ? task.chapter
+        : task.chapter?.includes(" - ")
+          ? "Start Page - End Page"
+          : task.chapter ? "Start Page - End Page" : "",
       chapterStart: task.chapter?.includes(" - ")
-                      ? task.chapter.split(" - ")[0] : task.chapter || "",
-      chapterEnd:   task.chapter?.includes(" - ")
-                      ? task.chapter.split(" - ")[1] : "",
-      assignedBy:   null, // will be set by user
-      totalPages:   task.totalPages?.toString() || "",
-      complexity:   task.complexity || "",
-      serverPath:   task.serverPath || "",
+        ? task.chapter.split(" - ")[0] : task.chapter || "",
+      chapterEnd: task.chapter?.includes(" - ")
+        ? task.chapter.split(" - ")[1] : "",
+      assignedBy: null, // will be set by user
+      totalPages: task.totalPages?.toString() || "",
+      complexity: task.complexity || "",
+      serverPath: task.serverPath || "",
+      clientId: proj?.clientId || "",
+      workflowId: proj?.workflowId || "",
     };
   });
 
-  const [errors,         setErrors]         = useState({});
-  const [saving,         setSaving]         = useState(false);
+  const [errors, setErrors] = useState({});
+  const [saving, setSaving] = useState(false);
   const [showComplexity, setShowComplexity] = useState(!!form.complexity);
+
+  const [initialJobIds] = useState(() => task && task.jobs ? task.jobs.map(j => j.id) : []);
 
   // Jobs available for selected project
   const [projectJobs, setProjectJobs] = useState([]);
@@ -205,19 +225,43 @@ function TaskModal({ mode, task, onClose, onSave,
   useEffect(() => {
     if (!form.projectId) { setProjectJobs([]); return; }
     apiCall(`/jobs/by-project/${form.projectId}`)
-      .then(data => setProjectJobs(data.map(j => ({
-        id:    j.id,
-        label: [j.jobIdCode, j.titleName, j.xmlIsbn]
-                 .filter(Boolean).join(" / "),
-        pages: j.pageCount,
-      }))))
+      .then(data => {
+        // Filter jobs based on status: exclude Completed / FINISH, unless already selected
+        const filtered = data.filter(j => {
+          const isSelected = initialJobIds.includes(j.id);
+          const isAvailable = j.status !== "FINISH" && j.status !== "Completed" && j.status !== "Completed / Finish";
+          return isSelected || isAvailable;
+        });
+        setProjectJobs(filtered.map(j => ({
+          id: j.id,
+          label: `${[j.jobIdCode, j.titleName, j.xmlIsbn].filter(Boolean).join(" / ")} (Status: ${j.status || "PENDING"})`,
+          pages: j.pageCount,
+          workflowId: j.workflowId,
+          clientId: j.clientId,
+          status: j.status,
+        })));
+      })
       .catch(() => setProjectJobs([]));
-  }, [form.projectId]);
+  }, [form.projectId, initialJobIds]);
 
   const setF = (k, v) => {
     setForm(p => {
       const next = { ...p, [k]: v };
+      if (k === "clientId") {
+        next.projectId = "";
+        next.workflowId = "";
+        next.jobIds = [];
+        next.totalPages = "";
+        next.pagesType = "";
+        next.pagesStart = "";
+        next.pagesEnd = "";
+      }
       if (k === "projectId") {
+        const proj = projects.find(p => p.id === v);
+        if (proj) {
+          next.clientId = proj.clientId || "";
+          next.workflowId = proj.workflowId || "";
+        }
         next.jobIds = [];
         next.totalPages = "";
         next.pagesType = "";
@@ -248,7 +292,7 @@ function TaskModal({ mode, task, onClose, onSave,
 
   const validate = () => {
     const e = {};
-    if (!form.projectId)       e.projectId   = "Project is required.";
+    if (!form.projectId) e.projectId = "Project is required.";
     if (!form.processIds.length) e.processIds = "Select at least one process.";
     if (!form.employeeIds.length) e.employeeIds = "Select at least one employee.";
     return e;
@@ -261,7 +305,7 @@ function TaskModal({ mode, task, onClose, onSave,
     let finalPages = form.pagesType;
     if (form.pagesType === "Start Page - End Page") {
       finalPages = [form.pagesStart, form.pagesEnd]
-                    .filter(Boolean).join(" - ");
+        .filter(Boolean).join(" - ");
     }
 
     // Calculate the numeric assignedPages to store for tracking
@@ -270,7 +314,7 @@ function TaskModal({ mode, task, onClose, onSave,
       numericAssignedPages = parseInt(form.totalPages) || null;
     } else if (form.pagesType === "Start Page - End Page") {
       const start = parseInt(form.pagesStart) || 0;
-      const end   = parseInt(form.pagesEnd)   || 0;
+      const end = parseInt(form.pagesEnd) || 0;
       if (start > 0 && end >= start) {
         numericAssignedPages = end - start + 1;
       }
@@ -279,26 +323,26 @@ function TaskModal({ mode, task, onClose, onSave,
     let finalChapter = form.chapterType;
     if (form.chapterType === "Start Page - End Page") {
       finalChapter = [form.chapterStart, form.chapterEnd]
-                       .filter(Boolean).join(" - ");
+        .filter(Boolean).join(" - ");
     }
 
     setSaving(true);
     try {
       await onSave({
-        projectId:         form.projectId,
-        processIds:        form.processIds,
-        taskTitle:         form.title || null,
-        description:       form.description || null,
-        status:            form.status,
-        dueDate:           form.dueDate || null,
-        assignedPagesStr:  finalPages || null,
-        assignedPages:     numericAssignedPages,
-        complexity:        showComplexity ? form.complexity : null,
+        projectId: form.projectId,
+        processIds: form.processIds,
+        taskTitle: form.title || null,
+        description: form.description || null,
+        status: form.status,
+        dueDate: form.dueDate || null,
+        assignedPagesStr: finalPages || null,
+        assignedPages: numericAssignedPages,
+        complexity: showComplexity ? form.complexity : null,
         chapterArticleBatch: finalChapter || null,
-        estimateHours:     parseFloat(form.estimateHours) || null,
-        serverPath:        form.serverPath || null,
-        assignedBy:        form.assignedBy || null,
-        totalPages:        parseInt(form.totalPages) || null,
+        estimateHours: parseFloat(form.estimateHours) || null,
+        serverPath: form.serverPath || null,
+        assignedBy: form.assignedBy || null,
+        totalPages: parseInt(form.totalPages) || null,
         jobAssignments: form.jobIds.map(id => ({
           jobId: id, assignedPages: numericAssignedPages
         })),
@@ -314,6 +358,22 @@ function TaskModal({ mode, task, onClose, onSave,
     }
   };
 
+  const filteredJobs = projectJobs.filter(j => {
+    if (form.workflowId && j.workflowId !== form.workflowId) return false;
+    if (form.status) {
+      const taskStatusLower = form.status.toLowerCase();
+      const jobStatusLower = (j.status || "").toLowerCase();
+      const isTaskCompleted = ["finish", "completed", "completed / finish"].includes(taskStatusLower);
+      const isJobCompleted = ["finish", "completed", "completed / finish"].includes(jobStatusLower);
+      if (isTaskCompleted) {
+        if (!isJobCompleted) return false;
+      } else {
+        if (jobStatusLower !== taskStatusLower) return false;
+      }
+    }
+    return true;
+  });
+
   return (
     <Overlay onClose={onClose}>
       <div className="tm-modal">
@@ -321,7 +381,7 @@ function TaskModal({ mode, task, onClose, onSave,
         {/* Header */}
         <div className="tm-modal-header">
           <div className="tm-modal-header-left">
-            <span style={{ fontSize:"1.1rem" }}>✅</span>
+            <span style={{ fontSize: "1.1rem" }}>✅</span>
             <h2 className="tm-modal-title">
               {mode === "add" ? "Add New Task" : "Edit Task"}
             </h2>
@@ -331,7 +391,22 @@ function TaskModal({ mode, task, onClose, onSave,
 
         <div className="tm-modal-body">
 
-          {/* Project */}
+          {/* Client Select */}
+          <div>
+            <div className="tm-field-label">💼 Client</div>
+            <select
+              className="tm-form-select"
+              value={form.clientId || ""}
+              onChange={e => setF("clientId", e.target.value || "")}
+            >
+              <option value="">Select Client</option>
+              {clients.map(c => (
+                <option key={c.id} value={c.id}>{c.companyName}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Project Select */}
           <div>
             <div className="tm-field-label">
               📁 Project <span className="req">*</span>
@@ -340,15 +415,34 @@ function TaskModal({ mode, task, onClose, onSave,
               className={`tm-form-select ${errors.projectId ? "tm-form-input--error" : ""}`}
               value={form.projectId || ""}
               onChange={e => setF("projectId", e.target.value || null)}
+              disabled={!form.clientId}
             >
-              <option value="">Select Publisher</option>
-              {projects.map(p => (
+              <option value="">Select Publisher / Project</option>
+              {(form.clientId
+                ? projects.filter(p => p.clientId === form.clientId)
+                : projects
+              ).map(p => (
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
             </select>
             {errors.projectId && (
               <span className="tm-form-error">{errors.projectId}</span>
             )}
+          </div>
+
+          {/* Workflow Select */}
+          <div>
+            <div className="tm-field-label">⚙️ Task Name</div>
+            <select
+              className="tm-form-select"
+              value={form.workflowId || ""}
+              onChange={e => setF("workflowId", e.target.value || "")}
+            >
+              <option value="">Select Task Name</option>
+              {workflows.map(w => (
+                <option key={w.id} value={w.id}>{w.name}</option>
+              ))}
+            </select>
           </div>
 
           {/* Status & Date */}
@@ -381,7 +475,7 @@ function TaskModal({ mode, task, onClose, onSave,
               <CheckboxList
                 title="Available Jobs"
                 icon="📖"
-                items={projectJobs}
+                items={filteredJobs}
                 selected={form.jobIds}
                 onChange={v => setF("jobIds", v)}
                 allowDeselect
@@ -401,9 +495,9 @@ function TaskModal({ mode, task, onClose, onSave,
                 onChange={e => setF("totalPages", e.target.value)} />
             </div>
             <div>
-              <div style={{ display:"flex", alignItems:"center", height:"24px" }}>
+              <div style={{ display: "flex", alignItems: "center", height: "24px" }}>
                 <label className="tm-checkbox-item"
-                  style={{ borderBottom:"none", padding:0, background:"none" }}>
+                  style={{ borderBottom: "none", padding: 0, background: "none" }}>
                   <input
                     type="checkbox"
                     checked={showComplexity}
@@ -413,13 +507,15 @@ function TaskModal({ mode, task, onClose, onSave,
                       else setF("complexity", "Simple");
                     }}
                   />
-                  <span style={{ fontWeight:600, color:"#4a5568",
-                                 fontSize:"0.82rem" }}>
+                  <span style={{
+                    fontWeight: 600, color: "#4a5568",
+                    fontSize: "0.82rem"
+                  }}>
                     Add Complexity
                   </span>
                 </label>
               </div>
-              <div style={{ marginTop:"5px" }}>
+              <div style={{ marginTop: "5px" }}>
                 {showComplexity ? (
                   <select className="tm-form-select" value={form.complexity}
                     onChange={e => setF("complexity", e.target.value)}>
@@ -430,7 +526,7 @@ function TaskModal({ mode, task, onClose, onSave,
                   </select>
                 ) : (
                   <select className="tm-form-select" disabled
-                    style={{ opacity:0.5, cursor:"not-allowed" }}>
+                    style={{ opacity: 0.5, cursor: "not-allowed" }}>
                     <option>Complexity Not Added</option>
                   </select>
                 )}
@@ -557,7 +653,7 @@ function TaskModal({ mode, task, onClose, onSave,
                 </div>
               )}
               {form.pagesType === "Start Page - End Page" && (
-                <div className="tm-two-col" style={{ marginTop:"8px" }}>
+                <div className="tm-two-col" style={{ marginTop: "8px" }}>
                   <input className="tm-form-input" placeholder="Start"
                     type="number" min="1"
                     value={form.pagesStart}
@@ -572,18 +668,18 @@ function TaskModal({ mode, task, onClose, onSave,
               {form.pagesType === "Start Page - End Page"
                 && form.pagesStart && form.pagesEnd
                 && parseInt(form.pagesEnd) >= parseInt(form.pagesStart) && (
-                <div style={{
-                  marginTop: '6px',
-                  fontSize: '0.78rem',
-                  color: '#1e40af',
-                  background: '#dbeafe',
-                  borderRadius: '6px',
-                  padding: '4px 10px',
-                  fontWeight: 600,
-                }}>
-                  📄 {parseInt(form.pagesEnd) - parseInt(form.pagesStart) + 1} pages assigned
-                </div>
-              )}
+                  <div style={{
+                    marginTop: '6px',
+                    fontSize: '0.78rem',
+                    color: '#1e40af',
+                    background: '#dbeafe',
+                    borderRadius: '6px',
+                    padding: '4px 10px',
+                    fontWeight: 600,
+                  }}>
+                    📄 {parseInt(form.pagesEnd) - parseInt(form.pagesStart) + 1} pages assigned
+                  </div>
+                )}
             </div>
 
             <div>
@@ -600,7 +696,7 @@ function TaskModal({ mode, task, onClose, onSave,
                 </option>
               </select>
               {form.chapterType === "Start Page - End Page" && (
-                <div className="tm-two-col" style={{ marginTop:"8px" }}>
+                <div className="tm-two-col" style={{ marginTop: "8px" }}>
                   <input className="tm-form-input" placeholder="Start"
                     value={form.chapterStart}
                     onChange={e => setF("chapterStart", e.target.value)} />
@@ -642,43 +738,56 @@ function TaskModal({ mode, task, onClose, onSave,
 // ═════════════════════════════════════════════════════════════════
 export default function TaskManagement() {
 
-  const [tasks,    setTasks]    = useState([]);
+  const [tasks, setTasks] = useState([]);
   const [projects, setProjects] = useState([]);
+  const [clients, setClients] = useState([]);
+  const [workflows, setWorkflows] = useState([]);
   const [processes, setProcesses] = useState([]);
   const [employees, setEmployees] = useState([]);
-  const [loading,  setLoading]  = useState(true);
-  const [error,    setError]    = useState("");
-  const [modal,    setModal]    = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [modal, setModal] = useState(null);
   const [showExportDropdown, setShowExportDropdown] = useState(false);
 
   // Filters
-  const [search,         setSearch]         = useState("");
-  const [filterProject,  setFilterProject]  = useState("");
-  const [filterProcess,  setFilterProcess]  = useState("");
+  const [search, setSearch] = useState("");
+  const [filterProject, setFilterProject] = useState("");
+  const [filterClient, setFilterClient] = useState("");
+  const [filterWorkflow, setFilterWorkflow] = useState("");
+  const [filterProcess, setFilterProcess] = useState("");
   const [filterEmployee, setFilterEmployee] = useState("");
-  const [filterStatus,   setFilterStatus]   = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
 
   // Pagination
   const [itemsPerPage, setItemsPerPage] = useState(25);
-  const [currentPage,  setCurrentPage]  = useState(1);
-  const [totalItems,   setTotalItems]   = useState(0);
-  const [totalPages,   setTotalPages]   = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
   const location = useLocation();
 
   // ── Load reference data ─────────────────────────────────────
   const loadDropdowns = useCallback(async () => {
     try {
-      const [proj, proc, emp] = await Promise.all([
+      const [proj, proc, emp, cl, wf] = await Promise.all([
         apiCall("/projects"),
         apiCall("/processes"),
         apiCall("/users"),
+        apiCall("/clients"),
+        apiCall("/projects/workflows"),
       ]);
-      setProjects(proj.map(p => ({ id: p.id, name: p.name })));
+      setProjects(proj.map(p => ({
+        id: p.id,
+        name: p.name,
+        clientId: p.clientId,
+        workflowId: p.workflowId,
+      })));
       setProcesses(proc.map(p => ({ id: p.id, name: p.name })));
       setEmployees(emp.map(e => ({
         id: e.id, fullName: e.fullName
       })));
+      setClients(cl || []);
+      setWorkflows(wf || []);
     } catch (err) {
       console.warn("Could not load dropdowns:", err.message);
     }
@@ -692,11 +801,13 @@ export default function TaskManagement() {
       const query = new URLSearchParams({
         page: pg,
         size: itemsPerPage,
-        ...(params.projectId  && { projectId: params.projectId }),
-        ...(params.processId  && { processId: params.processId }),
+        ...(params.projectId && { projectId: params.projectId }),
+        ...(params.clientId && { clientId: params.clientId }),
+        ...(params.workflowId && { workflowId: params.workflowId }),
+        ...(params.processId && { processId: params.processId }),
         ...(params.employeeId && { userId: params.employeeId }),
-        ...(params.status     && { status: params.status }),
-        ...(params.search     && { search: params.search }),
+        ...(params.status && { status: params.status }),
+        ...(params.search && { search: params.search }),
       });
       const data = await apiCall(`/tasks/search?${query}`);
       setTasks(data.content.map(mapTask));
@@ -710,10 +821,34 @@ export default function TaskManagement() {
     }
   }, [itemsPerPage]);
 
+  // Debounced auto-search when filters change
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      loadTasks(0, {
+        projectId: filterProject,
+        clientId: filterClient,
+        workflowId: filterWorkflow,
+        processId: filterProcess,
+        employeeId: filterEmployee,
+        status: filterStatus,
+        search,
+      });
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [
+    filterProject,
+    filterClient,
+    filterWorkflow,
+    filterProcess,
+    filterEmployee,
+    filterStatus,
+    search,
+    loadTasks
+  ]);
+
   useEffect(() => {
     loadDropdowns();
-    loadTasks(0);
-  }, [loadDropdowns, loadTasks]);
+  }, [loadDropdowns]);
 
   useEffect(() => {
     if (location.state?.openAddTask) {
@@ -726,7 +861,7 @@ export default function TaskManagement() {
   const paginated = tasks; // server already paginated
 
   // ── Scroll sync ─────────────────────────────────────────────
-  const topScrollRef    = React.useRef(null);
+  const topScrollRef = React.useRef(null);
   const bottomScrollRef = React.useRef(null);
 
   useEffect(() => {
@@ -752,18 +887,24 @@ export default function TaskManagement() {
   // ── Search / Clear ──────────────────────────────────────────
   const applySearch = () => {
     loadTasks(0, {
-      projectId:  filterProject,
-      processId:  filterProcess,
+      projectId: filterProject,
+      clientId: filterClient,
+      workflowId: filterWorkflow,
+      processId: filterProcess,
       employeeId: filterEmployee,
-      status:     filterStatus,
+      status: filterStatus,
       search,
     });
   };
 
   const clearFilters = () => {
     setSearch("");
-    setFilterProject(""); setFilterProcess("");
-    setFilterEmployee(""); setFilterStatus("");
+    setFilterProject("");
+    setFilterClient("");
+    setFilterWorkflow("");
+    setFilterProcess("");
+    setFilterEmployee("");
+    setFilterStatus("");
     loadTasks(0);
   };
 
@@ -800,23 +941,25 @@ export default function TaskManagement() {
 
   // ── Exports ─────────────────────────────────────────────────
   const handleExportCSV = () => {
-    const header = ["Assigned Date","Project","Process","Job","Employee",
-                    "Chapter","Page","Due Date","Status","Task Creator","Path"];
+    const header = ["Assigned Date", "Client", "Project", "Task Name", "Process", "Job", "Employee",
+      "Chapter", "Page", "Due Date", "Status", "Task Creator", "Path"];
     const rows = tasks.map(t => [
-      fmtDue(t.date)||"-",
+      fmtDue(t.date) || "-",
+      `"${t.client || "-"}"`,
       `"${t.project}"`,
+      `"${t.workflow || "-"}"`,
       `"${t.processes.join("; ")}"`,
       `"${t.jobs.map(j => j.label).join("; ")}"`,
       `"${t.employees.map(e => e.name).join("; ")}"`,
-      `"${t.chapter||"-"}"`,
-      t.pages||"-",
-      fmtDue(t.dueDate)||"-",
+      `"${t.chapter || "-"}"`,
+      t.pages || "-",
+      fmtDue(t.dueDate) || "-",
       t.status,
-      `"${t.assignedBy||"-"}"`,
-      `"${t.serverPath||"-"}"`
+      `"${t.assignedBy || "-"}"`,
+      `"${t.serverPath || "-"}"`
     ]);
-    const csv = [header,...rows].map(r => r.join(",")).join("\n");
-    const blob = new Blob([csv], { type:"text/csv" });
+    const csv = [header, ...rows].map(r => r.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = "tasks.csv";
@@ -838,22 +981,24 @@ export default function TaskManagement() {
       <h2>Task Management Report</h2>
       <p>${new Date().toLocaleDateString()}</p>
       <table><thead><tr>
-        <th>Date</th><th>Project</th><th>Process</th><th>Job</th>
+        <th>Date</th><th>Client</th><th>Project</th><th>Task Name</th><th>Process</th><th>Job</th>
         <th>Employee</th><th>Chapter</th><th>Page</th>
         <th>Due Date</th><th>Status</th><th>Creator</th><th>Path</th>
       </tr></thead><tbody>
       ${tasks.map(t => `<tr>
-        <td>${fmtDue(t.date)||"-"}</td>
-        <td>${t.project||"-"}</td>
-        <td>${t.processes.join(", ")||"-"}</td>
-        <td>${t.jobs.map(j => j.label).join("; ")||"-"}</td>
-        <td>${t.employees.map(e => e.name).join(", ")||"-"}</td>
-        <td>${t.chapter||"-"}</td>
-        <td>${t.pages||"-"}</td>
-        <td>${fmtDue(t.dueDate)||"-"}</td>
+        <td>${fmtDue(t.date) || "-"}</td>
+        <td>${t.client || "-"}</td>
+        <td>${t.project || "-"}</td>
+        <td>${t.workflow || "-"}</td>
+        <td>${t.processes.join(", ") || "-"}</td>
+        <td>${t.jobs.map(j => j.label).join("; ") || "-"}</td>
+        <td>${t.employees.map(e => e.name).join(", ") || "-"}</td>
+        <td>${t.chapter || "-"}</td>
+        <td>${t.pages || "-"}</td>
+        <td>${fmtDue(t.dueDate) || "-"}</td>
         <td>${t.status}</td>
-        <td>${t.assignedBy||"-"}</td>
-        <td>${t.serverPath||"-"}</td>
+        <td>${t.assignedBy || "-"}</td>
+        <td>${t.serverPath || "-"}</td>
       </tr>`).join("")}
       </tbody></table>
       <script>window.onload=()=>{window.print();window.close()}</script>
@@ -869,7 +1014,7 @@ export default function TaskManagement() {
       {/* ── Header ── */}
       <div className="tm-page-header">
         <div className="tm-page-title">
-          <span style={{ fontSize:22 }}>✅</span>
+          <span style={{ fontSize: 22 }}>✅</span>
           <h1>Task Management</h1>
         </div>
         <div className="tm-header-actions">
@@ -896,7 +1041,7 @@ export default function TaskManagement() {
             )}
           </div>
           <button className="btn-add-task"
-            onClick={() => setModal({ type:"add" })}>
+            onClick={() => setModal({ type: "add" })}>
             + Add Task
           </button>
         </div>
@@ -921,12 +1066,40 @@ export default function TaskManagement() {
           </div>
 
           <div className="tm-filter-group">
+            <span className="tm-filter-label">💼 Client</span>
+            <select className="tm-filter-select" value={filterClient}
+              onChange={e => {
+                setFilterClient(e.target.value);
+                setFilterProject("");
+              }}>
+              <option value="">All Clients</option>
+              {clients.map(c => (
+                <option key={c.id} value={c.id}>{c.companyName}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="tm-filter-group">
             <span className="tm-filter-label">📁 Project</span>
             <select className="tm-filter-select" value={filterProject}
               onChange={e => setFilterProject(e.target.value)}>
               <option value="">All Projects</option>
-              {projects.map(p => (
+              {(filterClient
+                ? projects.filter(p => p.clientId === filterClient)
+                : projects
+              ).map(p => (
                 <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="tm-filter-group">
+            <span className="tm-filter-label">⚙️ Task Name</span>
+            <select className="tm-filter-select" value={filterWorkflow}
+              onChange={e => setFilterWorkflow(e.target.value)}>
+              <option value="">All Task Names</option>
+              {workflows.map(w => (
+                <option key={w.id} value={w.id}>{w.name}</option>
               ))}
             </select>
           </div>
@@ -965,7 +1138,7 @@ export default function TaskManagement() {
           </div>
 
           <div className="tm-filter-group"
-            style={{ justifyContent:"flex-end" }}>
+            style={{ justifyContent: "flex-end" }}>
             <span className="tm-filter-label">&nbsp;</span>
             <button className="btn-search" onClick={applySearch}>
               🔍 Search
@@ -976,11 +1149,11 @@ export default function TaskManagement() {
 
       {/* ── Loading / Error ── */}
       {loading ? (
-        <div style={{ padding:"40px", textAlign:"center", color:"#888" }}>
+        <div style={{ padding: "40px", textAlign: "center", color: "#888" }}>
           Loading tasks...
         </div>
       ) : error ? (
-        <div style={{ padding:"40px", textAlign:"center", color:"red" }}>
+        <div style={{ padding: "40px", textAlign: "center", color: "red" }}>
           {error}
         </div>
       ) : (
@@ -994,7 +1167,9 @@ export default function TaskManagement() {
               <thead>
                 <tr>
                   <th className="col-date">Assigned Date</th>
+                  <th className="col-client">Client</th>
                   <th className="col-project">Project</th>
+                  <th className="col-workflow">Task Name</th>
                   <th className="col-process">Process</th>
                   <th className="col-job">Title / ISBN</th>
                   <th className="col-employee">Employee Name</th>
@@ -1010,8 +1185,8 @@ export default function TaskManagement() {
               <tbody>
                 {paginated.length === 0 ? (
                   <tr>
-                    <td colSpan={12} style={{
-                      textAlign:"center", padding:"48px", color:"#a0aec0"
+                    <td colSpan={14} style={{
+                      textAlign: "center", padding: "48px", color: "#a0aec0"
                     }}>
                       No tasks found.
                     </td>
@@ -1021,8 +1196,14 @@ export default function TaskManagement() {
                     <td className="col-date">
                       {fmtDue(task.date) || "-"}
                     </td>
+                    <td className="col-client">
+                      <span className="cell-client">{task.client || "-"}</span>
+                    </td>
                     <td className="col-project">
                       <span className="cell-project">{task.project}</span>
+                    </td>
+                    <td className="col-workflow">
+                      <span className="cell-workflow">{task.workflow || "-"}</span>
                     </td>
                     <td className="col-process">
                       <span className="cell-process">
@@ -1045,24 +1226,7 @@ export default function TaskManagement() {
                       </span>
                     </td>
                     <td className="col-pages">
-                      {task.pages
-                        ? (() => {
-                            // Compute numeric count from assignedPagesStr
-                            const p = task.pages.toString().trim();
-                            if (p === 'All Pages') {
-                              return task.totalPages
-                                ? `All (${task.totalPages})`
-                                : 'All Pages';
-                            }
-                            if (p.includes(' - ')) {
-                              const [s, e] = p.split(' - ').map(Number);
-                              if (!isNaN(s) && !isNaN(e) && e >= s) {
-                                return `${s}–${e} (${e - s + 1} pg)`;
-                              }
-                            }
-                            return p;
-                          })()
-                        : '-'}
+                      {task.pages || "-"}
                     </td>
                     <td className="col-duedate">
                       {fmtDue(task.dueDate) || "-"}
@@ -1076,18 +1240,20 @@ export default function TaskManagement() {
                       {task.assignedBy || "-"}
                     </td>
                     <td className="col-path"
-                      style={{ fontFamily:"monospace",
-                               fontSize:"11px", wordBreak:"break-all" }}>
+                      style={{
+                        fontFamily: "monospace",
+                        fontSize: "11px", wordBreak: "break-all"
+                      }}>
                       {task.serverPath || "-"}
                     </td>
                     <td className="col-actions">
                       <div className="tm-actions">
                         <button className="tm-action-btn" title="Edit"
-                          onClick={() => setModal({ type:"edit", task })}>
+                          onClick={() => setModal({ type: "edit", task })}>
                           ✏️
                         </button>
                         <button className="tm-action-btn" title="Delete"
-                          onClick={() => setModal({ type:"delete", task })}>
+                          onClick={() => setModal({ type: "delete", task })}>
                           🗑️
                         </button>
                       </div>
@@ -1107,7 +1273,7 @@ export default function TaskManagement() {
                   setItemsPerPage(Number(e.target.value));
                   loadTasks(0);
                 }}>
-                {[10,25,50,100].map(n => (
+                {[10, 25, 50, 100].map(n => (
                   <option key={n} value={n}>{n}</option>
                 ))}
               </select>
@@ -1125,8 +1291,8 @@ export default function TaskManagement() {
                   onClick={() => loadTasks(currentPage)}>›</button>
               </>}
               <span className="page-count">
-                Showing {Math.min((currentPage-1)*itemsPerPage+1, totalItems)}{" "}
-                to {Math.min(currentPage*itemsPerPage, totalItems)}{" "}
+                Showing {Math.min((currentPage - 1) * itemsPerPage + 1, totalItems)}{" "}
+                to {Math.min(currentPage * itemsPerPage, totalItems)}{" "}
                 of {totalItems} items
               </span>
             </div>
@@ -1142,6 +1308,8 @@ export default function TaskManagement() {
           onClose={() => setModal(null)}
           onSave={handleSave}
           projects={projects}
+          clients={clients}
+          workflows={workflows}
           processes={processes}
           employees={employees}
         />
@@ -1166,7 +1334,7 @@ export default function TaskManagement() {
                 This action cannot be undone.
               </p>
             </div>
-            <div className="tm-modal-footer" style={{ justifyContent:"center" }}>
+            <div className="tm-modal-footer" style={{ justifyContent: "center" }}>
               <button className="btn-cancel"
                 onClick={() => setModal(null)}>Cancel</button>
               <button className="btn-danger-modal"

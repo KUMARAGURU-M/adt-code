@@ -72,9 +72,34 @@ public class UserService {
     @Transactional(readOnly = true)
     public List<UserListResponse> getAllUsers() {
         List<User> users = userRepository.findByIsActiveTrueAndDeletedAtIsNull();
-        return users.stream()
+        List<UserListResponse> responses = users.stream()
                 .map(this::toUserListResponse)
                 .collect(Collectors.toList());
+
+        responses.sort((a, b) -> {
+            int pA = getRolePriority(a.getRole());
+            int pB = getRolePriority(b.getRole());
+            if (pA != pB) {
+                return Integer.compare(pA, pB);
+            }
+            String codeA = a.getUserCode() != null ? a.getUserCode() : "";
+            String codeB = b.getUserCode() != null ? b.getUserCode() : "";
+            return codeA.compareToIgnoreCase(codeB);
+        });
+
+        return responses;
+    }
+
+    private int getRolePriority(String role) {
+        if (role == null) return 99;
+        switch (role.trim().toLowerCase()) {
+            case "admin": return 1;
+            case "manager": return 2;
+            case "team leader": return 3;
+            case "employee": return 4;
+            case "viewer": return 5;
+            default: return 99;
+        }
     }
 
     // ─────────────────────────────────────────────
@@ -791,3 +816,9 @@ public class UserService {
 //        return toUserResponse(user);
 //    }
 }
+
+
+
+
+
+

@@ -24,6 +24,7 @@ public class TaskResponse {
     private LocalDate assignedDate;
     private LocalDate dueDate;
     private Integer assignedPages;
+    private String assignedPagesStr;
     private String complexity;
     private String chapterArticleBatch;
     private BigDecimal estimateHours;
@@ -31,6 +32,11 @@ public class TaskResponse {
     private String assignedByName;
     private Integer totalPages;
     private OffsetDateTime createdAt;
+
+    private UUID clientId;
+    private String clientName;
+    private UUID workflowId;
+    private String workflowName;
 
     private List<JobInfo> jobs;
     private List<EmployeeInfo> employees;

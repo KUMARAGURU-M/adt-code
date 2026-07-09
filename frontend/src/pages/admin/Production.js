@@ -7,6 +7,21 @@ const STATUS_OPTIONS = [
   'FINISH', 'WIP', 'YTS', 'RTU', 'UPLOADED', 'PENDING', 'HOLD', 'QUERY'
 ];
 
+const fmtDate = (d) => {
+  if (!d) return '—';
+  try {
+    const date = new Date(d);
+    if (isNaN(date.getTime())) return d;
+    const day = String(date.getDate()).padStart(2, '0');
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const month = months[date.getMonth()];
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  } catch {
+    return d;
+  }
+};
+
 const ComplexityBadge = ({ value }) => {
   if (!value) return <span className="cell-dash">-</span>;
   const complexityKey = value.toLowerCase().replace(/\s+/g, '');
@@ -20,6 +35,8 @@ const ComplexityBadge = ({ value }) => {
 const Production = () => {
   // Lists
   const [projects, setProjects] = useState([]);
+  const [clients, setClients] = useState([]);
+  const [workflows, setWorkflows] = useState([]);
   const [jobs, setJobs] = useState([]);
 
   // Loading & Error States
@@ -28,15 +45,15 @@ const Production = () => {
 
   // Filters State
   const [filters, setFilters] = useState({
+    clientId: '',
     projectId: '',
+    workflowId: '',
+    jobId: '',
+    complexity: '',
     startDate: '',
     endDate: '',
   });
-  const [appliedFilters, setAppliedFilters] = useState({
-    projectId: '',
-    startDate: '',
-    endDate: '',
-  });
+
 
   // Pagination
   const [page, setPage] = useState(0);
@@ -52,19 +69,31 @@ const Production = () => {
   const topScrollRef = React.useRef(null);
   const bottomScrollRef = React.useRef(null);
 
-  // ── Load projects for dropdown ─────────────────────────────────────
-  const loadProjects = useCallback(async () => {
+  // ── Load dropdown reference data ─────────────────────────────────────
+  const loadDropdowns = useCallback(async () => {
     try {
-      const data = await apiCall('/projects');
-      setProjects(data.map(p => ({ id: p.id, name: p.name })) || []);
+      const [proj, cl, wf] = await Promise.all([
+        apiCall('/projects'),
+        apiCall('/clients'),
+        apiCall('/projects/workflows'),
+      ]);
+      setProjects(proj.map(p => ({
+        id: p.id,
+        name: p.name,
+        clientId: p.clientId,
+        clientName: p.clientName,
+        workflowId: p.workflowId,
+        workflowName: p.workflowName,
+      })) || []);
+      setClients(cl || []);
+      setWorkflows(wf || []);
     } catch (err) {
-      console.warn('Could not load projects:', err.message);
+      console.warn('Could not load dropdowns:', err.message);
     }
   }, []);
 
   // ── Load production jobs ──────────────────────────────────────────
-  const loadProductionJobs = useCallback(async (pageNum = 0, filterOverride, size = pageSize) => {
-    const activeFilters = filterOverride !== undefined ? filterOverride : appliedFilters;
+  const loadProductionJobs = useCallback(async (pageNum = 0, size = pageSize) => {
     try {
       setLoading(true);
       setError('');
@@ -72,9 +101,13 @@ const Production = () => {
       const params = new URLSearchParams({
         page: pageNum,
         size: size,
-        ...(activeFilters.projectId && { projectId: activeFilters.projectId }),
-        ...(activeFilters.startDate && { startDate: activeFilters.startDate }),
-        ...(activeFilters.endDate && { endDate: activeFilters.endDate }),
+        ...(filters.clientId && { clientId: filters.clientId }),
+        ...(filters.projectId && { projectId: filters.projectId }),
+        ...(filters.workflowId && { workflowId: filters.workflowId }),
+        ...(filters.jobId && { jobIdCode: filters.jobId }),
+        ...(filters.complexity && { complexity: filters.complexity }),
+        ...(filters.startDate && { startDate: filters.startDate }),
+        ...(filters.endDate && { endDate: filters.endDate }),
       });
 
       const data = await apiCall(`/jobs/production/search?${params}`);
@@ -90,12 +123,21 @@ const Production = () => {
     } finally {
       setLoading(false);
     }
-  }, [appliedFilters, pageSize]);
+  }, [filters, pageSize]);
+
+  // Debounced auto-search when filters change
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      loadProductionJobs(0);
+    }, 300);
+    return () => clearTimeout(handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters, pageSize]);
 
   useEffect(() => {
-    loadProjects();
-    loadProductionJobs(0);
-  }, [loadProjects, loadProductionJobs]);
+    loadDropdowns();
+  }, [loadDropdowns]);
 
   useEffect(() => {
     const topEl = topScrollRef.current;
@@ -124,15 +166,19 @@ const Production = () => {
   // ── Search & Reset Handlers ───────────────────────────────────────
   const handleSearch = (e) => {
     e.preventDefault();
-    setAppliedFilters({ ...filters });
-    loadProductionJobs(0, filters);
+    loadProductionJobs(0);
   };
 
   const handleReset = () => {
-    const cleared = { projectId: '', startDate: '', endDate: '' };
-    setFilters(cleared);
-    setAppliedFilters(cleared);
-    loadProductionJobs(0, cleared);
+    setFilters({
+      clientId: '',
+      projectId: '',
+      workflowId: '',
+      jobId: '',
+      complexity: '',
+      startDate: '',
+      endDate: '',
+    });
   };
 
   // ── Edit Handlers ──────────────────────────────────────────────────
@@ -251,24 +297,98 @@ const Production = () => {
       {/* Filter panel */}
       <form onSubmit={handleSearch} className="production-filter-card">
         <div className="filter-grid">
+          {/* Client Select */}
+          <div className="filter-group">
+            <label htmlFor="clientId">💼 Client</label>
+            <select
+              id="clientId"
+              value={filters.clientId}
+              onChange={e => setFilters(prev => ({
+                ...prev,
+                clientId: e.target.value,
+                projectId: '',
+                workflowId: '',
+              }))}
+            >
+              <option value="">All Client</option>
+              {clients.map(c => (
+                <option key={c.id} value={c.id}>{c.companyName}</option>
+              ))}
+            </select>
+          </div>
+
           {/* Project Select */}
           <div className="filter-group">
-            <label htmlFor="projectId">Publisher / Project</label>
+            <label htmlFor="projectId">📦 Project</label>
             <select
               id="projectId"
               value={filters.projectId}
-              onChange={e => setFilters(prev => ({ ...prev, projectId: e.target.value }))}
+              onChange={e => {
+                const proj = projects.find(p => p.id === e.target.value);
+                setFilters(prev => ({
+                  ...prev,
+                  projectId: e.target.value,
+                  clientId: proj && proj.clientId ? proj.clientId : prev.clientId,
+                  workflowId: proj && proj.workflowId ? proj.workflowId : prev.workflowId,
+                }));
+              }}
             >
               <option value="">All Projects</option>
-              {projects.map(p => (
+              {(filters.clientId
+                ? projects.filter(p => p.clientId === filters.clientId)
+                : projects
+              ).map(p => (
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
             </select>
           </div>
 
+          {/* Workflow Select */}
+          <div className="filter-group">
+            <label htmlFor="workflowId">⚙️ Task Name</label>
+            <select
+              id="workflowId"
+              value={filters.workflowId}
+              onChange={e => setFilters(prev => ({ ...prev, workflowId: e.target.value }))}
+            >
+              <option value="">All Task Names</option>
+              {workflows.map(w => (
+                <option key={w.id} value={w.id}>{w.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Job ID Input */}
+          <div className="filter-group">
+            <label htmlFor="jobId">🆔 Job ID</label>
+            <input
+              type="text"
+              id="jobId"
+              placeholder="e.g. BM0748"
+              value={filters.jobId}
+              onChange={e => setFilters(prev => ({ ...prev, jobId: e.target.value }))}
+            />
+          </div>
+
+          {/* Complexity Select */}
+          <div className="filter-group">
+            <label htmlFor="complexity">Complexity</label>
+            <select
+              id="complexity"
+              value={filters.complexity}
+              onChange={e => setFilters(prev => ({ ...prev, complexity: e.target.value }))}
+            >
+              <option value="">All Complexities</option>
+              <option value="Simple">Simple</option>
+              <option value="Medium">Medium</option>
+              <option value="Complex">Complex</option>
+              <option value="Heavy Complex">Heavy Complex</option>
+            </select>
+          </div>
+
           {/* Start Date */}
           <div className="filter-group">
-            <label htmlFor="startDate">Production Start Date (From)</label>
+            <label htmlFor="startDate">Start Date (From)</label>
             <input
               type="date"
               id="startDate"
@@ -279,7 +399,7 @@ const Production = () => {
 
           {/* End Date */}
           <div className="filter-group">
-            <label htmlFor="endDate">Production End Date (To)</label>
+            <label htmlFor="endDate">End Date (To)</label>
             <input
               type="date"
               id="endDate"
@@ -328,13 +448,15 @@ const Production = () => {
               <table className="production-table">
                 <thead>
                   <tr>
+                    <th>Client</th>
                     <th>Project</th>
+                    <th>Task Name</th>
                     <th>Receive Date</th>
                     <th>Job ID</th>
-                    <th>XML ISBN</th>
-                    <th>Batch</th>
+                    <th>ISBN</th>
+                    <th style={{ minWidth: '120px' }}>Batch</th>
                     <th style={{ minWidth: '150px' }}>Title Name</th>
-                    <th>Page Count</th>
+                    <th>Page</th>
                     <th>PDF Type</th>
                     <th>Complexity</th>
                     <th style={{ minWidth: '180px' }}>Employees Assigned</th>
@@ -342,7 +464,7 @@ const Production = () => {
                     <th style={{ minWidth: '130px' }}>Process Status</th>
                     <th style={{ minWidth: '130px' }}>QC Status</th>
                     <th>End Date</th>
-                    <th className="actions-col">Actions</th>
+                    <th className="actions-col">Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -367,6 +489,15 @@ const Production = () => {
 
                     return (
                       <tr key={job.id} className={isModified ? 'modified-row' : ''}>
+                        <td className="client-name-col" title={job.clientName}>
+                          {job.clientName ? (
+                            <span className="client-badge" style={{ background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', padding: '2px 6px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: 700 }}>
+                              {job.clientName}
+                            </span>
+                          ) : (
+                            '—'
+                          )}
+                        </td>
                         <td className="proj-name-col" title={job.projectName}>
                           {job.projectName ? (
                             <span className={getProjectBadgeClass(job.projectName)}>
@@ -376,8 +507,17 @@ const Production = () => {
                             '—'
                           )}
                         </td>
+                        <td className="workflow-name-col" title={job.workflowName}>
+                          {job.workflowName ? (
+                            <span className="badge badge--workflow" style={{ background: '#e0f2fe', color: '#0369a1', border: '1px solid #bae6fd', padding: '2px 6px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: 700 }}>
+                              {job.workflowName}
+                            </span>
+                          ) : (
+                            '—'
+                          )}
+                        </td>
                         <td className="date-col">
-                          {job.receiveDate || '—'}
+                          {fmtDate(job.receiveDate)}
                         </td>
                         <td className="job-code-col">
                           <strong>{job.jobIdCode}</strong>
@@ -403,19 +543,21 @@ const Production = () => {
                           <ComplexityBadge value={job.complexity} />
                         </td>
                         <td className="employees-col">
-                          <input
-                            type="text"
-                            className="inline-employee-input"
-                            value={currentEmployees}
-                            onChange={e => handleCellChange(job.id, 'employees', e.target.value)}
-                            disabled={isSaving}
-                            placeholder="Add / edit employee names..."
-                          />
+                          <div className={`employee-input-wrapper${isSaving ? ' is-disabled' : ''}`}>
+                            <input
+                              type="text"
+                              className="inline-employee-input"
+                              value={currentEmployees}
+                              onChange={e => handleCellChange(job.id, 'employees', e.target.value)}
+                              disabled={isSaving}
+                              placeholder="Enter employee names..."
+                            />
+                          </div>
                         </td>
                         <td className="date-col">
                           {job.productionStartDate ? (
                             <span className="computed-start-date">
-                              📅 {job.productionStartDate}
+                              📅 {fmtDate(job.productionStartDate)}
                             </span>
                           ) : (
                             <span className="not-started">Not Started</span>
@@ -486,7 +628,7 @@ const Production = () => {
                   onChange={e => {
                     const newSize = Number(e.target.value);
                     setPageSize(newSize);
-                    loadProductionJobs(0, appliedFilters, newSize);
+                    loadProductionJobs(0, newSize);
                   }}
                   style={{
                     padding: '4px 8px',
@@ -531,3 +673,5 @@ const Production = () => {
 };
 
 export default Production;
+
+

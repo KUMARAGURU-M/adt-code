@@ -12,6 +12,7 @@ import com.arrowdatatech.adt_production_report.task.entity.Task;
 import com.arrowdatatech.adt_production_report.task.entity.TaskEmployeeAssignment;
 import com.arrowdatatech.adt_production_report.task.entity.TaskJobAssignment;
 import com.arrowdatatech.adt_production_report.task.repository.TaskJobAssignmentRepository;
+import com.arrowdatatech.adt_production_report.task.repository.TaskRepository;
 import com.arrowdatatech.adt_production_report.user.entity.EmployeeProfile;
 import com.arrowdatatech.adt_production_report.user.entity.User;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,6 +36,9 @@ class JobProductionServiceTest {
 
     @Mock
     private TaskJobAssignmentRepository taskJobAssignmentRepository;
+
+    @Mock
+    private TaskRepository taskRepository;
 
     @InjectMocks
     private JobService jobService;
@@ -65,8 +69,10 @@ class JobProductionServiceTest {
     void testSearchProductionJobs_withCalculatedFields() {
         // Mock repository search response
         Page<Job> jobPage = new PageImpl<>(List.of(testJob));
-        when(jobRepository.searchProductionJobs(eq(testProject.getId()), any(), any(), any()))
+        when(jobRepository.searchProductionJobs(eq(testProject.getId()), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(jobPage);
+        when(taskRepository.findProcessNamesByProjectIds(anyList()))
+                .thenReturn(new ArrayList<>());
 
         // Setup Task & Employee Assignments
         LocalDate taskDate1 = LocalDate.of(2026, 6, 1);
@@ -103,7 +109,7 @@ class JobProductionServiceTest {
 
         // Execute service method
         Page<JobResponse> result = jobService.searchProductionJobs(
-                testProject.getId(), null, null, 0, 10);
+                testProject.getId(), null, null, null, null, null, null, 0, 10);
 
         // Assertions
         assertNotNull(result);
@@ -126,6 +132,8 @@ class JobProductionServiceTest {
     void testUpdateProductionStatus() {
         when(jobRepository.findById(jobId)).thenReturn(Optional.of(testJob));
         when(jobRepository.save(any(Job.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(taskRepository.findProcessNamesByProjectId(any()))
+                .thenReturn(new ArrayList<>());
 
         UpdateProductionRequest request = new UpdateProductionRequest();
         request.setProcessStatus("FINISH");

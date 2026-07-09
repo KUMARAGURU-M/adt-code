@@ -16,6 +16,7 @@ public class MyTaskOption {
     private UUID    processId;
     private String  processName;
     private Integer assignedPages;
+    private String  assignedPagesStr;
     private Integer pagesCompleted;
     private String  dueDate;
     private String  complexity;
@@ -35,3 +36,6 @@ public class MyTaskOption {
         private Integer pageCount;
     }
 }
+
+
+

@@ -202,7 +202,7 @@ const JobForm = ({ form, onChange, projects = [], clients = [], workflows = [] }
 
       {/* Workflow Dropdown */}
       <div className="bj-form-group full">
-        <label>Workflow</label>
+        <label>Task Name</label>
         <select
           value={form.workflowId || ''}
           onChange={e => {
@@ -212,7 +212,7 @@ const JobForm = ({ form, onChange, projects = [], clients = [], workflows = [] }
             onChange('workflowName', wf?.name || '');
           }}
         >
-          <option value="">-- Select Workflow --</option>
+          <option value="">-- Select Task Name --</option>
           {workflows.map(w => (
             <option key={w.id} value={w.id}>{w.name}</option>
           ))}
@@ -827,14 +827,14 @@ const BulkImportModal = ({ onClose, onBulkAdd, projects, clients = [], workflows
             {/* Workflow Select */}
             <div className="bj-form-group" style={{ flex: 1, minWidth: '200px', marginBottom: 0 }}>
               <label style={{ fontWeight: 600, fontSize: '0.85rem', color: '#475569' }}>
-                Workflow <span style={{ color: '#94a3b8', fontWeight: 400 }}>(Optional)</span>
+                Task Name <span style={{ color: '#94a3b8', fontWeight: 400 }}>(Optional)</span>
               </label>
               <select
                 value={selectedWorkflowId || ''}
                 onChange={e => setSelectedWorkflowId(e.target.value)}
                 style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '6px' }}
               >
-                <option value="">-- Select Workflow --</option>
+                <option value="">-- Select Task Name --</option>
                 {workflows.map(w => (
                   <option key={w.id} value={w.id}>{w.name}</option>
                 ))}
@@ -1018,12 +1018,13 @@ const BooksJobs = () => {
 
   // Filter state (un-applied until Search clicked)
   const [filters, setFilters] = useState({
+    clientId: '',
     project: '', projectId: '',
+    workflowId: '',
     isbn: '', startMonth: '', endMonth: '',
     status: '', billing: '',
     jobId: '', complexity: '', fileStatus: '',
   });
-  const [applied, setApplied] = useState({ ...filters });
   const setF = (k, v) => setFilters(p => ({ ...p, [k]: v }));
 
   // Pagination
@@ -1068,8 +1069,7 @@ const BooksJobs = () => {
   }, []);
 
   // ── Load jobs with filters ──────────────────────────────────
-  const loadJobs = useCallback(async (pageNum = 0, filterOverride, size = pageSize) => {
-    const activeFilters = filterOverride !== undefined ? filterOverride : applied;
+  const loadJobs = useCallback(async (pageNum = 0, size = pageSize) => {
     try {
       setLoading(true);
       setError('');
@@ -1077,15 +1077,17 @@ const BooksJobs = () => {
       const params = new URLSearchParams({
         page: pageNum,
         size: size,
-        ...(activeFilters.projectId && { projectId: activeFilters.projectId }),
-        ...(activeFilters.jobId && { jobIdCode: activeFilters.jobId }),
-        ...(activeFilters.isbn && { xmlIsbn: activeFilters.isbn }),
-        ...(activeFilters.startMonth && { startMonthFrom: activeFilters.startMonth }),
-        ...(activeFilters.endMonth && { startMonthTo: activeFilters.endMonth }),
-        ...(activeFilters.status && { status: activeFilters.status }),
-        ...(activeFilters.billing && { billingStatus: activeFilters.billing }),
-        ...(activeFilters.complexity && { complexity: activeFilters.complexity }),
-        ...(activeFilters.fileStatus && { fileStatus: activeFilters.fileStatus }),
+        ...(filters.clientId && { clientId: filters.clientId }),
+        ...(filters.projectId && { projectId: filters.projectId }),
+        ...(filters.workflowId && { workflowId: filters.workflowId }),
+        ...(filters.jobId && { jobIdCode: filters.jobId }),
+        ...(filters.isbn && { xmlIsbn: filters.isbn }),
+        ...(filters.startMonth && { startMonthFrom: filters.startMonth }),
+        ...(filters.endMonth && { startMonthTo: filters.endMonth }),
+        ...(filters.status && { status: filters.status }),
+        ...(filters.billing && { billingStatus: filters.billing }),
+        ...(filters.complexity && { complexity: filters.complexity }),
+        ...(filters.fileStatus && { fileStatus: filters.fileStatus }),
       });
 
       const data = await apiCall(`/jobs/search?${params}`);
@@ -1098,14 +1100,22 @@ const BooksJobs = () => {
     } finally {
       setLoading(false);
     }
-  }, [applied, pageSize]);
+  }, [filters, pageSize]);
+
+  // Debounced auto-search when filters change
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      loadJobs(0);
+    }, 300);
+    return () => clearTimeout(handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters, pageSize]);
 
   useEffect(() => {
     loadProjects();
     loadClients();
     loadWorkflows();
-    loadJobs(0);
-  }, [loadProjects, loadClients, loadWorkflows, loadJobs]);
+  }, [loadProjects, loadClients, loadWorkflows]);
 
   // All filtering is server-side; rows = already filtered page
   const rows = jobs;
@@ -1204,19 +1214,21 @@ const BooksJobs = () => {
 
   // ── Search / Clear ──────────────────────────────────────────
   const handleSearch = () => {
-    setApplied({ ...filters });
-    loadJobs(0, filters);
+    loadJobs(0);
   };
 
   const handleClear = () => {
-    const blank = {
-      project: '', projectId: '', isbn: '',
-      startMonth: '', endMonth: '', status: '',
-      billing: '', jobId: '', complexity: '', fileStatus: '',
-    };
-    setFilters(blank);
-    setApplied(blank);
-    loadJobs(0, blank);
+    setFilters(prev => ({
+      ...prev,
+      clientId: '',
+      project: '', projectId: '',
+      workflowId: '',
+      isbn: '',
+      status: '',
+      billing: '',
+      complexity: '',
+      fileStatus: '',
+    }));
   };
 
   // ── Export ──────────────────────────────────────────────────
@@ -1226,9 +1238,10 @@ const BooksJobs = () => {
       const date = new Date(d);
       if (isNaN(date.getTime())) return d;
       const day = String(date.getDate()).padStart(2, '0');
-      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const month = months[date.getMonth()];
       const year = date.getFullYear();
-      return `${day}/${month}/${year}`;
+      return `${day}-${month}-${year}`;
     } catch {
       return d;
     }
@@ -1249,7 +1262,7 @@ const BooksJobs = () => {
       <h2>Job Management Report</h2>
       <p>Generated: ${new Date().toLocaleDateString('en-GB')}</p>
       <table><thead><tr>
-        <th>Client</th><th>Project</th><th>Workflow</th><th>Receive Date</th><th>Job ID</th>
+        <th>Client</th><th>Project</th><th>Task Name</th><th>Receive Date</th><th>Job ID</th>
         <th>ISBN</th><th>Batch</th><th>Language</th><th>Title</th><th>Pages</th>
         <th>PDF Type</th><th>Complexity</th><th>Ref Type</th>
         <th>Status</th><th>File Status</th><th>Upload Date</th>
@@ -1342,6 +1355,26 @@ const BooksJobs = () => {
           <strong>Filters &amp; Search</strong>
         </div>
         <div className="bj-filter-grid">
+          {/* Client filter */}
+          <div className="bj-filter-group">
+            <label><span className="flt-icon">💼</span> Client</label>
+            <select
+              value={filters.clientId}
+              onChange={e => {
+                setF('clientId', e.target.value);
+                setF('projectId', '');
+                setF('project', '');
+                setF('workflowId', '');
+              }}
+            >
+              <option value="">All Clients</option>
+              {clients.map(c => (
+                <option key={c.id} value={c.id}>{c.companyName}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Project filter */}
           <div className="bj-filter-group">
             <label><span className="flt-icon">📦</span> Project</label>
             <select
@@ -1350,15 +1383,48 @@ const BooksJobs = () => {
                 const proj = projects.find(p => p.id === e.target.value);
                 setF('projectId', e.target.value);
                 setF('project', proj?.name || '');
+                if (proj && proj.clientId && !filters.clientId) {
+                  setF('clientId', proj.clientId);
+                }
+                if (proj && proj.workflowId) {
+                  setF('workflowId', proj.workflowId);
+                } else {
+                  setF('workflowId', '');
+                }
               }}
             >
               <option value="">All Projects</option>
-              {projects.map(p => (
+              {(filters.clientId
+                ? projects.filter(p => p.clientId === filters.clientId)
+                : projects
+              ).map(p => (
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
             </select>
           </div>
 
+          {/* Workflow filter */}
+          <div className="bj-filter-group">
+            <label><span className="flt-icon">⚙️</span> Task Name</label>
+            <select
+              value={filters.workflowId}
+              onChange={e => setF('workflowId', e.target.value)}
+            >
+              <option value="">All Task Names</option>
+              {workflows.map(w => (
+                <option key={w.id} value={w.id}>{w.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Job ID filter */}
+          <div className="bj-filter-group">
+            <label><span className="flt-icon">🆔</span> Job ID</label>
+            <input placeholder="e.g., BM0748" value={filters.jobId}
+              onChange={e => setF('jobId', e.target.value)} />
+          </div>
+
+          {/* ISBN filter */}
           <div className="bj-filter-group">
             <label><span className="flt-icon">📖</span> ISBN</label>
             <input placeholder="e.g., 9798216386377"
@@ -1366,6 +1432,24 @@ const BooksJobs = () => {
               onChange={e => setF('isbn', e.target.value)} />
           </div>
 
+          <div className="bj-filter-group">
+            <label><span className="flt-icon">⚡</span> Complexity</label>
+            <select
+              className={getComplexityClass(filters.complexity)}
+              value={filters.complexity}
+              onChange={e => setF('complexity', e.target.value)}
+            >
+              <option value="">All Complexity</option>
+              {COMPLEXITY_OPTIONS.map(c => (
+                <option key={c.label} value={c.label}
+                  className={getComplexityClass(c.label)}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Remain filters */}
           <div className="bj-filter-group">
             <label><span className="flt-icon">📅</span> Start Month From</label>
             <input type="date" value={filters.startMonth}
@@ -1396,29 +1480,6 @@ const BooksJobs = () => {
               <option value="">All Billing Status</option>
               {BILLING_STATUS_OPTIONS.map(b => (
                 <option key={b} value={b}>{b}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="bj-filter-group">
-            <label><span className="flt-icon">🆔</span> Job ID</label>
-            <input placeholder="e.g., BM0748" value={filters.jobId}
-              onChange={e => setF('jobId', e.target.value)} />
-          </div>
-
-          <div className="bj-filter-group">
-            <label><span className="flt-icon">⚡</span> Complexity</label>
-            <select
-              className={getComplexityClass(filters.complexity)}
-              value={filters.complexity}
-              onChange={e => setF('complexity', e.target.value)}
-            >
-              <option value="">All Complexity</option>
-              {COMPLEXITY_OPTIONS.map(c => (
-                <option key={c.label} value={c.label}
-                  className={getComplexityClass(c.label)}>
-                  {c.label}
-                </option>
               ))}
             </select>
           </div>
@@ -1473,14 +1534,14 @@ const BooksJobs = () => {
                 <tr>
                   <th>Client</th>
                   <th>Project</th>
-                  <th>Workflow</th>
+                  <th>Task Name</th>
                   <th>Receive Date</th>
                   <th>Job ID</th>
-                  <th>XML ISBN</th>
+                  <th>ISBN</th>
                   <th>Batch</th>
                   <th>Language</th>
-                  <th>Title Name</th>
-                  <th>Page Count</th>
+                  <th>Title / Article Name</th>
+                  <th>Page</th>
                   <th>PDF Type</th>
                   <th>Complexity</th>
                   <th>Ref Type</th>
@@ -1488,7 +1549,7 @@ const BooksJobs = () => {
                   <th>File Status</th>
                   <th>Upload Date</th>
                   <th>Billing Status</th>
-                  <th>Actions</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -1593,7 +1654,7 @@ const BooksJobs = () => {
                   onChange={e => {
                     const newSize = Number(e.target.value);
                     setPageSize(newSize);
-                    loadJobs(0, applied, newSize);
+                    loadJobs(0, newSize);
                   }}
                   style={{
                     padding: '4px 8px',

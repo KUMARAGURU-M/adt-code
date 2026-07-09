@@ -12,4 +12,13 @@ public class StopValidationResponse {
     private Integer assignedPages;
     private Integer pagesCompletedSoFar;
     private String  taskTitle;
+    private String  assignedPagesStr;
 }
+
+
+
+
+
+
+
+

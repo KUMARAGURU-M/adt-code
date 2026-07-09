@@ -168,7 +168,7 @@
 
 .tm-filter-row {
   display: grid;
-  grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr 1fr auto;
+  grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr auto;
   gap: 10px;
   align-items: end;
 }
@@ -876,10 +876,15 @@ input[type="date"].tm-form-input {
   box-shadow: 0 3px 12px rgba(102, 126, 234, 0.35);
 }
 
+
+
+
+
 .btn-create-task:hover {
   opacity: 0.90;
   box-shadow: 0 5px 18px rgba(102, 126, 234, 0.45);
 }
+
 
 .btn-danger-modal {
   background: #ef4444;
@@ -947,9 +952,17 @@ input[type="date"].tm-form-input {
 }
 
 @keyframes pulse-trash {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.08); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.08);
+  }
+
+  100% {
+    transform: scale(1);
+  }
 }
 
 /* ── Responsive ── */

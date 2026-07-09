@@ -61,6 +61,7 @@ public class JobService {
     @Transactional(readOnly = true)
     public Page<JobResponse> searchJobs(UUID projectId,
                                         UUID clientId,
+                                        UUID workflowId,
                                         String jobIdCode,
                                         String xmlIsbn,
                                         LocalDate startMonthFrom,
@@ -74,6 +75,7 @@ public class JobService {
         Page<Job> jobs = jobRepository.searchJobs(
                 projectId,
                 clientId,
+                workflowId,
                 emptyToNull(jobIdCode),
                 emptyToNull(xmlIsbn),
                 startMonthFrom,
@@ -560,11 +562,24 @@ public class JobService {
     // ─────────────────────────────────────────────
     @Transactional(readOnly = true)
     public Page<JobResponse> searchProductionJobs(UUID projectId,
+                                                  UUID clientId,
+                                                  UUID workflowId,
+                                                  String jobIdCode,
+                                                  String complexity,
                                                   LocalDate startDate,
                                                   LocalDate endDate,
                                                   int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<Job> jobs = jobRepository.searchProductionJobs(projectId, startDate, endDate, pageable);
+        Page<Job> jobs = jobRepository.searchProductionJobs(
+                projectId,
+                clientId,
+                workflowId,
+                emptyToNull(jobIdCode),
+                emptyToNull(complexity),
+                startDate,
+                endDate,
+                pageable
+        );
 
         if (jobs.isEmpty()) {
             return Page.empty(pageable);
@@ -737,16 +752,36 @@ public class JobService {
 
     private LocalDate parseDateOrNull(String value) {
         if (value == null || value.isBlank()) return null;
-        String[] formats = {
+        String cleaned = value.trim();
+
+        // 1. Try standard numeric formats first
+        String[] numericFormats = {
                 "yyyy-MM-dd", "dd/MM/yyyy", "MM/dd/yyyy",
                 "dd-MM-yyyy", "d/M/yyyy",   "yyyy/MM/dd"
         };
-        for (String fmt : formats) {
+        for (String fmt : numericFormats) {
             try {
-                return LocalDate.parse(value,
-                        DateTimeFormatter.ofPattern(fmt));
+                return LocalDate.parse(cleaned, DateTimeFormatter.ofPattern(fmt));
             } catch (DateTimeParseException ignored) {}
         }
+
+        // 2. Try text/month-name formats case-insensitively (e.g. 08-Jul-2026, 08-july-2026)
+        String[] monthNameFormats = {
+                "dd-MMM-yyyy", "dd-MMMM-yyyy",
+                "dd/MMM/yyyy", "dd/MMMM/yyyy",
+                "d-MMM-yyyy",  "d-MMMM-yyyy",
+                "d/MMM/yyyy",  "d/MMMM/yyyy"
+        };
+        for (String fmt : monthNameFormats) {
+            try {
+                DateTimeFormatter formatter = new java.time.format.DateTimeFormatterBuilder()
+                        .parseCaseInsensitive()
+                        .appendPattern(fmt)
+                        .toFormatter(Locale.ENGLISH);
+                return LocalDate.parse(cleaned, formatter);
+            } catch (DateTimeParseException ignored) {}
+        }
+
         log.warn("Could not parse date '{}' — skipping", value);
         return null;
     }
@@ -863,5 +898,7 @@ public class JobService {
         return processesByProjectId;
     }
 }
+
+
 
 
