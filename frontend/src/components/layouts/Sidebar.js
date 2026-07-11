@@ -20,7 +20,7 @@ const menuItems = [
   { name: 'BOOK/JOB', icon: '📖', path: '/admin/books' },
   { name: 'PRODUCTION', icon: <img src={productionIcon} alt="Production" className="sidebar-img-icon" />, path: '/admin/production' },
   { name: 'TASK', icon: '✅', path: '/admin/tasks' },
-  { name: 'PROCESSE', icon: '⚙️', path: '/admin/processes' },
+  { name: 'PROCESS', icon: '⚙️', path: '/admin/processes' },
   { name: 'SHIFT', icon: '🕒', path: '/admin/shifts' },
   { name: 'TOOL', icon: <img src={toolIcon} alt="Tools" className="sidebar-img-icon" />, path: '/admin/tool' },
   { name: 'LEAVE', icon: '🏖️', path: '/admin/leaves' },
@@ -157,7 +157,7 @@ const Sidebar = ({ isMobileOpen, onCloseMobile }) => {
               >
                 <span className="nav-icon">{item.icon}</span>
                 <span className="nav-text">{item.name}</span>
-                {item.name === 'LEAVES' && pendingLeavesCount > 0 && (
+                {item.name === 'LEAVE' && pendingLeavesCount > 0 && (
                   <span className="sidebar-badge blink">{pendingLeavesCount}</span>
                 )}
               </NavLink>

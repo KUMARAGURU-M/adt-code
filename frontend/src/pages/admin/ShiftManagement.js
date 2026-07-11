@@ -21,23 +21,23 @@ const fmt12 = (t) => {
 
 const fmtDate = (d) =>
   d ? new Date(d).toLocaleDateString('en-US', {
-        month: 'numeric', day: 'numeric', year: 'numeric'
-      })
+    month: 'numeric', day: 'numeric', year: 'numeric'
+  })
     : '-';
 
 // Map backend → frontend shape
 const mapShift = (s) => ({
-  id:                s.id,
-  name:              s.name,
-  startTime:         s.startTime || '',
-  endTime:           s.endTime   || '',
-  description:       s.description || '',
-  active:            s.isActive,
-  created:           s.createdAt,
+  id: s.id,
+  name: s.name,
+  startTime: s.startTime || '',
+  endTime: s.endTime || '',
+  description: s.description || '',
+  active: s.isActive,
+  created: s.createdAt,
   assignedEmployees: (s.assignedEmployees || []).map(e => ({
-    id:       e.userId,
-    name:     e.fullName,
-    email:    e.email,
+    id: e.userId,
+    name: e.fullName,
+    email: e.email,
   })),
 });
 
@@ -52,13 +52,13 @@ const Modal = ({ onClose, children }) => (
 
 // ── Edit Shift Modal ──────────────────────────────────────────────
 const EditModal = ({ shift, onClose, onUpdate }) => {
-  const [name,      setName]      = useState(shift.name);
+  const [name, setName] = useState(shift.name);
   const [startTime, setStartTime] = useState(shift.startTime);
-  const [endTime,   setEndTime]   = useState(shift.endTime);
-  const [desc,      setDesc]      = useState(shift.description);
-  const [active,    setActive]    = useState(shift.active);
-  const [err,       setErr]       = useState('');
-  const [saving,    setSaving]    = useState(false);
+  const [endTime, setEndTime] = useState(shift.endTime);
+  const [desc, setDesc] = useState(shift.description);
+  const [active, setActive] = useState(shift.active);
+  const [err, setErr] = useState('');
+  const [saving, setSaving] = useState(false);
 
   const handleUpdate = async () => {
     if (!name.trim()) { setErr('Shift name is required.'); return; }
@@ -209,9 +209,8 @@ const AllotmentColumn = ({
           </span>
         </div>
         <div className="sm-allot-header-right">
-          <span className={`sm-status-badge${
-            shift.active ? ' active' : ' inactive'
-          }`}>
+          <span className={`sm-status-badge${shift.active ? ' active' : ' inactive'
+            }`}>
             {shift.active ? 'Active' : 'Inactive'}
           </span>
           {isAssigned && (
@@ -285,8 +284,8 @@ const AllotmentColumn = ({
           {assigning === shift.id
             ? 'Saving...'
             : isAssigned
-            ? '✓ Saved & Assigned'
-            : '💾 Assign Shift'}
+              ? '✓ Saved & Assigned'
+              : '💾 Assign Shift'}
         </button>
       </div>
     </div>
@@ -298,31 +297,31 @@ const AllotmentColumn = ({
 // ═════════════════════════════════════════════════════════════════
 const ShiftManagement = () => {
 
-  const [shifts,      setShifts]      = useState([]);
+  const [shifts, setShifts] = useState([]);
   const [allEmployees, setAllEmployees] = useState([]);
-  const [loading,     setLoading]     = useState(true);
-  const [error,       setError]       = useState('');
-  const [modal,       setModal]       = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [modal, setModal] = useState(null);
 
   // Add form state
-  const [showAddForm,   setShowAddForm]   = useState(true);
-  const [newName,       setNewName]       = useState('');
-  const [newStartTime,  setNewStartTime]  = useState('');
-  const [newEndTime,    setNewEndTime]    = useState('');
-  const [newDesc,       setNewDesc]       = useState('');
-  const [newActive,     setNewActive]     = useState(true);
-  const [addErr,        setAddErr]        = useState('');
-  const [creating,      setCreating]      = useState(false);
+  const [showAddForm, setShowAddForm] = useState(true);
+  const [newName, setNewName] = useState('');
+  const [newStartTime, setNewStartTime] = useState('');
+  const [newEndTime, setNewEndTime] = useState('');
+  const [newDesc, setNewDesc] = useState('');
+  const [newActive, setNewActive] = useState(true);
+  const [addErr, setAddErr] = useState('');
+  const [creating, setCreating] = useState(false);
 
   // Allotment board state
   // { [shiftId]: { id, name, email }[] }
-  const [allotments,    setAllotments]    = useState({});
+  const [allotments, setAllotments] = useState({});
   const [assignedFlags, setAssignedFlags] = useState({});
-  const [assigning,     setAssigning]     = useState(null);
+  const [assigning, setAssigning] = useState(null);
 
   // Pagination
   const [perPage, setPerPage] = useState(25);
-  const [page,    setPage]    = useState(1);
+  const [page, setPage] = useState(1);
 
   // ── Load data ──────────────────────────────────────────────
   const loadShifts = useCallback(async () => {
@@ -335,10 +334,10 @@ const ShiftManagement = () => {
 
       // Initialize allotments from currently assigned employees
       const initAllotments = {};
-      const initFlags       = {};
+      const initFlags = {};
       mapped.forEach(s => {
         initAllotments[s.id] = s.assignedEmployees || [];
-        initFlags[s.id]      = s.assignedEmployees?.length > 0;
+        initFlags[s.id] = s.assignedEmployees?.length > 0;
       });
       setAllotments(initAllotments);
       setAssignedFlags(initFlags);
@@ -354,10 +353,10 @@ const ShiftManagement = () => {
     try {
       const data = await apiCall('/shifts/employees');
       setAllEmployees(data.map(e => ({
-        id:    e.userId,
-        name:  e.fullName,
+        id: e.userId,
+        name: e.fullName,
         email: e.email,
-        currentShiftId:   e.currentShiftId,
+        currentShiftId: e.currentShiftId,
         currentShiftName: e.currentShiftName,
       })));
     } catch (err) {
@@ -382,8 +381,8 @@ const ShiftManagement = () => {
   // ── Pagination ──────────────────────────────────────────────
   const totalItems = shifts.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / perPage));
-  const safePage   = Math.min(page, totalPages);
-  const startIdx   = (safePage - 1) * perPage;
+  const safePage = Math.min(page, totalPages);
+  const startIdx = (safePage - 1) * perPage;
 
   const pageRows = useMemo(
     () => shifts.slice(startIdx, startIdx + perPage),
@@ -392,8 +391,8 @@ const ShiftManagement = () => {
 
   const handlePerPage = (val) => { setPerPage(val); setPage(1); };
 
-  const open  = (type, shift) => setModal({ type, shift });
-  const close = ()             => setModal(null);
+  const open = (type, shift) => setModal({ type, shift });
+  const close = () => setModal(null);
 
   // ── Create shift ────────────────────────────────────────────
   const handleCreate = async () => {
@@ -404,11 +403,11 @@ const ShiftManagement = () => {
     setCreating(true);
     try {
       const created = await apiCall('/shifts', 'POST', {
-        name:        newName.trim(),
-        startTime:   newStartTime || null,
-        endTime:     newEndTime   || null,
-        description: newDesc      || null,
-        isActive:    newActive,
+        name: newName.trim(),
+        startTime: newStartTime || null,
+        endTime: newEndTime || null,
+        description: newDesc || null,
+        isActive: newActive,
       });
 
       const mapped = mapShift(created);
@@ -432,7 +431,7 @@ const ShiftManagement = () => {
   // ── Update shift ────────────────────────────────────────────
   const handleUpdate = useCallback(async (id, payload) => {
     const updated = await apiCall(`/shifts/${id}`, 'PUT', payload);
-    const mapped  = mapShift(updated);
+    const mapped = mapShift(updated);
     setShifts(prev => prev.map(s => s.id === id ? mapped : s));
     setAssignedFlags(prev => ({ ...prev, [id]: false }));
   }, []);
@@ -621,9 +620,8 @@ const ShiftManagement = () => {
           <div
             className="sm-allot-grid"
             style={{
-              gridTemplateColumns: `repeat(${
-                Math.min(shifts.length, 4)
-              }, 1fr)`,
+              gridTemplateColumns: `repeat(${Math.min(shifts.length, 4)
+                }, 1fr)`,
             }}
           >
             {shifts.map(shift => (
@@ -687,9 +685,8 @@ const ShiftManagement = () => {
                       )}
                     </td>
                     <td>
-                      <span className={`sm-status-badge${
-                        shift.active ? ' active' : ' inactive'
-                      }`}>
+                      <span className={`sm-status-badge${shift.active ? ' active' : ' inactive'
+                        }`}>
                         {shift.active ? 'Active' : 'Inactive'}
                       </span>
                     </td>
@@ -767,9 +764,8 @@ const ShiftManagement = () => {
                   { length: totalPages }, (_, i) => i + 1
                 ).map(n => (
                   <button key={n}
-                    className={`sm-nav-btn${
-                      safePage === n ? ' active-page' : ''
-                    }`}
+                    className={`sm-nav-btn${safePage === n ? ' active-page' : ''
+                      }`}
                     onClick={() => setPage(n)}>
                     {n}
                   </button>
@@ -797,3 +793,7 @@ const ShiftManagement = () => {
 };
 
 export default ShiftManagement;
+
+
+
+
