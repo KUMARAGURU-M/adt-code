@@ -310,8 +310,8 @@
 }
 
 .col-job {
-  min-width: 160px;
-  max-width: 200px;
+  min-width: 350px;
+  max-width: 500px;
 }
 
 .col-process {
@@ -335,8 +335,13 @@
 }
 
 .col-pages {
-  min-width: 110px;
-  width: 120px;
+  min-width: 90px;
+  width: 100px;
+}
+
+.col-totalpages {
+  min-width: 70px;
+  width: 80px;
 }
 
 .col-chapter {
@@ -363,6 +368,7 @@
   color: #2d3748;
   line-height: 1.4;
   word-break: break-word;
+  min-width: 300px;
 }
 
 .cell-project {
@@ -388,7 +394,6 @@
   color: #4a5568;
   word-break: break-word;
   line-height: 1.4;
-  max-width: 200px;
 }
 
 /* ── Status Badges ── */
@@ -876,15 +881,10 @@ input[type="date"].tm-form-input {
   box-shadow: 0 3px 12px rgba(102, 126, 234, 0.35);
 }
 
-
-
-
-
 .btn-create-task:hover {
   opacity: 0.90;
   box-shadow: 0 5px 18px rgba(102, 126, 234, 0.45);
 }
-
 
 .btn-danger-modal {
   background: #ef4444;

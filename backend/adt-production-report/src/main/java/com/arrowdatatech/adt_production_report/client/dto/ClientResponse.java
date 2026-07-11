@@ -12,6 +12,7 @@ public class ClientResponse {
 
     private UUID id;
     private String companyName;
+    private String companyFullName;
     private String addressLine1;
     private String addressLine2;
     private String city;

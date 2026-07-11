@@ -38,7 +38,7 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
             AND (:billingStatus IS NULL OR j.billingStatus = :billingStatus)
             AND (:complexity IS NULL OR j.complexity = :complexity)
             AND (:fileStatus IS NULL OR j.fileStatus = :fileStatus)
-            ORDER BY j.receiveDate DESC NULLS LAST, j.jobIdCode ASC
+            ORDER BY j.jobIdCode ASC
             """)
     Page<Job> searchJobs(
             @Param("projectId")     UUID projectId,

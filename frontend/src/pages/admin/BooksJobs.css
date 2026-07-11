@@ -93,7 +93,7 @@
 
 .bj-filter-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(7, 1fr);
   gap: 14px 16px;
 }
 
@@ -271,7 +271,7 @@
 }
 
 .td-title {
-  max-width: 200px;
+  max-width: 300px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1132,4 +1132,222 @@
   margin: 2px;
   text-transform: uppercase;
   border: 1px solid rgba(124, 58, 237, 0.2);
+}
+
+/* ══════════════════════════════════════════════
+   BULK SELECT — Checkboxes
+══════════════════════════════════════════════ */
+.bj-th-check,
+.bj-td-check {
+  width: 42px;
+  min-width: 42px;
+  text-align: center !important;
+  padding: 8px 6px !important;
+  position: sticky;
+  left: 0;
+  background: inherit;
+  z-index: 1;
+}
+
+.bj-th-check {
+  background: #f8fafc;
+}
+
+.bj-row-checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #7c3aed;
+  border-radius: 3px;
+}
+
+/* Highlighted selected rows */
+.bj-row-selected {
+  background-color: #faf5ff !important;
+  outline: 1px solid #c4b5fd;
+  outline-offset: -1px;
+}
+
+.bj-row-selected td {
+  background-color: #faf5ff;
+}
+
+/* ══════════════════════════════════════════════
+   BULK TOOLBAR (appears above table when rows selected)
+══════════════════════════════════════════════ */
+.bj-table-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  min-height: 38px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.bj-bulk-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: bj-toolbar-in 0.2s ease;
+}
+
+@keyframes bj-toolbar-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.bj-bulk-count {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #7c3aed;
+  background: #ede9fe;
+  padding: 5px 12px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.bj-bulk-edit-trigger {
+  background: #7c3aed;
+  color: white;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.18s;
+  white-space: nowrap;
+}
+
+.bj-bulk-edit-trigger:hover {
+  opacity: 0.88;
+}
+
+.bj-bulk-clear-btn {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s;
+  white-space: nowrap;
+}
+
+.bj-bulk-clear-btn:hover {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+/* ══════════════════════════════════════════════
+   BULK EDIT MODAL
+══════════════════════════════════════════════ */
+.bj-bulk-edit-hint {
+  font-size: 0.83rem;
+  color: #64748b;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin: 0 0 18px;
+  line-height: 1.5;
+}
+
+.bj-bulk-edit-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bj-bulk-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 11px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+  transition: all 0.2s;
+}
+
+.bj-bulk-edit-row.active {
+  background: #faf5ff;
+  border-color: #c4b5fd;
+  box-shadow: 0 1px 4px rgba(124, 58, 237, 0.08);
+}
+
+/* Custom checkbox pill for the toggle */
+.bj-bulk-edit-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  flex-shrink: 0;
+  min-width: 160px;
+  user-select: none;
+}
+
+.bj-bulk-edit-toggle input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #7c3aed;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.bj-bulk-toggle-dot {
+  display: none;
+  /* reserved for future pill toggle if desired */
+}
+
+.bj-bulk-edit-label {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #374151;
+  white-space: nowrap;
+}
+
+.bj-bulk-edit-row.active .bj-bulk-edit-label {
+  color: #6d28d9;
+}
+
+.bj-bulk-edit-control {
+  flex: 1;
+}
+
+.bj-bulk-edit-control select,
+.bj-bulk-edit-control input[type="date"] {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.83rem;
+  color: #1a202c;
+  background: white;
+  outline: none;
+  transition: border-color 0.18s, opacity 0.2s;
+  box-sizing: border-box;
+}
+
+.bj-bulk-edit-control select:focus,
+.bj-bulk-edit-control input[type="date"]:focus {
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.12);
+}
+
+.bj-bulk-edit-control select:disabled,
+.bj-bulk-edit-control input[type="date"]:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: #f1f5f9;
 }

@@ -141,7 +141,7 @@ const EmpTask = () => {
 
   return (
     <div className="et-page">
-      
+
       {/* HEADER SECTION */}
       <div className="et-header">
         <h1 className="et-title">My Tasks</h1>
@@ -153,7 +153,7 @@ const EmpTask = () => {
         <div className="et-filter-group">
           <label className="et-filter-label">Project</label>
           <div className="et-select-wrapper">
-            <select 
+            <select
               className="et-select"
               value={filterProject}
               onChange={e => setFilterProject(e.target.value)}
@@ -169,7 +169,7 @@ const EmpTask = () => {
         <div className="et-filter-group">
           <label className="et-filter-label">Job/ISBN</label>
           <div className="et-select-wrapper">
-            <select 
+            <select
               className="et-select"
               value={filterJob}
               onChange={e => setFilterJob(e.target.value)}
@@ -185,7 +185,7 @@ const EmpTask = () => {
         <div className="et-filter-group">
           <label className="et-filter-label">Process</label>
           <div className="et-select-wrapper">
-            <select 
+            <select
               className="et-select"
               value={filterProcess}
               onChange={e => setFilterProcess(e.target.value)}
@@ -201,7 +201,7 @@ const EmpTask = () => {
         <div className="et-filter-group">
           <label className="et-filter-label">Status</label>
           <div className="et-select-wrapper">
-            <select 
+            <select
               className="et-select"
               value={filterStatus}
               onChange={e => setFilterStatus(e.target.value)}
@@ -218,9 +218,9 @@ const EmpTask = () => {
 
         <div className="et-filter-group">
           <label className="et-filter-label">Due Date From</label>
-          <input 
-            type="date" 
-            className="et-input-date" 
+          <input
+            type="date"
+            className="et-input-date"
             value={dueDateFrom}
             onChange={e => setDueDateFrom(e.target.value)}
           />
@@ -228,9 +228,9 @@ const EmpTask = () => {
 
         <div className="et-filter-group">
           <label className="et-filter-label">Due Date To</label>
-          <input 
-            type="date" 
-            className="et-input-date" 
+          <input
+            type="date"
+            className="et-input-date"
             value={dueDateTo}
             onChange={e => setDueDateTo(e.target.value)}
           />
@@ -253,7 +253,9 @@ const EmpTask = () => {
               <thead>
                 <tr>
                   <th>Task Title</th>
+                  <th>Client</th>
                   <th>Project</th>
+                  <th>Task Name</th>
                   <th>Job/ISBN</th>
                   <th>Process</th>
                   <th>Status</th>
@@ -266,7 +268,7 @@ const EmpTask = () => {
               <tbody>
                 {filteredTasks.length === 0 ? (
                   <tr>
-                    <td colSpan={9} style={{ padding: '40px', color: '#666' }}>
+                    <td colSpan={11} style={{ padding: '40px', color: '#666' }}>
                       No tasks found.
                     </td>
                   </tr>
@@ -276,7 +278,9 @@ const EmpTask = () => {
                     return (
                       <tr key={task.id}>
                         <td className="et-td-title">{task.taskTitle || '-'}</td>
+                        <td>{task.clientName || '-'}</td>
                         <td>{task.projectName || '-'}</td>
+                        <td>{task.workflowName || '-'}</td>
                         <td className="et-td-job">{formatJob(task.jobs)}</td>
                         <td className="et-td-process">{task.processName || '-'}</td>
                         <td>

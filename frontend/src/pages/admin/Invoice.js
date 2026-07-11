@@ -452,6 +452,7 @@ export default function Invoice() {
         .map(c => ({
           id: c.id,
           name: c.companyName,
+          companyFullName: c.companyFullName,
           address: [
             c.addressLine1,
             c.addressLine2,
@@ -462,8 +463,16 @@ export default function Invoice() {
           gstin: c.gstin
         }));
       setClients(mapped);
-      if (mapped.length > 0 && !selectedClientId) {
-        setSelectedClientId(mapped[0].id);
+      if (mapped.length > 0) {
+        if (!selectedClientId) {
+          setSelectedClientId(mapped[0].id);
+          setClientName(mapped[0].companyFullName || mapped[0].name);
+        } else {
+          const currentMapped = mapped.find(c => c.id === selectedClientId);
+          if (currentMapped) {
+            setClientName(currentMapped.companyFullName || currentMapped.name);
+          }
+        }
       }
     } catch (err) {
       console.error("Failed to fetch clients:", err);
@@ -628,16 +637,10 @@ export default function Invoice() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedClientId]);
 
-  useEffect(() => {
-    if (currentClient) {
-      setClientName(currentClient.name);
-    } else {
-      setClientName("");
-    }
-  }, [currentClient]);
 
-  const openEditClient = () => { setClientDraft({ id: currentClient?.id || "", name: currentClient?.name || "", address: currentClient?.address || "" }); setClientModalMode("edit"); setShowClientModal(true); };
-  const openAddClient = () => { setClientDraft({ id: "", name: "", address: "" }); setClientModalMode("add"); setShowClientModal(true); };
+
+  const openEditClient = () => { setClientDraft({ id: currentClient?.id || "", name: currentClient?.name || "", companyFullName: currentClient?.companyFullName || "", address: currentClient?.address || "" }); setClientModalMode("edit"); setShowClientModal(true); };
+  const openAddClient = () => { setClientDraft({ id: "", name: "", companyFullName: "", address: "" }); setClientModalMode("add"); setShowClientModal(true); };
 
   const handleDeleteClient = async () => {
     if (!currentClient?.id) return;
@@ -662,11 +665,13 @@ export default function Invoice() {
       if (clientModalMode === "edit") {
         await apiCall(`/clients/${clientDraft.id}`, 'PUT', {
           companyName: clientDraft.name,
+          companyFullName: clientDraft.companyFullName,
           addressLine1: clientDraft.address
         });
       } else {
         const created = await apiCall('/clients', 'POST', {
           companyName: clientDraft.name,
+          companyFullName: clientDraft.companyFullName,
           addressLine1: clientDraft.address
         });
         setSelectedClientId(created.id);
@@ -938,6 +943,7 @@ export default function Invoice() {
     try {
       const payload = {
         clientId: selectedClientId,
+        clientName: clientName,
         invoiceTitle: `INVOICE OF ${vendorName.toUpperCase()} FOR THE MONTH OF ${titleMonth.toUpperCase()} - ${titleYear}`,
         periodMonth: titleMonth,
         periodYear: titleYear,
@@ -1014,6 +1020,7 @@ export default function Invoice() {
     setInvoiceNo(h.invoiceNumber);
     setInvoiceDate(h.invoiceDate);
     setSelectedClientId(h.clientId);
+    setClientName(h.clientName || "");
     setVendorName(h.vendorName);
     setVendorAddress(h.vendorAddress);
     setTitleMonth(h.periodMonth);
@@ -1186,7 +1193,18 @@ export default function Invoice() {
                   <div className="inv-field-block">
                     <label className="inv-label">Invoice To</label>
                     <div className="inv-client-selector-row">
-                      <select className="inv-select inv-select--client" value={selectedClientId} onChange={e => setSelectedClientId(e.target.value)}>
+                      <select
+                        className="inv-select inv-select--client"
+                        value={selectedClientId}
+                        onChange={e => {
+                          const val = e.target.value;
+                          setSelectedClientId(val);
+                          const matched = clients.find(c => c.id === val);
+                          if (matched) {
+                            setClientName(matched.companyFullName || matched.name);
+                          }
+                        }}
+                      >
                         {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                       </select>
                       <button className="inv-btn inv-btn--outline inv-btn--sm" onClick={openEditClient}>✏ Edit</button>
@@ -2039,7 +2057,8 @@ export default function Invoice() {
           <div className="inv-modal" onClick={e => e.stopPropagation()}>
             <div className="inv-modal-header"><h3>{clientModalMode === "add" ? "Add New Client" : "Edit Client"}</h3><button className="inv-modal-close" onClick={() => setShowClientModal(false)}>✕</button></div>
             <div className="inv-modal-body">
-              <div className="inv-field-block"><label className="inv-label">Company Name</label><input className="inv-input" value={clientDraft.name} onChange={e => setClientDraft(d => ({ ...d, name: e.target.value }))} placeholder="Company name" /></div>
+              <div className="inv-field-block"><label className="inv-label">Company Name (Short Form)</label><input className="inv-input" value={clientDraft.name} onChange={e => setClientDraft(d => ({ ...d, name: e.target.value }))} placeholder="Company short name" /></div>
+              <div className="inv-field-block"><label className="inv-label">Company Full Name (for Invoice display)</label><input className="inv-input" value={clientDraft.companyFullName || ""} onChange={e => setClientDraft(d => ({ ...d, companyFullName: e.target.value }))} placeholder="Company full name" /></div>
               <div className="inv-field-block"><label className="inv-label">Company Address</label><textarea className="inv-textarea" rows={4} value={clientDraft.address} onChange={e => setClientDraft(d => ({ ...d, address: e.target.value }))} placeholder="Full address" /></div>
             </div>
             <div className="inv-modal-footer">
@@ -2306,4 +2325,5 @@ export default function Invoice() {
     </div>
   );
 }
+
 

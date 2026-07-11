@@ -20,6 +20,9 @@ public class Client extends BaseEntity {
     @Column(name = "company_name", nullable = false, unique = true, length = 200)
     private String companyName;
 
+    @Column(name = "company_full_name", length = 300)
+    private String companyFullName;
+
     @Column(name = "address_line1", length = 255)
     private String addressLine1;
 

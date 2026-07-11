@@ -23,7 +23,9 @@ public interface TimeLogRepository extends JpaRepository<TimeLog, UUID> {
     @Query("""
             SELECT t FROM TimeLog t
             WHERE t.user.id = :userId
+            AND (:clientId IS NULL OR (t.project IS NOT NULL AND t.project.client.id = :clientId))
             AND (:projectId IS NULL OR t.project.id = :projectId)
+            AND (:workflowId IS NULL OR (t.project IS NOT NULL AND t.project.workflow.id = :workflowId))
             AND (:processId IS NULL OR t.process.id = :processId)
             AND (:status IS NULL OR t.status = :status)
             AND (CAST(:startDate AS date) IS NULL OR t.logDate >= :startDate)
@@ -31,12 +33,14 @@ public interface TimeLogRepository extends JpaRepository<TimeLog, UUID> {
             ORDER BY t.startTime DESC
             """)
     Page<TimeLog> searchTimeLogs(
-            @Param("userId")    UUID userId,
-            @Param("projectId") UUID projectId,
-            @Param("processId") UUID processId,
-            @Param("status")    String status,
-            @Param("startDate") LocalDate startDate,
-            @Param("endDate")   LocalDate endDate,
+            @Param("userId")     UUID userId,
+            @Param("clientId")   UUID clientId,
+            @Param("projectId")  UUID projectId,
+            @Param("workflowId") UUID workflowId,
+            @Param("processId")  UUID processId,
+            @Param("status")     String status,
+            @Param("startDate")  LocalDate startDate,
+            @Param("endDate")    LocalDate endDate,
             Pageable pageable
     );
 

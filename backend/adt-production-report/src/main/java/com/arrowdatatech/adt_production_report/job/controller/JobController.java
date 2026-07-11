@@ -126,6 +126,16 @@ public class JobController {
                 ApiResponse.success("Bulk import complete", result));
     }
 
+    // PUT /jobs/bulk-update - Bulk update selected jobs' fields
+    @PutMapping("/bulk-update")
+    @PreAuthorize("hasAnyRole('Admin','Manager','Team Leader')")
+    public ResponseEntity<ApiResponse<Integer>> bulkUpdate(
+            @RequestBody BulkUpdateRequest request) {
+        int updated = jobService.bulkUpdate(request);
+        return ResponseEntity.ok(
+                ApiResponse.success("Bulk update complete: " + updated + " jobs updated", updated));
+    }
+
     // POST /jobs/field-mapping/{projectId} - Save field mapping
     // Replaces localStorage in frontend
     @PostMapping("/field-mapping/{projectId}")
@@ -205,3 +215,10 @@ public class JobController {
                 ApiResponse.success("Job production status updated", updated));
     }
 }
+
+
+
+
+
+
+

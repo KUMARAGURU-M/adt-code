@@ -17,6 +17,10 @@ public class TimeLogResponse {
     private String employeeName;
     private UUID projectId;
     private String projectName;
+    private UUID clientId;
+    private String clientName;
+    private UUID workflowId;
+    private String workflowName;
     private UUID processId;
     private String processName;
     private String isbnTitle;
@@ -29,6 +33,7 @@ public class TimeLogResponse {
     private Integer pagesCompleted;
     private Integer assignedPages;
     private String assignedPagesStr;
+    private Integer totalPages;
     private String status;
     private LocalDate logDate;
     private String shift;

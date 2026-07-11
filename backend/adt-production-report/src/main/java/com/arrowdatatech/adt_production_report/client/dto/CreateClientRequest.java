@@ -11,6 +11,8 @@ public class CreateClientRequest {
     @NotBlank(message = "Company name is required")
     private String companyName;
 
+    private String companyFullName;
+
     private String addressLine1;
     private String addressLine2;
     private String city;

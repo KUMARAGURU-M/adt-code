@@ -766,7 +766,7 @@ export default function HourlyGraph() {
                                                     {processName}
                                                 </div>
                                                 <div className="hg-summary-pages-badge">
-                                                    <strong>{pages}</strong> pages
+                                                    <strong>{pages}</strong>
                                                 </div>
                                             </div>
                                         ))}

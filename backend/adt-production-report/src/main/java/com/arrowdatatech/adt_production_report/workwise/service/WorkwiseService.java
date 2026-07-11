@@ -115,6 +115,22 @@ public class WorkwiseService {
                             .build())
                     .collect(Collectors.toList());
 
+            UUID clientId = null;
+            String clientName = null;
+            UUID workflowId = null;
+            String workflowName = null;
+
+            if (t.getProject() != null) {
+                if (t.getProject().getClient() != null) {
+                    clientId = t.getProject().getClient().getId();
+                    clientName = t.getProject().getClient().getCompanyName();
+                }
+                if (t.getProject().getWorkflow() != null) {
+                    workflowId = t.getProject().getWorkflow().getId();
+                    workflowName = t.getProject().getWorkflow().getName();
+                }
+            }
+
             return MyTaskOption.builder()
                     .taskId(t.getId())
                     .taskTitle(t.getTaskTitle())
@@ -122,6 +138,10 @@ public class WorkwiseService {
                             ? t.getProject().getId() : null)
                     .projectName(t.getProject() != null
                             ? t.getProject().getName() : null)
+                    .clientId(clientId)
+                    .clientName(clientName)
+                    .workflowId(workflowId)
+                    .workflowName(workflowName)
                     .processId(t.getProcess() != null
                             ? t.getProcess().getId() : null)
                     .processName(t.getProcess() != null
@@ -166,6 +186,22 @@ public class WorkwiseService {
                         .build())
                 .collect(Collectors.toList());
 
+        UUID clientId = null;
+        String clientName = null;
+        UUID workflowId = null;
+        String workflowName = null;
+
+        if (t.getProject() != null) {
+            if (t.getProject().getClient() != null) {
+                clientId = t.getProject().getClient().getId();
+                clientName = t.getProject().getClient().getCompanyName();
+            }
+            if (t.getProject().getWorkflow() != null) {
+                workflowId = t.getProject().getWorkflow().getId();
+                workflowName = t.getProject().getWorkflow().getName();
+            }
+        }
+
         return MyTaskOption.builder()
                 .taskId(t.getId())
                 .taskTitle(t.getTaskTitle())
@@ -173,6 +209,10 @@ public class WorkwiseService {
                         ? t.getProject().getId() : null)
                 .projectName(t.getProject() != null
                         ? t.getProject().getName() : null)
+                .clientId(clientId)
+                .clientName(clientName)
+                .workflowId(workflowId)
+                .workflowName(workflowName)
                 .processId(t.getProcess() != null
                         ? t.getProcess().getId() : null)
                 .processName(t.getProcess() != null
@@ -529,25 +569,79 @@ public class WorkwiseService {
     public WorkwiseContextResponse startBreak(UUID userId,
                                               StartBreakRequest request) {
 
-        TimeLog timeLog = timeLogRepository.findById(request.getTimeLogId())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "TimeLog", "id", request.getTimeLogId()));
-
-        if (!timeLog.getUser().getId().equals(userId)) {
-            throw new BadRequestException(
-                    "Cannot modify another user's timer.");
-        }
-        if (!"Running".equals(timeLog.getStatus())) {
-            throw new BadRequestException(
-                    "Can only take a break when the timer is running.");
-        }
-        if (breakLogRepository.existsByTimeLogIdAndBreakEndIsNull(
-                timeLog.getId())) {
-            throw new BadRequestException(
-                    "Already on break. Resume first.");
-        }
-
+        TimeLog timeLog;
         OffsetDateTime now = OffsetDateTime.now();
+
+        if (request.getTimeLogId() == null) {
+            // General shift break (Scenario B)
+            // 1. Block if already running or on break
+            boolean alreadyRunning =
+                    timeLogRepository.existsByUserIdAndStatus(userId, "Running")
+                            || timeLogRepository.existsByUserIdAndStatus(userId, "On Break");
+            if (alreadyRunning) {
+                throw new BadRequestException(
+                        "You already have an active session. Stop or resume it before starting a new break.");
+            }
+
+            // 2. Check-in guard
+            LocalDate today = LocalDate.now();
+            boolean checkedInToday = attendanceEmployeeRepository
+                    .findByUserId(userId)
+                    .flatMap(emp -> attendanceRecordRepository
+                            .findByEmployeeIdAndAttendanceDate(emp.getId(), today))
+                    .map(rec -> rec.getCheckInTime() != null)
+                    .orElse(false);
+
+            if (!checkedInToday) {
+                throw new BadRequestException(
+                        "You must check in first before taking a break. " +
+                        "Please mark your attendance for today.");
+            }
+
+            User user = userRepository.findByIdWithProfile(userId)
+                    .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+
+            Shift shift = shiftAssignmentRepository
+                    .findByUserIdAndEffectiveToIsNull(userId)
+                    .map(s -> s.getShift())
+                    .orElse(null);
+
+            // Create a general taskless time log
+            timeLog = TimeLog.builder()
+                    .user(user)
+                    .shift(shift)
+                    .startTime(now)
+                    .status("On Break")
+                    .logDate(today)
+                    .updatedAt(now)
+                    .build();
+
+            timeLog = timeLogRepository.save(timeLog);
+            ensureAttendanceEmployeeExists(user);
+        } else {
+            // Task break
+            timeLog = timeLogRepository.findById(request.getTimeLogId())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "TimeLog", "id", request.getTimeLogId()));
+
+            if (!timeLog.getUser().getId().equals(userId)) {
+                throw new BadRequestException(
+                        "Cannot modify another user's timer.");
+            }
+            if (!"Running".equals(timeLog.getStatus())) {
+                throw new BadRequestException(
+                        "Can only take a break when the timer is running.");
+            }
+            if (breakLogRepository.existsByTimeLogIdAndBreakEndIsNull(
+                    timeLog.getId())) {
+                throw new BadRequestException(
+                        "Already on break. Resume first.");
+            }
+
+            timeLog.setStatus("On Break");
+            timeLog.setUpdatedAt(now);
+            timeLogRepository.save(timeLog);
+        }
 
         // BUG FIX: breakReason MUST be the DB enum value.
         // Valid: 'Tea Break' | 'Lunch Break' | 'Restroom' | 'Other'
@@ -564,10 +658,6 @@ public class WorkwiseService {
                 .build();
 
         breakLogRepository.save(breakLog);
-
-        timeLog.setStatus("On Break");
-        timeLog.setUpdatedAt(now);
-        timeLogRepository.save(timeLog);
 
         log.info("Break started for user {} — reason: {}", userId, enumReason);
 
@@ -604,11 +694,27 @@ public class WorkwiseService {
                                     ? timeLog.getBreakSeconds() : 0) + dur);
                 });
 
-        timeLog.setStatus("Running");
-        timeLog.setUpdatedAt(now);
-        timeLogRepository.save(timeLog);
+        if (timeLog.getTask() == null) {
+            // General taskless break is now finished
+            OffsetDateTime startTime = timeLog.getStartTime();
+            long totalElapsed = ChronoUnit.SECONDS.between(startTime, now);
+            int totalBreak = timeLog.getBreakSeconds() != null ? timeLog.getBreakSeconds() : 0;
+            int workingSeconds = (int) Math.max(totalElapsed - totalBreak, 0);
 
-        return buildContext(timeLog, userId);
+            timeLog.setStatus("FINISH");
+            timeLog.setEndTime(now);
+            timeLog.setElapsedSeconds((int) totalElapsed);
+            timeLog.setWorkingSeconds(workingSeconds);
+            timeLog.setUpdatedAt(now);
+            timeLogRepository.save(timeLog);
+
+            return null; // Return null so frontend knows no active session exists
+        } else {
+            timeLog.setStatus("Running");
+            timeLog.setUpdatedAt(now);
+            timeLogRepository.save(timeLog);
+            return buildContext(timeLog, userId);
+        }
     }
 
     // ─────────────────────────────────────────────
@@ -616,7 +722,9 @@ public class WorkwiseService {
     // ─────────────────────────────────────────────
     @Transactional(readOnly = true)
     public Page<TimeLogResponse> getMyTimeLogs(UUID userId,
+                                               UUID clientId,
                                                UUID projectId,
+                                               UUID workflowId,
                                                UUID processId,
                                                String status,
                                                LocalDate startDate,
@@ -624,7 +732,7 @@ public class WorkwiseService {
                                                int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         return timeLogRepository.searchTimeLogs(
-                userId, projectId, processId,
+                userId, clientId, projectId, workflowId, processId,
                 status, startDate, endDate, pageable
         ).map(this::toTimeLogResponse);
     }
@@ -1015,6 +1123,22 @@ public class WorkwiseService {
 
         String taskTitle = log.getTask() != null ? log.getTask().getTaskTitle() : null;
 
+        java.util.UUID clientId = null;
+        String clientName = null;
+        java.util.UUID workflowId = null;
+        String workflowName = null;
+
+        if (log.getProject() != null) {
+            if (log.getProject().getClient() != null) {
+                clientId = log.getProject().getClient().getId();
+                clientName = log.getProject().getClient().getCompanyName();
+            }
+            if (log.getProject().getWorkflow() != null) {
+                workflowId = log.getProject().getWorkflow().getId();
+                workflowName = log.getProject().getWorkflow().getName();
+            }
+        }
+
         return TimeLogResponse.builder()
                 .id(log.getId())
                 .userId(log.getUser().getId())
@@ -1022,6 +1146,10 @@ public class WorkwiseService {
                 .projectId(log.getProject() != null ? log.getProject().getId() : null)
                 .projectName(log.getProject() != null
                         ? log.getProject().getName() : null)
+                .clientId(clientId)
+                .clientName(clientName)
+                .workflowId(workflowId)
+                .workflowName(workflowName)
                 .processId(log.getProcess() != null ? log.getProcess().getId() : null)
                 .processName(log.getProcess() != null
                         ? log.getProcess().getName() : null)
@@ -1033,6 +1161,13 @@ public class WorkwiseService {
                 .workingSeconds(log.getWorkingSeconds())
                 .breakSeconds(log.getBreakSeconds())
                 .pagesCompleted(log.getPagesCompleted())
+                .assignedPages(log.getTask() != null ? log.getTask().getAssignedPages() : null)
+                .assignedPagesStr(log.getTask() != null ? log.getTask().getAssignedPagesStr() : null)
+                .totalPages(
+                    log.getJob()  != null && log.getJob().getPageCount()  != null ? log.getJob().getPageCount()
+                  : log.getTask() != null && log.getTask().getTotalPages() != null ? log.getTask().getTotalPages()
+                  : null
+                )
                 .status(log.getStatus())
                 .logDate(log.getLogDate())
                 .shift(shiftName)

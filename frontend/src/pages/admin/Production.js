@@ -7,6 +7,107 @@ const STATUS_OPTIONS = [
   'FINISH', 'WIP', 'YTS', 'RTU', 'UPLOADED', 'PENDING', 'HOLD', 'QUERY'
 ];
 
+// ── Bulk Edit Modal (Production) ────────────────────────────────────────────
+const PROD_BULK_FIELDS = [
+  { key: 'processStatus', label: 'Process Status', type: 'select', options: STATUS_OPTIONS },
+  { key: 'qcStatus', label: 'QC Status', type: 'select', options: STATUS_OPTIONS },
+  { key: 'endDate', label: 'End Date', type: 'date' },
+];
+
+const BulkEditProductionModal = ({ selectedIds, selectedCount, jobs, onClose, onDone }) => {
+  const [fields, setFields] = useState(() =>
+    Object.fromEntries(PROD_BULK_FIELDS.map(f => [f.key, { enabled: false, value: '' }]))
+  );
+  const [saving, setSaving] = useState(false);
+
+  const toggleField = key =>
+    setFields(prev => ({ ...prev, [key]: { enabled: !prev[key].enabled, value: prev[key].enabled ? '' : prev[key].value } }));
+
+  const setValue = (key, value) =>
+    setFields(prev => ({ ...prev, [key]: { ...prev[key], value } }));
+
+  const activeFields = PROD_BULK_FIELDS.filter(f => fields[f.key].enabled);
+
+  const handleApply = async () => {
+    if (activeFields.length === 0) { alert('Please enable at least one field to update.'); return; }
+    if (activeFields.some(f => !fields[f.key].value)) { alert('Please set a value for every enabled field.'); return; }
+
+    setSaving(true);
+    let successCount = 0;
+    let failCount = 0;
+    try {
+      await Promise.all(
+        selectedIds.map(async jobId => {
+          const job = jobs.find(j => j.id === jobId);
+          const payload = {
+            processStatus: fields.processStatus.enabled ? fields.processStatus.value : job?.processStatus,
+            qcStatus: fields.qcStatus.enabled ? fields.qcStatus.value : job?.qcStatus,
+            endDate: fields.endDate.enabled ? fields.endDate.value : job?.endDate,
+            employees: job?.employees || [],
+          };
+          try {
+            await apiCall(`/jobs/${jobId}/production`, 'PUT', payload);
+            successCount++;
+          } catch {
+            failCount++;
+          }
+        })
+      );
+      if (failCount > 0) {
+        alert(`Done: ${successCount} updated, ${failCount} failed.`);
+      } else {
+        alert(`✅ Successfully updated ${successCount} job${successCount !== 1 ? 's' : ''}.`);
+      }
+      await onDone();
+      onClose();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="prod-bulk-overlay" onClick={onClose}>
+      <div className="prod-bulk-modal" onClick={e => e.stopPropagation()}>
+        <h3 className="prod-bulk-title">✏️ Bulk Edit — {selectedCount} Job{selectedCount !== 1 ? 's' : ''}</h3>
+        <p className="prod-bulk-hint">Toggle the fields you want to update. Only enabled fields will be changed.</p>
+        <div className="prod-bulk-fields">
+          {PROD_BULK_FIELDS.map(f => {
+            const { enabled, value } = fields[f.key];
+            return (
+              <div key={f.key} className={`prod-bulk-row${enabled ? ' active' : ''}`}>
+                <label className="prod-bulk-toggle">
+                  <input type="checkbox" checked={enabled} onChange={() => toggleField(f.key)} />
+                  <span className="prod-bulk-label">{f.label}</span>
+                </label>
+                <div className="prod-bulk-control">
+                  {f.type === 'select' ? (
+                    <select value={value} disabled={!enabled} onChange={e => setValue(f.key, e.target.value)}>
+                      <option value="">-- Select --</option>
+                      {f.options.map(o => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  ) : (
+                    <input type="date" value={value} disabled={!enabled} onChange={e => setValue(f.key, e.target.value)} />
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="prod-bulk-actions">
+          <button className="prod-bulk-cancel" onClick={onClose}>Cancel</button>
+          <button
+            className="prod-bulk-apply"
+            onClick={handleApply}
+            disabled={saving || activeFields.length === 0}
+          >
+            {saving ? 'Applying...' : `Apply to ${selectedCount} Job${selectedCount !== 1 ? '' : ''}`}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const fmtDate = (d) => {
   if (!d) return '—';
   try {
@@ -19,6 +120,22 @@ const fmtDate = (d) => {
     return `${day}-${month}-${year}`;
   } catch {
     return d;
+  }
+};
+
+const calculateNoOfDays = (start, end) => {
+  if (!start || !end) return '—';
+  try {
+    const s = new Date(start);
+    const e = new Date(end);
+    if (isNaN(s.getTime()) || isNaN(e.getTime())) return '—';
+    s.setHours(0, 0, 0, 0);
+    e.setHours(0, 0, 0, 0);
+    const diff = e.getTime() - s.getTime();
+    const days = Math.round(diff / (1000 * 60 * 60 * 24));
+    return days >= 0 ? days + 1 : '—';
+  } catch {
+    return '—';
   }
 };
 
@@ -65,6 +182,10 @@ const Production = () => {
   const [edits, setEdits] = useState({});
   const [savingRows, setSavingRows] = useState({}); // { [jobId]: boolean }
   const [successRows, setSuccessRows] = useState({}); // { [jobId]: boolean }
+
+  // Bulk selection state
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [showBulkEdit, setShowBulkEdit] = useState(false);
 
   const topScrollRef = React.useRef(null);
   const bottomScrollRef = React.useRef(null);
@@ -285,6 +406,28 @@ const Production = () => {
     return `proj-badge proj-badge-${index}`;
   };
 
+  // ── Bulk selection handlers ─────────────────────────────────────────
+  const toggleRow = id => setSelectedIds(prev => {
+    const next = new Set(prev);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return next;
+  });
+
+  const toggleAll = () => {
+    if (selectedIds.size === jobs.length && jobs.length > 0) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(jobs.map(j => j.id)));
+    }
+  };
+
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const handleBulkEditDone = async () => {
+    clearSelection();
+    await loadProductionJobs(page);
+  };
+
   return (
     <div className="production-container">
       <div className="bj-page-title">
@@ -441,6 +584,25 @@ const Production = () => {
           </div>
         ) : (
           <>
+            {/* Bulk toolbar */}
+            <div className="prod-table-topbar">
+              <div style={{ fontSize: '0.82rem', color: '#64748b' }}>
+                Showing {jobs.length} of {totalItems} records
+                {totalPages > 1 && ` (page ${page + 1} of ${totalPages})`}
+              </div>
+              {selectedIds.size > 0 && (
+                <div className="prod-bulk-toolbar">
+                  <span className="prod-bulk-count">✅ {selectedIds.size} selected</span>
+                  <button className="prod-bulk-edit-btn" onClick={() => setShowBulkEdit(true)}>
+                    ✏️ Bulk Edit
+                  </button>
+                  <button className="prod-bulk-deselect-btn" onClick={clearSelection}>
+                    ✕ Deselect All
+                  </button>
+                </div>
+              )}
+            </div>
+
             <div className="double-scroll-top" ref={topScrollRef}>
               <div className="double-scroll-top-inner" />
             </div>
@@ -448,6 +610,15 @@ const Production = () => {
               <table className="production-table">
                 <thead>
                   <tr>
+                    <th className="prod-th-check">
+                      <input
+                        type="checkbox"
+                        className="prod-row-checkbox"
+                        checked={jobs.length > 0 && selectedIds.size === jobs.length}
+                        onChange={toggleAll}
+                        title="Select all on this page"
+                      />
+                    </th>
                     <th>Client</th>
                     <th>Project</th>
                     <th>Task Name</th>
@@ -464,6 +635,7 @@ const Production = () => {
                     <th style={{ minWidth: '130px' }}>Process Status</th>
                     <th style={{ minWidth: '130px' }}>QC Status</th>
                     <th>End Date</th>
+                    <th>No. Day</th>
                     <th className="actions-col">Action</th>
                   </tr>
                 </thead>
@@ -488,7 +660,15 @@ const Production = () => {
                       : (job.employees ? job.employees.join(', ') : '');
 
                     return (
-                      <tr key={job.id} className={isModified ? 'modified-row' : ''}>
+                      <tr key={job.id} className={`${isModified ? 'modified-row' : ''} ${selectedIds.has(job.id) ? 'prod-row-selected' : ''}`}>
+                        <td className="prod-td-check">
+                          <input
+                            type="checkbox"
+                            className="prod-row-checkbox"
+                            checked={selectedIds.has(job.id)}
+                            onChange={() => toggleRow(job.id)}
+                          />
+                        </td>
                         <td className="client-name-col" title={job.clientName}>
                           {job.clientName ? (
                             <span className="client-badge" style={{ background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', padding: '2px 6px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: 700 }}>
@@ -596,6 +776,9 @@ const Production = () => {
                             disabled={isSaving}
                           />
                         </td>
+                        <td style={{ fontWeight: 'bold', color: '#475569' }}>
+                          {calculateNoOfDays(job.productionStartDate, currentEndDate)}
+                        </td>
                         <td className="actions-col">
                           {isSaving ? (
                             <span className="row-spinner" />
@@ -668,10 +851,19 @@ const Production = () => {
           </>
         )}
       </div>
+
+      {/* Bulk Edit Modal */}
+      {showBulkEdit && (
+        <BulkEditProductionModal
+          selectedIds={Array.from(selectedIds)}
+          selectedCount={selectedIds.size}
+          jobs={jobs}
+          onClose={() => setShowBulkEdit(false)}
+          onDone={handleBulkEditDone}
+        />
+      )}
     </div>
   );
 };
 
 export default Production;
-
-

@@ -54,6 +54,7 @@ public class ClientController {
         }
         Client client = new Client();
         client.setCompanyName(request.getCompanyName());
+        client.setCompanyFullName(request.getCompanyFullName());
         client.setAddressLine1(request.getAddressLine1());
         client.setAddressLine2(request.getAddressLine2());
         client.setCity(request.getCity());
@@ -80,6 +81,7 @@ public class ClientController {
                 .orElseThrow(() -> new com.arrowdatatech.adt_production_report.common.exception
                         .ResourceNotFoundException("Client", "id", id));
         client.setCompanyName(request.getCompanyName());
+        client.setCompanyFullName(request.getCompanyFullName());
         client.setAddressLine1(request.getAddressLine1());
         client.setCity(request.getCity());
         client.setState(request.getState());
@@ -114,6 +116,7 @@ public class ClientController {
         return ClientResponse.builder()
                 .id(c.getId())
                 .companyName(c.getCompanyName())
+                .companyFullName(c.getCompanyFullName())
                 .addressLine1(c.getAddressLine1())
                 .addressLine2(c.getAddressLine2())
                 .city(c.getCity())

@@ -550,6 +550,134 @@ const ReconfirmDeleteModal = ({ job, onClose, onDelete }) => {
   );
 };
 
+// ── Bulk Edit Modal ───────────────────────────────────────────────
+const BULK_EDIT_FIELDS = [
+  { key: 'pdfType', label: 'PDF Input Type', type: 'select', options: PDF_TYPES },
+  { key: 'complexity', label: 'Complexity', type: 'select', options: COMPLEXITY_OPTIONS.map(c => c.label) },
+  { key: 'refType', label: 'Reference Type', type: 'select', options: REF_TYPES },
+  { key: 'status', label: 'Status', type: 'select', options: STATUS_OPTIONS },
+  { key: 'fileStatus', label: 'File Status', type: 'select', options: FILE_STATUS_OPTIONS },
+  { key: 'uploadDate', label: 'Upload Date', type: 'date' },
+  { key: 'billing', label: 'Billing Status', type: 'select', options: BILLING_STATUS_OPTIONS },
+];
+
+const BulkEditModal = ({ selectedIds, selectedCount, onClose, onDone }) => {
+  // Track which fields are enabled (checked) and their values
+  const [fields, setFields] = useState(() =>
+    Object.fromEntries(BULK_EDIT_FIELDS.map(f => [f.key, { enabled: false, value: '' }]))
+  );
+  const [saving, setSaving] = useState(false);
+
+  const toggleField = (key) =>
+    setFields(prev => ({ ...prev, [key]: { ...prev[key], enabled: !prev[key].enabled, value: prev[key].enabled ? '' : prev[key].value } }));
+
+  const setValue = (key, value) =>
+    setFields(prev => ({ ...prev, [key]: { ...prev[key], value } }));
+
+  const activeFields = BULK_EDIT_FIELDS.filter(f => fields[f.key].enabled);
+
+  const handleApply = async () => {
+    if (activeFields.length === 0) {
+      alert('Please enable and set at least one field to update.');
+      return;
+    }
+    const hasEmpty = activeFields.some(f => !fields[f.key].value);
+    if (hasEmpty) {
+      alert('Please provide a value for every enabled field.');
+      return;
+    }
+    setSaving(true);
+    try {
+      const updates = {};
+      activeFields.forEach(f => {
+        const apiKey = {
+          pdfType: 'pdfInputType',
+          complexity: 'complexity',
+          refType: 'referenceType',
+          status: 'status',
+          fileStatus: 'fileStatus',
+          uploadDate: 'uploadDate',
+          billing: 'billingStatus',
+        }[f.key];
+        updates[apiKey] = fields[f.key].value;
+      });
+      await apiCall('/jobs/bulk-update', 'PUT', {
+        ids: selectedIds,
+        updates,
+      });
+      await onDone();
+      onClose();
+    } catch (e) {
+      alert('Bulk update failed: ' + e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal onClose={onClose} wide>
+      <h2 className="bj-modal-title">✏️ Bulk Edit — {selectedCount} Job{selectedCount !== 1 ? 's' : ''}</h2>
+      <p className="bj-bulk-edit-hint">
+        Toggle the fields you want to update, then set the new value.
+        Only enabled fields will be changed.
+      </p>
+      <div className="bj-bulk-edit-fields">
+        {BULK_EDIT_FIELDS.map(f => {
+          const { enabled, value } = fields[f.key];
+          return (
+            <div key={f.key} className={`bj-bulk-edit-row${enabled ? ' active' : ''}`}>
+              <label className="bj-bulk-edit-toggle">
+                <input
+                  type="checkbox"
+                  checked={enabled}
+                  onChange={() => toggleField(f.key)}
+                />
+                <span className="bj-bulk-toggle-dot" />
+                <span className="bj-bulk-edit-label">{f.label}</span>
+              </label>
+              <div className="bj-bulk-edit-control">
+                {f.type === 'select' ? (
+                  <select
+                    value={value}
+                    disabled={!enabled}
+                    onChange={e => setValue(f.key, e.target.value)}
+                    className={f.key === 'complexity' ? getComplexityClass(value) : ''}
+                  >
+                    <option value="">-- Select --</option>
+                    {f.options.map(o => (
+                      <option key={o} value={o}
+                        className={f.key === 'complexity' ? getComplexityClass(o) : ''}>
+                        {o}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="date"
+                    value={value}
+                    disabled={!enabled}
+                    onChange={e => setValue(f.key, e.target.value)}
+                  />
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="bj-modal-actions">
+        <button className="bj-btn-cancel" onClick={onClose}>Cancel</button>
+        <button
+          className="bj-btn-primary"
+          onClick={handleApply}
+          disabled={saving || activeFields.length === 0}
+        >
+          {saving ? 'Applying...' : `Apply to ${selectedCount} Job${selectedCount !== 1 ? '' : ''}`}
+        </button>
+      </div>
+    </Modal>
+  );
+};
+
 // ── Bulk Import Modal ─────────────────────────────────────────────
 const BulkImportModal = ({ onClose, onBulkAdd, projects, clients = [], workflows = [] }) => {
   const [view, setView] = useState('main');
@@ -1016,6 +1144,10 @@ const BooksJobs = () => {
   const [modal, setModal] = useState(null);
   const [showExportDropdown, setShowExportDropdown] = useState(false);
 
+  // ── Bulk selection state ────────────────────────────────────────
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [showBulkEdit, setShowBulkEdit] = useState(false);
+
   // Filter state (un-applied until Search clicked)
   const [filters, setFilters] = useState({
     clientId: '',
@@ -1210,6 +1342,30 @@ const BooksJobs = () => {
 
   const handleBulkAdd = async () => {
     await loadJobs(0);
+  };
+
+  // ── Bulk selection handlers ─────────────────────────────────────
+  const toggleRow = (id) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    if (selectedIds.size === rows.length && rows.length > 0) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(rows.map(j => j.id)));
+    }
+  };
+
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const handleBulkEditDone = async () => {
+    clearSelection();
+    await loadJobs(page);
   };
 
   // ── Search / Clear ──────────────────────────────────────────
@@ -1517,12 +1673,31 @@ const BooksJobs = () => {
         </div>
       ) : (
         <div className="bj-table-container">
-          {/* Result count */}
-          <div style={{
-            padding: '8px 12px', fontSize: '0.85rem', color: '#6b7280'
-          }}>
-            Showing {rows.length} of {totalItems} jobs
-            {totalPages > 1 && ` (page ${page + 1} of ${totalPages})`}
+          {/* Result count + Bulk toolbar */}
+          <div className="bj-table-topbar">
+            <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>
+              Showing {rows.length} of {totalItems} jobs
+              {totalPages > 1 && ` (page ${page + 1} of ${totalPages})`}
+            </div>
+            {selectedIds.size > 0 && (
+              <div className="bj-bulk-toolbar">
+                <span className="bj-bulk-count">
+                  ✅ {selectedIds.size} selected
+                </span>
+                <button
+                  className="bj-bulk-edit-trigger"
+                  onClick={() => setShowBulkEdit(true)}
+                >
+                  ✏️ Bulk Edit
+                </button>
+                <button
+                  className="bj-bulk-clear-btn"
+                  onClick={clearSelection}
+                >
+                  ✕ Deselect All
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="double-scroll-top" ref={topScrollRef}>
@@ -1532,6 +1707,15 @@ const BooksJobs = () => {
             <table className="bj-table">
               <thead>
                 <tr>
+                  <th className="bj-th-check">
+                    <input
+                      type="checkbox"
+                      className="bj-row-checkbox"
+                      checked={rows.length > 0 && selectedIds.size === rows.length}
+                      onChange={toggleAll}
+                      title="Select all on this page"
+                    />
+                  </th>
                   <th>Client</th>
                   <th>Project</th>
                   <th>Task Name</th>
@@ -1555,12 +1739,20 @@ const BooksJobs = () => {
               <tbody>
                 {rows.length === 0 ? (
                   <tr>
-                    <td colSpan="18" className="bj-empty">
+                    <td colSpan="20" className="bj-empty">
                       No records found. Try different filters or add a job.
                     </td>
                   </tr>
                 ) : rows.map(job => (
-                  <tr key={job.id}>
+                  <tr key={job.id} className={selectedIds.has(job.id) ? 'bj-row-selected' : ''}>
+                    <td className="bj-td-check">
+                      <input
+                        type="checkbox"
+                        className="bj-row-checkbox"
+                        checked={selectedIds.has(job.id)}
+                        onChange={() => toggleRow(job.id)}
+                      />
+                    </td>
                     <td>
                       {job.clientName ? (
                         <span className="client-badge" style={{ background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', padding: '2px 6px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: 700 }}>
@@ -1714,6 +1906,14 @@ const BooksJobs = () => {
       {modal?.type === 'bulk' && (
         <BulkImportModal onClose={close} onBulkAdd={handleBulkAdd}
           projects={projects} clients={clients} workflows={workflows} />
+      )}
+      {showBulkEdit && (
+        <BulkEditModal
+          selectedIds={Array.from(selectedIds)}
+          selectedCount={selectedIds.size}
+          onClose={() => setShowBulkEdit(false)}
+          onDone={handleBulkEditDone}
+        />
       )}
     </div>
   );

@@ -13,6 +13,10 @@ public class MyTaskOption {
     private String  taskTitle;
     private UUID    projectId;
     private String  projectName;
+    private UUID    clientId;
+    private String  clientName;
+    private UUID    workflowId;
+    private String  workflowName;
     private UUID    processId;
     private String  processName;
     private Integer assignedPages;
@@ -36,6 +40,8 @@ public class MyTaskOption {
         private Integer pageCount;
     }
 }
+
+
 
 
 

@@ -941,8 +941,8 @@ export default function TaskManagement() {
 
   // ── Exports ─────────────────────────────────────────────────
   const handleExportCSV = () => {
-    const header = ["Assigned Date", "Client", "Project", "Task Name", "Process", "Job", "Employee",
-      "Chapter", "Page", "Due Date", "Status", "Task Creator", "Path"];
+    const header = ["Assigned Date", "Client", "Project", "Task Name", "Process", "Job", "Pages", "A.Page", "Employee",
+      "Chapter", "Due Date", "Status", "Task Creator", "Path"];
     const rows = tasks.map(t => [
       fmtDue(t.date) || "-",
       `"${t.client || "-"}"`,
@@ -950,9 +950,10 @@ export default function TaskManagement() {
       `"${t.workflow || "-"}"`,
       `"${t.processes.join("; ")}"`,
       `"${t.jobs.map(j => j.label).join("; ")}"`,
+      t.totalPages || "-",
+      t.pages || "-",
       `"${t.employees.map(e => e.name).join("; ")}"`,
       `"${t.chapter || "-"}"`,
-      t.pages || "-",
       fmtDue(t.dueDate) || "-",
       t.status,
       `"${t.assignedBy || "-"}"`,
@@ -982,7 +983,7 @@ export default function TaskManagement() {
       <p>${new Date().toLocaleDateString()}</p>
       <table><thead><tr>
         <th>Date</th><th>Client</th><th>Project</th><th>Task Name</th><th>Process</th><th>Job</th>
-        <th>Employee</th><th>Chapter</th><th>Page</th>
+        <th>Pages</th><th>A.Page</th><th>Employee</th><th>Chapter</th>
         <th>Due Date</th><th>Status</th><th>Creator</th><th>Path</th>
       </tr></thead><tbody>
       ${tasks.map(t => `<tr>
@@ -992,9 +993,10 @@ export default function TaskManagement() {
         <td>${t.workflow || "-"}</td>
         <td>${t.processes.join(", ") || "-"}</td>
         <td>${t.jobs.map(j => j.label).join("; ") || "-"}</td>
+        <td>${t.totalPages || "-"}</td>
+        <td>${t.pages || "-"}</td>
         <td>${t.employees.map(e => e.name).join(", ") || "-"}</td>
         <td>${t.chapter || "-"}</td>
-        <td>${t.pages || "-"}</td>
         <td>${fmtDue(t.dueDate) || "-"}</td>
         <td>${t.status}</td>
         <td>${t.assignedBy || "-"}</td>
@@ -1172,9 +1174,10 @@ export default function TaskManagement() {
                   <th className="col-workflow">Task Name</th>
                   <th className="col-process">Process</th>
                   <th className="col-job">Title / ISBN</th>
+                  <th className="col-totalpages">Pages</th>
+                  <th className="col-pages">A.Page</th>
                   <th className="col-employee">Employee Name</th>
-                  <th className="col-chapter">Chapter / Article / Batch</th>
-                  <th className="col-pages">Page</th>
+                  <th className="col-chapter">Chap / Art / Bat</th>
                   <th className="col-duedate">Due Date</th>
                   <th className="col-status">Status</th>
                   <th className="col-creator">Task Creator</th>
@@ -1185,7 +1188,7 @@ export default function TaskManagement() {
               <tbody>
                 {paginated.length === 0 ? (
                   <tr>
-                    <td colSpan={14} style={{
+                    <td colSpan={15} style={{
                       textAlign: "center", padding: "48px", color: "#a0aec0"
                     }}>
                       No tasks found.
@@ -1217,6 +1220,12 @@ export default function TaskManagement() {
                           : "-"}
                       </span>
                     </td>
+                    <td className="col-totalpages">
+                      {task.totalPages || "-"}
+                    </td>
+                    <td className="col-pages">
+                      {task.pages || "-"}
+                    </td>
                     <td className="col-employee col-left">
                       {task.employees.map(e => e.name).join(", ") || "-"}
                     </td>
@@ -1224,9 +1233,6 @@ export default function TaskManagement() {
                       <span className="cell-chapter">
                         {task.chapter || "-"}
                       </span>
-                    </td>
-                    <td className="col-pages">
-                      {task.pages || "-"}
                     </td>
                     <td className="col-duedate">
                       {fmtDue(task.dueDate) || "-"}

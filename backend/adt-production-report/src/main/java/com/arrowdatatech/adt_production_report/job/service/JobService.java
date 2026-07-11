@@ -333,6 +333,51 @@ public class JobService {
     }
 
     // ─────────────────────────────────────────────
+    // BULK UPDATE
+    // ─────────────────────────────────────────────
+    @Transactional
+    public int bulkUpdate(BulkUpdateRequest request) {
+        if (request.getIds() == null || request.getIds().isEmpty()) {
+            throw new BadRequestException("No job IDs provided.");
+        }
+        if (request.getUpdates() == null || request.getUpdates().isEmpty()) {
+            throw new BadRequestException("No update fields provided.");
+        }
+
+        List<Job> jobs = jobRepository.findAllById(request.getIds());
+        if (jobs.isEmpty()) {
+            throw new ResourceNotFoundException("Jobs", "ids", request.getIds());
+        }
+
+        Map<String, String> upd = request.getUpdates();
+        OffsetDateTime now = OffsetDateTime.now();
+
+        for (Job job : jobs) {
+            if (upd.containsKey("pdfInputType"))   job.setPdfInputType(upd.get("pdfInputType"));
+            if (upd.containsKey("complexity"))      job.setComplexity(upd.get("complexity"));
+            if (upd.containsKey("referenceType"))   job.setReferenceType(upd.get("referenceType"));
+            if (upd.containsKey("status"))          job.setStatus(upd.get("status"));
+            if (upd.containsKey("fileStatus"))      job.setFileStatus(upd.get("fileStatus"));
+            if (upd.containsKey("uploadDate"))      job.setUploadDate(parseDateOrNull(upd.get("uploadDate")));
+            if (upd.containsKey("billingStatus"))   job.setBillingStatus(upd.get("billingStatus"));
+            job.setUpdatedAt(now);
+        }
+
+        jobRepository.saveAll(jobs);
+
+        User currentUser = getCurrentUserOrNull();
+        if (currentUser != null) {
+            activityLogService.log(currentUser, "UPDATE", "jobs",
+                    null,
+                    "Bulk update: " + jobs.size() + " jobs, fields: " + upd.keySet(),
+                    null);
+        }
+
+        log.info("Bulk updated {} jobs with fields {}", jobs.size(), upd.keySet());
+        return jobs.size();
+    }
+
+    // ─────────────────────────────────────────────
     // SAVE FIELD MAPPING (JSONB — single row per project)
     // ─────────────────────────────────────────────
     @Transactional

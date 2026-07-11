@@ -100,7 +100,9 @@ public class WorkwiseController {
 
     @GetMapping("/logs")
     public ResponseEntity<ApiResponse<PagedResponse<TimeLogResponse>>> getLogs(
+            @RequestParam(required = false) UUID clientId,
             @RequestParam(required = false) UUID projectId,
+            @RequestParam(required = false) UUID workflowId,
             @RequestParam(required = false) UUID processId,
             @RequestParam(required = false) String status,
             @RequestParam(required = false)
@@ -112,7 +114,7 @@ public class WorkwiseController {
 
         UUID userId = SecurityUtils.getCurrentUserId();
         Page<TimeLogResponse> result = workwiseService.getMyTimeLogs(
-                userId, projectId, processId,
+                userId, clientId, projectId, workflowId, processId,
                 status, startDate, endDate, page, size);
 
         PagedResponse<TimeLogResponse> response = PagedResponse

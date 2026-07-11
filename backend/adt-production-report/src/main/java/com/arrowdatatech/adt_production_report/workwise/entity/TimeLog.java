@@ -43,7 +43,7 @@ public class TimeLog {
     private Task task;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = true)
-    @JoinColumn(name = "project_id", nullable = false,
+    @JoinColumn(name = "project_id", nullable = true,
             foreignKey = @ForeignKey(name = "fk_tl_project"))
     @org.hibernate.annotations.NotFound(action = org.hibernate.annotations.NotFoundAction.IGNORE)
     private Project project;
@@ -118,3 +118,7 @@ public class TimeLog {
         return shift != null ? shift.getName() : null;
     }
 }
+
+
+
+

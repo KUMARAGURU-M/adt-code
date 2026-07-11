@@ -105,6 +105,8 @@ export default function EmpWorkwise() {
   // ── Dropdown data (for log filters only) ─────────────────────
   const [projects, setProjects] = useState([]);
   const [processes, setProcesses] = useState([]);
+  const [clients, setClients] = useState([]);
+  const [workflows, setWorkflows] = useState([]);
 
   // ── Stop popup ────────────────────────────────────────────────
   const [showStop, setShowStop] = useState(false);
@@ -127,7 +129,7 @@ export default function EmpWorkwise() {
   const [logPages, setLogPages] = useState(0);
   const [logSize, setLogSize] = useState(25);
   const [logF, setLogF] = useState({
-    projectId: '', processId: '', status: '',
+    clientId: '', projectId: '', workflowId: '', processId: '', status: '',
     startDate: '', endDate: '',
   });
 
@@ -148,12 +150,16 @@ export default function EmpWorkwise() {
 
   const loadDropdowns = useCallback(async () => {
     try {
-      const [proj, proc] = await Promise.all([
+      const [proj, proc, cl, wf] = await Promise.all([
         apiCall('/projects'),
         apiCall('/processes'),
+        apiCall('/clients'),
+        apiCall('/projects/workflows'),
       ]);
       setProjects(proj || []);
       setProcesses(proc || []);
+      setClients(cl || []);
+      setWorkflows(wf || []);
     } catch (e) {
       console.warn('Could not load dropdowns:', e.message);
     }
@@ -186,7 +192,9 @@ export default function EmpWorkwise() {
     try {
       const f = filter !== null ? filter : logF;
       const p = new URLSearchParams({ page: pg, size: sizeVal });
+      if (f.clientId) p.set('clientId', f.clientId);
       if (f.projectId) p.set('projectId', f.projectId);
+      if (f.workflowId) p.set('workflowId', f.workflowId);
       if (f.processId) p.set('processId', f.processId);
       if (f.status) p.set('status', f.status);
       if (f.startDate) p.set('startDate', f.startDate);
@@ -246,10 +254,17 @@ export default function EmpWorkwise() {
     loadTasks();
     loadDropdowns();
     loadCurrent();
-    loadLogs(0);
     loadNext();
     // eslint-disable-next-line
   }, []);
+
+  // Auto-search logs when filter changes
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      loadLogs(0, logF);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [logF, loadLogs]);
 
   // ── Auto-populate from selected task ─────────────────────────
   // When user selects a task, ALL other fields fill from task data.
@@ -461,12 +476,15 @@ export default function EmpWorkwise() {
     setBusy(true);
     try {
       const data = await apiCall('/workwise/break/start', 'POST', {
-        timeLogId: timeLogId,
+        timeLogId: timeLogId || null,
         breakReason: bReason,       // DB enum value
         customReason: bReason === 'Other' ? bCustom : null,
         description: bDesc || null,
       });
       setContext(data);
+      if (data) {
+        setTimeLogId(data.timeLogId);
+      }
       setStatus('break');
       breakRef.current = new Date();
       setBreakEl(0);
@@ -484,8 +502,21 @@ export default function EmpWorkwise() {
     try {
       const data = await apiCall('/workwise/break/end', 'POST',
         { timeLogId });
-      setContext(data);
-      setStatus('running');
+      if (data) {
+        setContext(data);
+        setTimeLogId(data.timeLogId);
+        setStatus('running');
+      } else {
+        setContext(null);
+        setTimeLogId(null);
+        setStatus('stopped');
+        setElapsed(0);
+        setSelTask('');
+        setSelectedTask(null);
+        setAutoProject(''); setAutoProcess(''); setAutoJob('');
+        setAutoProjectId(null); setAutoProcessId(null); setAutoJobId(null);
+        await Promise.all([loadLogs(0), loadTasks(), loadNext()]);
+      }
       setBreakEl(0);
       breakRef.current = null;
     } catch (e) {
@@ -799,7 +830,9 @@ export default function EmpWorkwise() {
               </span>
               <strong>{nextTask.taskTitle}</strong>
               <span className="ww-next-task-meta">
+                {nextTask.clientName ? `${nextTask.clientName} · ` : ''}
                 {nextTask.projectName}
+                {nextTask.workflowName ? ` · ${nextTask.workflowName}` : ''}
                 {nextTask.processName ? ` · ${nextTask.processName}` : ''}
                 {nextTask.assignedPages != null
                   ? ` · ${nextTask.pagesCompleted ?? 0}/${nextTask.assignedPages} pg`
@@ -912,14 +945,21 @@ export default function EmpWorkwise() {
                 </div>
               )}
 
-              {/* Start button */}
-              <div className="ww-btn-container">
+              {/* Action buttons */}
+              <div className="ww-btn-container" style={{ display: 'flex', gap: '14px', width: '100%', justifyContent: 'center' }}>
                 <button
                   className={`ww-toggle-btn ${isFormValid() ? 'ww-btn-start' : 'ww-btn-disabled'
                     }`}
                   onClick={handleStart}
                   disabled={!isFormValid() || busy}>
                   {busy ? 'Starting...' : '▶ Start Task'}
+                </button>
+                <button
+                  className="ww-btn-break ww-toggle-btn"
+                  onClick={() => setShowBreak(true)}
+                  disabled={busy}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  ☕ Take Break
                 </button>
               </div>
             </div>
@@ -933,11 +973,13 @@ export default function EmpWorkwise() {
               </h2>
 
               <div className="ww-timers-row">
-                <div className="ww-timer-banner ww-timer-running"
-                  style={{ flex: 1 }}>
-                  <div className="ww-timer-display">{fmt(elapsed)}</div>
-                  <div className="ww-timer-label">TOTAL ELAPSED</div>
-                </div>
+                {context?.projectName && (
+                  <div className="ww-timer-banner ww-timer-running"
+                    style={{ flex: 1 }}>
+                    <div className="ww-timer-display">{fmt(elapsed)}</div>
+                    <div className="ww-timer-label">TOTAL ELAPSED</div>
+                  </div>
+                )}
                 <div className="ww-timer-banner ww-timer-break"
                   style={{ flex: 1 }}>
                   <div className="ww-timer-display">{fmt(breakEl)}</div>
@@ -952,12 +994,13 @@ export default function EmpWorkwise() {
                     : 'Timer is paused. Resume when ready.'}
                 </p>
                 <p className="ww-break-subtext">
-                  Task timer keeps running. Break time is subtracted
-                  from your productive time.
+                  {context?.projectName
+                    ? 'Task timer keeps running. Break time is subtracted from your productive time.'
+                    : 'Shift break is tracked separately and will be recorded in your time logs.'}
                 </p>
               </div>
 
-              {context && (
+              {context && context.projectName && (
                 <div className="ww-break-task-info">
                   <span className="ww-bti-item">
                     <span className="ww-bti-label">Project</span>
@@ -981,10 +1024,12 @@ export default function EmpWorkwise() {
                   onClick={handleResume} disabled={busy}>
                   {busy ? 'Resuming...' : '▶ Resume Work'}
                 </button>
-                <button className="ww-btn-stop-large"
-                  onClick={() => setShowStop(true)}>
-                  ⏹ Stop Task
-                </button>
+                {context?.projectName && (
+                  <button className="ww-btn-stop-large"
+                    onClick={() => setShowStop(true)}>
+                    ⏹ Stop Task
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -1086,6 +1131,22 @@ export default function EmpWorkwise() {
         </div>
 
         <div className="ww-filters">
+          {/* Client */}
+          <div className="ww-filter-col">
+            <label>Client</label>
+            <select className="ww-filter-select"
+              value={logF.clientId}
+              onChange={e => {
+                const nextClient = e.target.value;
+                setLogF(f => ({ ...f, clientId: nextClient, projectId: '' }));
+              }}>
+              <option value="">All Clients</option>
+              {clients.map(c => (
+                <option key={c.id} value={c.id}>{c.companyName}</option>
+              ))}
+            </select>
+          </div>
+
           {/* Project */}
           <div className="ww-filter-col">
             <label>Project</label>
@@ -1094,8 +1155,25 @@ export default function EmpWorkwise() {
               onChange={e => setLogF(f =>
                 ({ ...f, projectId: e.target.value }))}>
               <option value="">All Projects</option>
-              {projects.map(p => (
+              {(logF.clientId
+                ? projects.filter(p => p.clientId === logF.clientId)
+                : projects
+              ).map(p => (
                 <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Task Name */}
+          <div className="ww-filter-col">
+            <label>Task Name</label>
+            <select className="ww-filter-select"
+              value={logF.workflowId}
+              onChange={e => setLogF(f =>
+                ({ ...f, workflowId: e.target.value }))}>
+              <option value="">All Task Names</option>
+              {workflows.map(w => (
+                <option key={w.id} value={w.id}>{w.name}</option>
               ))}
             </select>
           </div>
@@ -1147,20 +1225,14 @@ export default function EmpWorkwise() {
           {/* Actions */}
           <div className="ww-filter-col ww-clear-col">
             <button className="ww-clear-btn"
+              style={{ width: '100%' }}
               onClick={() => {
-                const cleared = {
-                  projectId: '', processId: '', status: '',
+                setLogF({
+                  clientId: '', projectId: '', workflowId: '', processId: '', status: '',
                   startDate: '', endDate: ''
-                };
-                setLogF(cleared);
-                loadLogs(0, cleared);
+                });
               }}>
-              Clear
-            </button>
-            {/* BUG FIX: pass current logF snapshot directly */}
-            <button className="ww-apply-btn"
-              onClick={() => loadLogs(0, logF)}>
-              Apply
+              Clear Filters
             </button>
           </div>
         </div>
@@ -1170,11 +1242,14 @@ export default function EmpWorkwise() {
             <thead>
               <tr>
                 <th>Date</th>
-                <th>Check In</th>
-                <th>Check Out</th>
+                <th>Start </th>
+                <th>End</th>
+                <th>Client</th>
                 <th>Project</th>
+                <th>Task Name</th>
                 <th>Process</th>
                 <th>ISBN / Book</th>
+                <th>A.Page</th>
                 <th>Pages</th>
                 <th>Break Time</th>
                 <th>Working Time</th>
@@ -1184,18 +1259,33 @@ export default function EmpWorkwise() {
             <tbody>
               {logs.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="ww-table-empty">
+                  <td colSpan={13} className="ww-table-empty">
                     No time logs found.
                   </td>
                 </tr>
               ) : logs.map(log => (
                 <tr key={log.id}>
                   <td>{fmtDate(log.logDate)}</td>
-                  <td className="ww-td-mono">{formatTime(log.manualCheckIn || log.startTime)}</td>
+                  <td className="ww-td-mono">{formatTime(log.startTime)}</td>
                   <td className="ww-td-mono">{formatTime(log.manualCheckOut || log.endTime)}</td>
+                  <td>{log.clientName || '-'}</td>
                   <td>{log.projectName || '-'}</td>
+                  <td>{log.workflowName || '-'}</td>
                   <td>{log.processName || '-'}</td>
                   <td>{log.isbnTitle || '-'}</td>
+                  <td>
+                    {(() => {
+                      const str = log.assignedPagesStr;
+                      const num = log.assignedPages;
+                      const total = log.totalPages;
+                      if (!str && num == null) return '-';
+                      // "all pages" when str says so, or assigned equals total
+                      const isAll = (str && str.toLowerCase().includes('all'))
+                        || (num != null && total != null && num === total);
+                      if (isAll) return `All Page (${total ?? num})`;
+                      return str || num;
+                    })()}
+                  </td>
                   <td className="ww-td-center">
                     {log.pagesCompleted ?? '0'}
                   </td>
