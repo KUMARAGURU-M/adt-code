@@ -5,16 +5,16 @@ import { apiCall } from "../../utils/api";
 
 // ── Helpers ───────────────────────────────────────────────────────
 const roleClass = (role) => ({
-  Admin:    "role--admin",
-  Manager:  "role--manager",
+  Admin: "role--admin",
+  Manager: "role--manager",
   Employee: "role--employee",
-  Viewer:   "role--viewer",
+  Viewer: "role--viewer",
 }[role] || "role--employee");
 
 const avatarColor = (initial = "A") => {
   const colors = [
-    "#6c63ff","#00b894","#e17055",
-    "#0984e3","#a29bfe","#fd79a8",
+    "#6c63ff", "#00b894", "#e17055",
+    "#0984e3", "#a29bfe", "#fd79a8",
   ];
   return colors[(initial || "A").charCodeAt(0) % colors.length];
 };
@@ -58,16 +58,15 @@ function Modal({ title, onClose, children, confirm }) {
 }
 
 function ModalActions({ onCancel, onConfirm, confirmLabel, danger,
-                         disabled }) {
+  disabled }) {
   return (
     <div className="modal-actions">
       <button className="modal-btn-cancel" onClick={onCancel}>
         Cancel
       </button>
       <button
-        className={`modal-btn-confirm${
-          danger ? " modal-btn-confirm--danger" : ""
-        }`}
+        className={`modal-btn-confirm${danger ? " modal-btn-confirm--danger" : ""
+          }`}
         onClick={onConfirm}
         disabled={disabled}>
         {confirmLabel}
@@ -104,7 +103,7 @@ function EmployeeTable({
             <div className="tm-dropdown-menu">
               {availableUsers.length === 0 ? (
                 <div className="tm-dropdown-item" style={{
-                  color:"#aaa", cursor:"default"
+                  color: "#aaa", cursor: "default"
                 }}>
                   All users already added
                 </div>
@@ -143,7 +142,7 @@ function EmployeeTable({
               </tr>
             ) : entries.map(emp => {
               const initial = (emp.employeeName || emp.email || "A")[0]
-                                .toUpperCase();
+                .toUpperCase();
               return (
                 <tr key={emp.userId} className="tm-row">
                   <td>
@@ -162,11 +161,10 @@ function EmployeeTable({
                     </span>
                   </td>
                   <td>
-                    <span className={`tm-access-badge ${
-                      emp.access === "Granted"
-                        ? "tm-access-badge--granted"
-                        : "tm-access-badge--denied"
-                    }`}>
+                    <span className={`tm-access-badge ${emp.access === "Granted"
+                      ? "tm-access-badge--granted"
+                      : "tm-access-badge--denied"
+                      }`}>
                       {emp.access}
                     </span>
                   </td>
@@ -201,7 +199,7 @@ function EmployeeTable({
 // ═════════════════════════════════════════════════════════════════
 export default function Tools() {
   const [activeTab, setActiveTab] = useState(null); // toolId string
-  const [tools,     setTools]     = useState([]);   // ToolDto[]
+  const [tools, setTools] = useState([]);   // ToolDto[]
 
   // Per-tool access lists: toolId -> ToolAccessDto[]
   const [accessMap, setAccessMap] = useState({});
@@ -216,13 +214,13 @@ export default function Tools() {
 
   // Access toggle modal
   const [showAccessModal, setShowAccessModal] = useState(false);
-  const [selEntry,        setSelEntry]        = useState(null);
-  const [modalAccess,     setModalAccess]     = useState("Denied");
-  const [saving,          setSaving]          = useState(false);
+  const [selEntry, setSelEntry] = useState(null);
+  const [modalAccess, setModalAccess] = useState("Denied");
+  const [saving, setSaving] = useState(false);
 
   // Remove confirm modal
   const [showDelModal, setShowDelModal] = useState(false);
-  const [delEntry,     setDelEntry]     = useState(null);
+  const [delEntry, setDelEntry] = useState(null);
 
   // ── Load tools + users ────────────────────────────────────────
   const loadTools = useCallback(async () => {
@@ -234,10 +232,10 @@ export default function Tools() {
       ]);
       setTools(toolList || []);
       setAllUsers((userList || []).map(u => ({
-        id:       u.id,
+        id: u.id,
         fullName: u.fullName || u.email,
-        email:    u.email,
-        role:     u.role || "Employee",
+        email: u.email,
+        role: u.role || "Employee",
       })));
       if (toolList && toolList.length > 0) {
         setActiveTab(toolList[0].id);
@@ -327,7 +325,7 @@ export default function Tools() {
   if (loading) {
     return (
       <div className="tm-wrapper">
-        <div style={{ padding:"40px", textAlign:"center", color:"#888" }}>
+        <div style={{ padding: "40px", textAlign: "center", color: "#888" }}>
           Loading tools...
         </div>
       </div>
@@ -402,11 +400,11 @@ export default function Tools() {
           <p className="access-toggle-status">
             {modalAccess === "Granted"
               ? <span className="access-status--granted">
-                  ✓ Access will be granted
-                </span>
+                ✓ Access will be granted
+              </span>
               : <span className="access-status--revoked">
-                  ✗ Access will be revoked
-                </span>
+                ✗ Access will be revoked
+              </span>
             }
           </p>
           <ModalActions

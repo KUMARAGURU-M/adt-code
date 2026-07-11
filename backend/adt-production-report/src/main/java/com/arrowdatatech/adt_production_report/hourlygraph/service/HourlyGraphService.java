@@ -177,8 +177,20 @@ public class HourlyGraphService {
             rows.add(builder.build());
         }
 
-        // Sort by employee name alphabetically
-        rows.sort(Comparator.comparing(EmployeeRowDto::getName, Comparator.nullsLast(String::compareToIgnoreCase)));
+        // Sort by role priority first, then employee name alphabetically
+        Map<UUID, Integer> rolePriorityMap = eligibleUsers.stream()
+                .collect(Collectors.toMap(User::getId, this::getRolePriority));
+
+        rows.sort((r1, r2) -> {
+            int p1 = rolePriorityMap.getOrDefault(r1.getUserId(), 99);
+            int p2 = rolePriorityMap.getOrDefault(r2.getUserId(), 99);
+            if (p1 != p2) {
+                return Integer.compare(p1, p2);
+            }
+            String name1 = r1.getName() != null ? r1.getName() : "";
+            String name2 = r2.getName() != null ? r2.getName() : "";
+            return name1.compareToIgnoreCase(name2);
+        });
 
         // Get day of week name (e.g. Monday)
         String activeDay = date.getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.ENGLISH);
@@ -349,6 +361,21 @@ public class HourlyGraphService {
             log.error("Error during timing validation", e);
             throw new BadRequestException("Failed to validate hourly update timing rules");
         }
+    }
+
+    private int getRolePriority(User user) {
+        String role = user.getRoleAssignments().stream()
+                .map(ura -> ura.getRole().getName())
+                .collect(Collectors.joining(", "));
+        if (role.isEmpty()) {
+            role = "Employee";
+        }
+        String r = role.toLowerCase().trim();
+        if (r.contains("admin")) return 1;
+        if (r.contains("team leader")) return 2;
+        if (r.contains("manager") || r.contains("management")) return 3;
+        if (r.contains("employee")) return 4;
+        return 5;
     }
 
     private String normalizeShiftName(String shiftName) {

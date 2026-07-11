@@ -46,6 +46,16 @@ public class AttendanceService {
                                 ? name : null)
                 .stream()
                 .map(this::toEmployeeResponse)
+                .sorted((e1, e2) -> {
+                    int p1 = getRolePriority(e1.getCategory());
+                    int p2 = getRolePriority(e2.getCategory());
+                    if (p1 != p2) {
+                        return Integer.compare(p1, p2);
+                    }
+                    String name1 = e1.getName() != null ? e1.getName() : "";
+                    String name2 = e2.getName() != null ? e2.getName() : "";
+                    return name1.compareToIgnoreCase(name2);
+                })
                 .collect(Collectors.toList());
     }
 
@@ -199,6 +209,16 @@ public class AttendanceService {
 
         List<AttendanceEmployeeResponse> empResponses = employees.stream()
                 .map(this::toEmployeeResponse)
+                .sorted((e1, e2) -> {
+                    int p1 = getRolePriority(e1.getCategory());
+                    int p2 = getRolePriority(e2.getCategory());
+                    if (p1 != p2) {
+                        return Integer.compare(p1, p2);
+                    }
+                    String name1 = e1.getName() != null ? e1.getName() : "";
+                    String name2 = e2.getName() != null ? e2.getName() : "";
+                    return name1.compareToIgnoreCase(name2);
+                })
                 .collect(Collectors.toList());
 
         return MonthlyAttendanceResponse.builder()
@@ -549,5 +569,15 @@ public class AttendanceService {
                 .baseSalary(e.getBaseSalary())
                 .sortOrder(e.getSortOrder())
                 .build();
+    }
+
+    private int getRolePriority(String role) {
+        if (role == null) return 99;
+        String r = role.toLowerCase().trim();
+        if (r.contains("admin")) return 1;
+        if (r.contains("team leader")) return 2;
+        if (r.contains("manager") || r.contains("management")) return 3;
+        if (r.contains("employee")) return 4;
+        return 5;
     }
 }
