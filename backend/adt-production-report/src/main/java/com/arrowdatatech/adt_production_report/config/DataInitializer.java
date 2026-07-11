@@ -83,8 +83,8 @@ public class DataInitializer implements ApplicationRunner {
 
         // 1. Create user
         User admin = User.builder()
-                .userCode("1")
-                .email("admin@arrowdatatech.com")
+                .userCode("2")
+                .email("newadmin@arrowdatatech.com")
                 .passwordHash(passwordEncoder.encode("Admin@123"))
                 .isActive(true)
                 .updatedAt(OffsetDateTime.now())
@@ -95,8 +95,8 @@ public class DataInitializer implements ApplicationRunner {
         // 2. Create profile
         EmployeeProfile profile = EmployeeProfile.builder()
                 .user(admin)
-                .fullName("T. Mohamed Usen")
-                .phone("+91 9884562152")
+                .fullName("Kumar")
+                .phone("+91 7418646886")
                 .timezone("Asia/Kolkata")
                 .isTopPerformer(false)
                 .showCalendarStats(true)
