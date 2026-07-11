@@ -4,6 +4,8 @@ import com.arrowdatatech.adt_production_report.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.NotFound;
+import org.hibernate.annotations.NotFoundAction;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -30,12 +32,16 @@ public class ShiftUserAssignment {
     private Shift shift;
 
     // ManyToOne: many shift assignments -> one user
+    // @NotFound(IGNORE): if user is soft-deleted (@SQLRestriction filters them),
+    // Hibernate returns null instead of throwing EntityNotFoundException
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @NotFound(action = NotFoundAction.IGNORE)
     @JoinColumn(name = "user_id", nullable = false,
             foreignKey = @ForeignKey(name = "fk_shift_assignment_user"))
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @NotFound(action = NotFoundAction.IGNORE)
     @JoinColumn(name = "assigned_by",
             foreignKey = @ForeignKey(name = "fk_shift_assignment_by"))
     private User assignedBy;

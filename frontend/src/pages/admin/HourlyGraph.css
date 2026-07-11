@@ -656,6 +656,34 @@
   background: rgba(255, 59, 92, 0.18);
 }
 
+/* ── Drag handle in S.No cell (target table) ── */
+.hg-drag-handle {
+  display: none;
+  position: absolute;
+  top: 50%;
+  left: 4px;
+  transform: translateY(-50%);
+  font-size: 14px;
+  color: var(--hg-text-faint);
+  cursor: grab;
+  line-height: 1;
+  user-select: none;
+}
+
+.hg-drag-handle:active {
+  cursor: grabbing;
+}
+
+.hg-row:hover .hg-drag-handle {
+  display: block;
+}
+
+/* ── Drag-over visual feedback ── */
+.hg-row-drag-over {
+  border-top: 2.5px solid var(--cyan) !important;
+  background: var(--cyan-soft) !important;
+}
+
 .td-name,
 .th-name {
   min-width: 180px;

@@ -99,6 +99,10 @@ export default function HourlyGraph() {
     const [addingGroup, setAddingGroup] = useState(null);
     const [newColName, setNewColName] = useState("");
 
+    // Drag-to-reorder state for target rows
+    const [dragRowId, setDragRowId] = useState(null);
+    const [dragOverRowId, setDragOverRowId] = useState(null);
+
     const [search, setSearch] = useState("");
     const [savedAt, setSavedAt] = useState(null);
     const [dirty, setDirty] = useState(false);
@@ -134,18 +138,27 @@ export default function HourlyGraph() {
                 setColumnGroups(settings?.columnGroups || []);
 
                 // Map projects and default targets
+                // Iterate savedTargets FIRST to preserve the user's saved drag order,
+                // then append any new projects that have no saved row yet.
                 const activeProjects = pData || [];
                 const savedTargets = settings?.targetRows || [];
                 const mergedTargets = [];
+
+                savedTargets.forEach(r => {
+                    const matchingProject = activeProjects.find(p => {
+                        const formatted = p.clientName ? `${p.clientName}_${p.name}` : p.name;
+                        return formatted === r.project;
+                    });
+                    mergedTargets.push({
+                        ...r,
+                        id: r.id || (matchingProject ? `tgt-${matchingProject.id}` : `tgt-custom-${Date.now()}`)
+                    });
+                });
+
+                // Append any active projects that have no saved target row yet
                 activeProjects.forEach(p => {
                     const formatted = p.clientName ? `${p.clientName}_${p.name}` : p.name;
-                    const existing = savedTargets.find(r => r.project === formatted);
-                    if (existing) {
-                        mergedTargets.push({
-                            ...existing,
-                            id: existing.id || `tgt-${p.id}`
-                        });
-                    } else {
+                    if (!mergedTargets.some(mt => mt.project === formatted)) {
                         mergedTargets.push({
                             id: `tgt-${p.id}`,
                             project: formatted,
@@ -153,12 +166,7 @@ export default function HourlyGraph() {
                         });
                     }
                 });
-                // Keep any extra targets that aren't matches for current active projects
-                savedTargets.forEach(r => {
-                    if (!mergedTargets.some(mt => mt.project === r.project)) {
-                        mergedTargets.push(r);
-                    }
-                });
+
                 setTargetRows(mergedTargets);
 
             } catch (err) {
@@ -444,6 +452,58 @@ export default function HourlyGraph() {
         markDirty();
     };
 
+    // ── Drag-to-reorder handlers for target rows ──
+    const handleDragStart = (e, id) => {
+        setDragRowId(id);
+        e.dataTransfer.effectAllowed = "move";
+    };
+
+    const handleDragOver = (e, id) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        if (id !== dragRowId) setDragOverRowId(id);
+    };
+
+    const handleDrop = async (e, targetId) => {
+        e.preventDefault();
+        if (!dragRowId || dragRowId === targetId) {
+            setDragRowId(null);
+            setDragOverRowId(null);
+            return;
+        }
+        // Compute new order synchronously so we can save it immediately
+        let reordered;
+        setTargetRows((prev) => {
+            const next = [...prev];
+            const fromIdx = next.findIndex((r) => r.id === dragRowId);
+            const toIdx = next.findIndex((r) => r.id === targetId);
+            if (fromIdx === -1 || toIdx === -1) { reordered = prev; return prev; }
+            const [moved] = next.splice(fromIdx, 1);
+            next.splice(toIdx, 0, moved);
+            reordered = next;
+            return next;
+        });
+        setDragRowId(null);
+        setDragOverRowId(null);
+        // Auto-save the new order immediately (don't wait for user to click Save)
+        try {
+            await apiCall("/hourly-graph/settings", "POST", {
+                columnGroups,
+                targetRows: reordered,
+            });
+            setSavedAt(new Date());
+            setDirty(false);
+        } catch (err) {
+            console.error("Failed to auto-save row order:", err);
+            markDirty(); // Fall back to manual save
+        }
+    };
+
+    const handleDragEnd = () => {
+        setDragRowId(null);
+        setDragOverRowId(null);
+    };
+
     // ── Column-group header handlers (Admin only) ──
     const updateGroupLabel = (groupKey, label) => {
         if (!isAdmin) return;
@@ -672,22 +732,31 @@ export default function HourlyGraph() {
                                         </tr>
                                     ) : (
                                         targetRows.map((row, idx) => (
-                                            <tr key={row.id} className={`hg-row ${ROW_BANDS[idx % ROW_BANDS.length]}`}>
+                                            <tr
+                                                key={row.id}
+                                                className={`hg-row ${ROW_BANDS[idx % ROW_BANDS.length]}${dragOverRowId === row.id ? ' hg-row-drag-over' : ''}`}
+                                                draggable={isAdmin}
+                                                onDragStart={isAdmin ? (e) => handleDragStart(e, row.id) : undefined}
+                                                onDragOver={isAdmin ? (e) => handleDragOver(e, row.id) : undefined}
+                                                onDrop={isAdmin ? (e) => handleDrop(e, row.id) : undefined}
+                                                onDragEnd={isAdmin ? handleDragEnd : undefined}
+                                                style={dragRowId === row.id ? { opacity: 0.45 } : {}}
+                                            >
                                                 <td className="td-sno">
+                                                    {isAdmin && (
+                                                        <span className="hg-drag-handle" title="Drag to reorder">≡</span>
+                                                    )}
                                                     <span className="hg-sno-num">{idx + 1}</span>
                                                     {isAdmin && (
                                                         <button className="hg-sno-remove" onClick={() => removeTargetRow(row.id)} title="Remove row">✕</button>
                                                     )}
                                                 </td>
                                                 <td className="td-project">
-                                                    {!row.isNew ? (
-                                                        <span style={{ fontWeight: 700, paddingLeft: "5px" }}>{row.project}</span>
-                                                    ) : (
+                                                    {isAdmin ? (
                                                         <select
                                                             className="hg-cell-select tgt-project-select"
                                                             value={row.project}
                                                             onChange={(e) => updateTargetProject(row.id, e.target.value)}
-                                                            disabled={!isAdmin}
                                                         >
                                                             <option value="">Select project…</option>
                                                             {projects.map((p) => {
@@ -695,6 +764,8 @@ export default function HourlyGraph() {
                                                                 return <option key={p.id} value={formatted}>{formatted}</option>;
                                                             })}
                                                         </select>
+                                                    ) : (
+                                                        <span style={{ fontWeight: 700, paddingLeft: "5px" }}>{row.project}</span>
                                                     )}
                                                 </td>
                                                 {columnGroups.map((group) =>
@@ -996,4 +1067,5 @@ export default function HourlyGraph() {
         </div>
     );
 }
+
 

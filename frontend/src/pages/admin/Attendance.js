@@ -30,6 +30,11 @@ const CURRENT_YEAR = new Date().getFullYear();
 const CURRENT_MONTH = new Date().getMonth();
 const DOW_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+const formatUserCode = (code) => {
+  if (!code) return '—';
+  return code.replace(/^ADT-/, '');
+};
+
 // ── Local helpers (no API) ────────────────────────────────────────
 const getDaysInMonth = (y, m) => new Date(y, m + 1, 0).getDate();
 const getDayOfWeek = (y, m, d) => new Date(y, m, d).getDay();
@@ -763,7 +768,7 @@ const Attendance = () => {
                     attendance[emp.id] || {}, selYear, selMonth);
                   return (
                     <tr key={emp.id} className="att-row">
-                      <td className="att-td-sno">{emp.userCode || '—'}</td>
+                      <td className="att-td-sno">{formatUserCode(emp.userCode)}</td>
                       <td className="att-td-name col-left">
                         <button className="att-emp-name-btn"
                           onClick={() =>
@@ -876,7 +881,7 @@ const Attendance = () => {
                       <tr key={s.emp.id}
                         className={`att-summary-row${isHidden ? ' att-row-hidden' : ''
                           }`}>
-                        <td className="att-sum-sticky-id">{s.emp.userCode || '—'}</td>
+                        <td className="att-sum-sticky-id">{formatUserCode(s.emp.userCode)}</td>
                         <td className="col-left att-sum-sticky-emp">
                           {s.emp.name}
                         </td>
@@ -1064,7 +1069,7 @@ const Attendance = () => {
                         (s.totalPresent / s.totalWorking) * 100) : 0;
                     return (
                       <tr key={s.emp.id}>
-                        <td>{s.emp.userCode || '—'}</td>
+                        <td>{formatUserCode(s.emp.userCode)}</td>
                         <td className="col-left">{s.emp.name}</td>
                         <td>
                           <span className={`att-cat-badge att-cat-${s.emp.category.toLowerCase().replace(/\s+/g, '-')

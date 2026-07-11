@@ -83,7 +83,7 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
                 JOIN tja2.task t2
                 WHERE tja2.job = j
             ) <= :endDate)
-            ORDER BY j.receiveDate DESC NULLS LAST, j.jobIdCode ASC
+            ORDER BY j.jobIdCode ASC
             """)
     Page<Job> searchProductionJobs(
             @Param("projectId")  UUID projectId,

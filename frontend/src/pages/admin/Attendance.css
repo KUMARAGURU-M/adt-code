@@ -293,18 +293,18 @@
 
 .att-th-sno {
   left: 0;
-  min-width: 40px;
-  width: 40px;
+  min-width: 100px;
+  width: 100px;
 }
 
 .att-th-name {
-  left: 40px;
+  left: 80px;
   min-width: 190px;
   width: 190px;
 }
 
 .att-th-cat {
-  left: 230px;
+  left: 280px;
   min-width: 120px;
   width: 120px;
 }
@@ -437,17 +437,19 @@
 
 .att-td-sno {
   left: 0;
+  min-width: 90px;
+  width: 90px;
   font-size: 11px;
   color: #9ca3af;
 }
 
 .att-td-name {
-  left: 40px;
+  left: 90px;
   text-align: center;
 }
 
 .att-td-cat {
-  left: 230px;
+  left: 280px;
 }
 
 .att-table tbody tr:hover .att-td-sno,
@@ -698,15 +700,15 @@
 .att-summary-table td.att-sum-sticky-id {
   position: sticky;
   left: 0;
-  min-width: 50px;
-  max-width: 50px;
-  width: 50px;
+  min-width: 120px;
+  max-width: 120px;
+  width: 120px;
 }
 
 .att-summary-table th.att-sum-sticky-emp,
 .att-summary-table td.att-sum-sticky-emp {
   position: sticky;
-  left: 50px;
+  left: 80px;
   min-width: 180px;
   max-width: 180px;
   width: 180px;
@@ -715,7 +717,7 @@
 .att-summary-table th.att-sum-sticky-role,
 .att-summary-table td.att-sum-sticky-role {
   position: sticky;
-  left: 230px;
+  left: 270px;
   min-width: 130px;
   max-width: 130px;
   width: 130px;
@@ -724,7 +726,7 @@
 .att-summary-table th.att-sum-sticky-gpay,
 .att-summary-table td.att-sum-sticky-gpay {
   position: sticky;
-  left: 360px;
+  left: 400px;
   min-width: 130px;
   max-width: 130px;
   width: 130px;
@@ -733,7 +735,7 @@
 .att-summary-table th.att-sum-sticky-salary,
 .att-summary-table td.att-sum-sticky-salary {
   position: sticky;
-  left: 490px;
+  left: 530px;
   min-width: 160px;
   max-width: 160px;
   width: 160px;
