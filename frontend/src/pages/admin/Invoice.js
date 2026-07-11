@@ -1066,7 +1066,7 @@ export default function Invoice() {
   const getExportFilename = () => {
     const uniqueProjects = Array.from(new Set(rows.map(r => r.projectName).filter(Boolean)));
     const projName = uniqueProjects.length > 0 ? uniqueProjects.join("_") : "";
-    const rawName = `${projName}_Invoice_of_ADT_${titleMonth}`;
+    const rawName = `${projName ? projName + "_" : ""}INVOICE OF ${vendorName.toUpperCase()} FOR THE MONTH OF ${titleMonth.toUpperCase()} - ${titleYear}`;
     return rawName.replace(/[/\\?%*:|"<>\r\n]/g, "").trim();
   };
 

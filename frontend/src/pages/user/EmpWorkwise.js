@@ -83,6 +83,64 @@ export default function EmpWorkwise() {
   const [timeLogId, setTimeLogId] = useState(null);
   const [breakEl, setBreakEl] = useState(0);
   const breakRef = useRef(null);
+  const [toast, setToast] = useState(null);
+  const lastBeepTimeRef = useRef(0);
+  const contextRef = useRef(null);
+
+  useEffect(() => {
+    contextRef.current = context;
+  }, [context]);
+
+  // Auto-close info/warning toasts after 5 seconds
+  useEffect(() => {
+    if (toast && toast.type !== 'error') {
+      const timer = setTimeout(() => setToast(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
+
+  // ── Break limits helper functions ──────────────────────────────
+  const getBreakLimitSeconds = (reason) => {
+    if (reason === 'Tea Break') return 15 * 60; // 15 mins
+    if (reason === 'Lunch Break') return 50 * 60; // 50 mins
+    return null;
+  };
+
+  const playBeep = () => {
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const playTone = (time, duration) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, time); // A5 note
+        gain.gain.setValueAtTime(0.08, time);
+        gain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+        osc.start(time);
+        osc.stop(time + duration);
+      };
+      playTone(audioCtx.currentTime, 0.25);
+      playTone(audioCtx.currentTime + 0.3, 0.25);
+    } catch (err) {
+      console.warn('Could not play break alert beep:', err);
+    }
+  };
+
+  const sendDesktopNotification = (reason, limitMinutes) => {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      try {
+        new Notification('Break Limit Exceeded!', {
+          body: `Your ${reason} has exceeded the limit of ${limitMinutes} minutes. Please resume your work.`,
+          tag: 'break-limit-alert',
+          requireInteraction: true
+        });
+      } catch (e) {
+        console.warn('Desktop notification failed:', e);
+      }
+    }
+  };
 
   // ── Task data ─────────────────────────────────────────────────
   const [myTasks, setMyTasks] = useState([]);
@@ -176,9 +234,26 @@ export default function EmpWorkwise() {
           setStatus('break');
           if (data.breakStartedAt) {
             breakRef.current = new Date(data.breakStartedAt);
-            setBreakEl(Math.floor(
+            const calculatedBreakEl = Math.floor(
               (Date.now() - breakRef.current.getTime()) / 1000
-            ));
+            );
+            setBreakEl(calculatedBreakEl);
+
+            // Show toast on page load if break is active
+            const limit = getBreakLimitSeconds(data.breakReason);
+            if (limit) {
+              if (calculatedBreakEl > limit) {
+                setToast({
+                  type: 'error',
+                  message: `⚠️ Active ${data.breakReason} limit (${limit / 60} mins) is exceeded!`
+                });
+              } else {
+                setToast({
+                  type: 'info',
+                  message: `ℹ️ Active ${data.breakReason}. Limit: ${limit / 60} mins. Remaining: ${fmt(limit - calculatedBreakEl)}`
+                });
+              }
+            }
           }
         } else {
           setStatus('running');
@@ -309,10 +384,31 @@ export default function EmpWorkwise() {
   useEffect(() => {
     let iv = null;
     if (status === 'break') {
-      iv = setInterval(() => setBreakEl(b => b + 1), 1000);
+      lastBeepTimeRef.current = 0;
+      iv = setInterval(() => {
+        setBreakEl(b => {
+          const newEl = b + 1;
+          const reason = contextRef.current?.breakReason;
+          const limit = getBreakLimitSeconds(reason);
+          if (limit && newEl > limit) {
+            const now = Date.now();
+            if (lastBeepTimeRef.current === 0 || now - lastBeepTimeRef.current >= 30000) {
+              lastBeepTimeRef.current = now;
+              playBeep();
+              sendDesktopNotification(reason, limit / 60);
+              setToast({
+                type: 'error',
+                message: `⚠️ ${reason} limit (${limit / 60} mins) exceeded!`
+              });
+            }
+          }
+          return newEl;
+        });
+      }, 1000);
     } else {
       setBreakEl(0);
       breakRef.current = null;
+      lastBeepTimeRef.current = 0;
     }
     return () => clearInterval(iv);
   }, [status]);
@@ -473,6 +569,10 @@ export default function EmpWorkwise() {
       alert('Please specify the reason for break.');
       return;
     }
+    // Request desktop notification permission if supported and not asked yet
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
     setBusy(true);
     try {
       const data = await apiCall('/workwise/break/start', 'POST', {
@@ -489,6 +589,21 @@ export default function EmpWorkwise() {
       breakRef.current = new Date();
       setBreakEl(0);
       setShowBreak(false);
+
+      // Trigger break start toast
+      const limit = getBreakLimitSeconds(bReason);
+      if (limit) {
+        setToast({
+          type: 'info',
+          message: `☕ ${bReason} started. Limit is ${limit / 60} minutes.`
+        });
+      } else {
+        setToast({
+          type: 'info',
+          message: `☕ Break (${bReason}) started.`
+        });
+      }
+
       setBReason(''); setBCustom(''); setBDesc('');
     } catch (e) {
       alert('Error starting break: ' + e.message);
@@ -532,6 +647,17 @@ export default function EmpWorkwise() {
   // ── Render ────────────────────────────────────────────────────
   return (
     <div className="workwise-page">
+
+      {/* ══ TOAST NOTIFICATIONS ═════════════════════════════════ */}
+      {toast && (
+        <div className={`ww-toast ${toast.type}`}>
+          <span className="ww-toast-icon">
+            {toast.type === 'error' ? '🚨' : toast.type === 'warning' ? '⚠️' : 'ℹ️'}
+          </span>
+          <span className="ww-toast-message">{toast.message}</span>
+          <button className="ww-toast-close" onClick={() => setToast(null)}>✕</button>
+        </div>
+      )}
 
       {/* ══ STOP POPUP ══════════════════════════════════════════ */}
       {showStop && (
@@ -986,6 +1112,41 @@ export default function EmpWorkwise() {
                   <div className="ww-timer-label">BREAK DURATION</div>
                 </div>
               </div>
+
+              {/* Real-time Break Limit Progress UI */}
+              {(() => {
+                const reason = context?.breakReason;
+                const limit = getBreakLimitSeconds(reason);
+                if (!limit) return null;
+                const isExceeded = breakEl > limit;
+                const pct = Math.min((breakEl / limit) * 100, 100);
+                const remaining = Math.max(0, limit - breakEl);
+                return (
+                  <div className={`ww-break-progress-container ${isExceeded ? 'exceeded' : ''}`}>
+                    <div className="ww-break-progress-header">
+                      <span className="ww-bp-limit-label">
+                        ⏱️ Limit: {limit / 60} mins ({reason})
+                      </span>
+                      <span className={`ww-bp-time-label ${isExceeded ? 'danger' : ''}`}>
+                        {isExceeded
+                          ? `Exceeded by ${fmt(breakEl - limit)}`
+                          : `Remaining: ${fmt(remaining)}`}
+                      </span>
+                    </div>
+                    <div className="ww-break-progress-bar">
+                      <div
+                        className={`ww-break-progress-fill ${isExceeded ? 'exceeded' : ''}`}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    {isExceeded && (
+                      <div className="ww-break-exceeded-warning">
+                        🚨 Please resume your work! Break limit exceeded.
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               <div className="ww-break-info">
                 <p className="ww-break-text">

@@ -2033,12 +2033,12 @@ tfoot .inv-hist-detail-table td {
   border-collapse: collapse;
   margin-bottom: 0;
   font-size: 10.5px;
-  border: 1px solid var(--inv-doc-border);
+  border: 0.3px solid var(--inv-doc-border);
 }
 
 .inv-doc-meta-table td {
   padding: 5px 8px;
-  border: 0.5px solid var(--inv-doc-border);
+  border: 0.2px solid var(--inv-doc-border);
   vertical-align: middle;
 }
 
@@ -2092,7 +2092,7 @@ tfoot .inv-hist-detail-table td {
   letter-spacing: 0.3px;
   padding: 6px 8px;
   background: #f5f5f5;
-  border: 1px solid var(--inv-doc-border);
+  border: 0.3px solid var(--inv-doc-border);
   border-top: none;
   border-bottom: none;
   margin-bottom: 0;
@@ -2109,7 +2109,7 @@ tfoot .inv-hist-detail-table td {
   border-collapse: collapse;
   font-size: 10px;
   /* Share top border with title bottom; left/right/bottom from outer border */
-  border: 1px solid var(--inv-doc-border);
+  border: 0.3px solid var(--inv-doc-border);
   border-top: none;
   /* Let columns be auto-sized by content; no fixed layout */
   table-layout: auto;
@@ -2117,7 +2117,7 @@ tfoot .inv-hist-detail-table td {
 
 .inv-doc-table th {
   background: #efefef;
-  border: 0.5px solid var(--inv-doc-border);
+  border: 0.2px solid var(--inv-doc-border);
   padding: 5px 5px;
   text-align: center !important;
   font-weight: 700;
@@ -2130,7 +2130,7 @@ tfoot .inv-hist-detail-table td {
 }
 
 .inv-doc-table td {
-  border: 0.5px solid var(--inv-doc-border);
+  border: 0.2px solid var(--inv-doc-border);
   padding: 5px 5px;
   font-size: var(--inv-doc-font-size, 10px) !important;
   vertical-align: middle;
@@ -2185,13 +2185,13 @@ tfoot .inv-hist-detail-table td {
   width: 100%;
   border-collapse: collapse;
   font-size: 10.5px;
-  border: 1px solid var(--inv-doc-border);
+  border: 0.3px solid var(--inv-doc-border);
   border-top: none;
   table-layout: fixed;
 }
 
 .inv-doc-totals-table td {
-  border: 0.5px solid var(--inv-doc-border);
+  border: 0.2px solid var(--inv-doc-border);
   padding: 4px 8px;
   vertical-align: middle;
 }
@@ -2242,7 +2242,7 @@ tfoot .inv-hist-detail-table td {
   margin-top: 0;
   align-items: stretch;
   flex-wrap: nowrap;
-  border: 1px solid var(--inv-doc-border);
+  border: 0.3px solid var(--inv-doc-border);
   border-top: none;
   padding: 10px 14px;
   background: #fff;
@@ -2471,13 +2471,13 @@ tfoot .inv-hist-detail-table td {
   .inv-doc-table {
     table-layout: auto !important;
     width: 100% !important;
-    border: 1px solid var(--inv-doc-border) !important;
+    border: 0.3px solid var(--inv-doc-border) !important;
     border-top: none !important;
   }
 
   .inv-doc-table th,
   .inv-doc-table td {
-    border: 0.5px solid var(--inv-doc-border) !important;
+    border: 0.2px solid var(--inv-doc-border) !important;
     word-break: keep-all !important;
     overflow-wrap: normal !important;
     white-space: normal !important;
@@ -2486,24 +2486,24 @@ tfoot .inv-hist-detail-table td {
   }
 
   .inv-doc-totals-table {
-    border: 1px solid var(--inv-doc-border) !important;
+    border: 0.3px solid var(--inv-doc-border) !important;
     border-top: none !important;
     width: 100% !important;
   }
 
   .inv-doc-meta-table {
-    border: 1px solid var(--inv-doc-border) !important;
+    border: 0.3px solid var(--inv-doc-border) !important;
     width: 100% !important;
   }
 
   .inv-doc-title {
-    border: 1px solid var(--inv-doc-border) !important;
+    border: 0.3px solid var(--inv-doc-border) !important;
     border-top: none !important;
     border-bottom: none !important;
   }
 
   .inv-doc-bottom {
-    border: 1px solid var(--inv-doc-border) !important;
+    border: 0.3px solid var(--inv-doc-border) !important;
     border-top: none !important;
     font-size: 8.5px !important;
     page-break-inside: avoid !important;

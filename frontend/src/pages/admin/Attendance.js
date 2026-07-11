@@ -32,7 +32,13 @@ const DOW_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 const formatUserCode = (code) => {
   if (!code) return '—';
-  return code.replace(/^ADT-/, '');
+  return code.replace(/^ADT-/i, '');
+};
+
+const getNumericId = (userCode) => {
+  if (!userCode) return Infinity;
+  const match = userCode.match(/\d+/);
+  return match ? parseInt(match[0], 10) : Infinity;
 };
 
 // ── Local helpers (no API) ────────────────────────────────────────
@@ -215,13 +221,22 @@ const Attendance = () => {
     return () => ro.disconnect();
   }, [activeView, employees]);
 
+  const sortedEmployees = useMemo(() => {
+    return [...employees].sort((a, b) => {
+      const numA = getNumericId(a.userCode);
+      const numB = getNumericId(b.userCode);
+      if (numA !== numB) return numA - numB;
+      return (a.userCode || '').localeCompare(b.userCode || '');
+    });
+  }, [employees]);
+
   // ── Filtered employees ────────────────────────────────────────
   const filtered = useMemo(() =>
-    employees.filter(e =>
+    sortedEmployees.filter(e =>
       (!filterCat || e.category === filterCat) &&
       (!filterName || e.name.toLowerCase()
         .includes(filterName.toLowerCase()))
-    ), [employees, filterCat, filterName]);
+    ), [sortedEmployees, filterCat, filterName]);
 
   const days = useMemo(
     () => buildDays(selYear, selMonth),
@@ -337,10 +352,10 @@ const Attendance = () => {
 
   // ── Summaries ─────────────────────────────────────────────────
   const summaries = useMemo(() =>
-    employees.map(emp => ({
+    sortedEmployees.map(emp => ({
       emp,
       ...computeSummary(attendance[emp.id] || {}, selYear, selMonth),
-    })), [employees, attendance, selYear, selMonth]);
+    })), [sortedEmployees, attendance, selYear, selMonth]);
 
   const totalMonthlySalary = useMemo(() =>
     summaries.reduce((sum, s) => {
@@ -356,7 +371,7 @@ const Attendance = () => {
 
   // ── Yearly summary ────────────────────────────────────────────
   const yearlySummary = useMemo(() =>
-    employees.map(emp => {
+    sortedEmployees.map(emp => {
       let totalPresent = 0, totalAbsent = 0, totalWorking = 0;
       for (let m = 0; m < 12; m++) {
         const s = computeSummary(
@@ -366,7 +381,7 @@ const Attendance = () => {
         totalWorking += s.workingDays;
       }
       return { emp, totalPresent, totalAbsent, totalWorking };
-    }), [employees, attendance, selYear]);
+    }), [sortedEmployees, attendance, selYear]);
 
   const workingDaysCount = useMemo(
     () => countWorkingDays(selYear, selMonth),
