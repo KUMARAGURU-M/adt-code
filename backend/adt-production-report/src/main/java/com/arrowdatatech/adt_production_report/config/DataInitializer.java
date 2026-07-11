@@ -95,8 +95,8 @@ public class DataInitializer implements ApplicationRunner {
         // 2. Create profile
         EmployeeProfile profile = EmployeeProfile.builder()
                 .user(admin)
-                .fullName("Kumar")
-                .phone("+91 7418646886")
+                .fullName("admin")
+                .phone("+91 1234567890")
                 .timezone("Asia/Kolkata")
                 .isTopPerformer(false)
                 .showCalendarStats(true)
