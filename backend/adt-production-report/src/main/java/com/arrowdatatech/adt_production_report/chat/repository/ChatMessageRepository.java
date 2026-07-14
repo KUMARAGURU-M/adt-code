@@ -43,6 +43,11 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, UUID> 
 
     long countBySenderIdAndRecipientIdAndIsReadFalse(UUID senderId, UUID recipientId);
 
+    @Query("SELECT MAX(m.createdAt) FROM ChatMessage m WHERE " +
+           "(m.sender.id = :user1Id AND m.recipient.id = :user2Id) " +
+           "OR (m.sender.id = :user2Id AND m.recipient.id = :user1Id)")
+    java.time.OffsetDateTime findLastMessageTime(@Param("user1Id") UUID user1Id, @Param("user2Id") UUID user2Id);
+
     @Query(value = "WITH RankedMessages AS (" +
                    "  SELECT *, ROW_NUMBER() OVER (" +
                    "    PARTITION BY LEAST(sender_id, recipient_id), GREATEST(sender_id, recipient_id) " +
@@ -61,3 +66,4 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, UUID> 
     @Query("DELETE FROM ChatMessage m WHERE m.createdAt < :cutoff")
     void deleteMessagesOlderThan(@Param("cutoff") java.time.OffsetDateTime cutoff);
 }
+

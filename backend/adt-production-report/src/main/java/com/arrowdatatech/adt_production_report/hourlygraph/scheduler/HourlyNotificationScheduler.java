@@ -29,8 +29,8 @@ public class HourlyNotificationScheduler {
     public void sendHourlyReminder() {
         log.info("Hourly production log reminder scheduler started.");
 
-        // 1. Fetch all active employees
-        List<User> employees = userRepository.findByRoleName("Employee");
+        // 1. Fetch all active executives
+        List<User> employees = userRepository.findByRoleName("Executive");
 
         // 2. Filter out employees who are hidden/excluded from Hourly Graph
         List<User> eligibleEmployees = employees.stream()
@@ -59,3 +59,11 @@ public class HourlyNotificationScheduler {
         log.info("Hourly production log reminder notifications created successfully.");
     }
 }
+
+
+
+
+
+
+
+

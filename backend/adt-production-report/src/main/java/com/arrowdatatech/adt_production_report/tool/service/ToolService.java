@@ -241,6 +241,7 @@ public class ToolService {
                 && !user.getRoleAssignments().isEmpty()
                 ? user.getRoleAssignments().iterator().next()
                 .getRole().getName()
-                : "Employee";
+                : "Executive";
     }
 }
+

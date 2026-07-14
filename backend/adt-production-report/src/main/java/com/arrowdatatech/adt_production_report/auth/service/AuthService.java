@@ -329,7 +329,7 @@ public class AuthService {
         boolean isAdmin = roles.contains("Admin");
         boolean isManager = roles.contains("Manager");
         boolean isAdminOrManager = isAdmin || isManager;
-        boolean isEmployeeOrTeamLeader = roles.contains("Employee")
+        boolean isEmployeeOrTeamLeader = roles.contains("Executive")
                 || roles.contains("Team Leader");
 
         log.info("Validating login type '{}' for roles: {}",
@@ -339,7 +339,7 @@ public class AuthService {
             // Admin tab: only Admin and Manager roles allowed
             if (!isAdminOrManager) {
                 throw new UnauthorizedException(
-                        "Access denied. Please use Employee Login.");
+                        "Access denied. Please use Executive Login.");
             }
         } else {
             // Employee tab: only non-admin roles allowed
@@ -376,11 +376,11 @@ public class AuthService {
                         ? user.getEmployeeProfile().getFullName()
                         : user.getEmail();
                 
-                String category = "Employee";
+                String category = "Executive";
                 List<String> roles = roleAssignmentRepository.findRoleNamesByUserId(user.getId());
                 if (!roles.isEmpty()) {
                     String primaryRole = roles.get(0);
-                    if (List.of("Admin", "Employee", "Team Leader", "Manager", "Senior Operator", "Operator", "Coordinator")
+                    if (List.of("Admin", "Executive", "Team Leader", "Manager", "Senior Operator", "Operator", "Coordinator")
                             .contains(primaryRole)) {
                         category = primaryRole;
                     }

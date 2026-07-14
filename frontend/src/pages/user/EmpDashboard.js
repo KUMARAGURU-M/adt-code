@@ -38,7 +38,7 @@ export default function EmpDashboard() {
 
   const [activeTab, setActiveTab] = useState('workwise');
   const [now, setNow] = useState(new Date());
-  const [userName, setUserName] = useState('Employee');
+  const [userName, setUserName] = useState('Executive');
   const [attendanceToday, setAttendanceToday] = useState(null);
   const [checkingInOut, setCheckingInOut] = useState(false);
   const [attendanceError, setAttendanceError] = useState('');
@@ -321,3 +321,4 @@ export default function EmpDashboard() {
     </div>
   );
 }
+

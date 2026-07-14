@@ -43,6 +43,8 @@ public class ChatService {
                     ChatContactResponse resp = mapToChatContactResponse(user);
                     long unread = chatMessageRepository.countBySenderIdAndRecipientIdAndIsReadFalse(user.getId(), currentUserId);
                     resp.setUnreadCount(unread);
+                    java.time.OffsetDateTime lastMsgTime = chatMessageRepository.findLastMessageTime(user.getId(), currentUserId);
+                    resp.setLastMessageAt(lastMsgTime);
                     return resp;
                 })
                 .collect(Collectors.toList());
@@ -248,6 +250,37 @@ public class ChatService {
         }
     }
 
+    @Transactional
+    public void deleteMessage(UUID currentUserId, UUID messageId) {
+        ChatMessage message = chatMessageRepository.findById(messageId)
+                .orElseThrow(() -> new ResourceNotFoundException("Message not found"));
+
+        if (!message.getSender().getId().equals(currentUserId)) {
+            throw new BadRequestException("You are not authorized to delete this message");
+        }
+
+        MediaFile mediaFile = message.getMediaFile();
+
+        chatMessageRepository.delete(message);
+        chatMessageRepository.flush();
+
+        if (mediaFile != null) {
+            try {
+                String storagePathStr = mediaFile.getStoragePath();
+                if (storagePathStr != null) {
+                    java.nio.file.Path path = java.nio.file.Paths.get(storagePathStr).normalize();
+                    if (java.nio.file.Files.deleteIfExists(path)) {
+                        log.info("Deleted chat attachment file from disk: {}", storagePathStr);
+                    }
+                }
+                mediaFileRepository.delete(mediaFile);
+                mediaFileRepository.flush();
+            } catch (Exception e) {
+                log.error("Failed to delete chat attachment ID {} on message deletion: {}", mediaFile.getId(), e.getMessage());
+            }
+        }
+    }
+
     // Helpers
     private ChatContactResponse mapToChatContactResponse(User user) {
         String fullName = user.getEmployeeProfile() != null ? user.getEmployeeProfile().getFullName() : null;
@@ -259,7 +292,7 @@ public class ChatService {
                 .map(ura -> ura.getRole().getName())
                 .collect(Collectors.joining(", "));
         if (role.isEmpty()) {
-            role = "Employee";
+            role = "Executive";
         }
 
         return ChatContactResponse.builder()

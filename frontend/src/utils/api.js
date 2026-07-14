@@ -202,12 +202,12 @@ export const apiCall = async (endpoint, method = 'GET', body = null) => {
 };
 
 export function getRolePrefix(roles) {
-  if (!roles || !Array.isArray(roles)) return 'employee';
+  if (!roles || !Array.isArray(roles)) return 'executive';
   if (roles.includes('Admin')) return 'admin';
   if (roles.includes('Manager')) return 'manager';
   if (roles.includes('Team Leader')) return 'team-leader';
-  if (roles.includes('Employee')) return 'employee';
-  return 'employee';
+  if (roles.includes('Executive')) return 'executive';
+  return 'executive';
 }
 
 export default apiCall;

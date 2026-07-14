@@ -17,4 +17,5 @@ public class ChatContactResponse {
     private String email;
     private String role;
     private Long unreadCount;
+    private java.time.OffsetDateTime lastMessageAt;
 }

@@ -6,10 +6,10 @@ import './UserManagement.css';
 import { apiCall, getRolePrefix } from '../../utils/api';
 
 // ── Static fallback data ─────────────────────────────────────────
-const ALL_ROLES = ['Employee', 'Manager', 'Admin', 'Viewer', 'Team Leader'];
+const ALL_ROLES = ['Executive', 'Manager', 'Admin', 'Viewer', 'Team Leader'];
 
 const mapRoleName = (roleVal) => {
-  if (!roleVal) return 'Employee';
+  if (!roleVal) return 'Executive';
   const match = ALL_ROLES.find(r => r.toLowerCase() === roleVal.toLowerCase());
   return match || (roleVal.charAt(0).toUpperCase() + roleVal.slice(1));
 };
@@ -33,7 +33,7 @@ const AddUserModal = ({ onClose, onAdd, shifts }) => {
     email: '',
     phone: '',
     password: '',
-    role: 'employee',
+    role: 'executive',
     shiftId: '',
     timezone: 'Asia/Kolkata',
     top: false,
@@ -646,7 +646,7 @@ const UserManagement = () => {
         name: u.fullName,
         email: u.email,
         phone: u.phone || '-',
-        role: u.role ? u.role.toLowerCase() : 'employee',
+        role: u.role ? u.role.toLowerCase() : 'executive',
         shiftId: u.shiftId || null,
         shift: u.shift || '-',
         top: u.isTopPerformer,

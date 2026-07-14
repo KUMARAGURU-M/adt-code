@@ -3,7 +3,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import './EmpHeader.css';
 
-const EmpHeader = ({ userName = 'Employee' }) => {
+const EmpHeader = ({ userName = 'Executive' }) => {
   const navigate = useNavigate();
 
   return (

@@ -76,13 +76,14 @@ public class ProjectService {
     public ProjectResponse createProject(CreateProjectRequest request) {
 
         String trimmedName = request.getName() != null ? request.getName().trim() : "";
-        // Validate unique name per client
+        String complexity = request.getComplexityLevel() != null ? request.getComplexityLevel() : "Medium";
+        // Validate unique name per client & complexity level
         boolean nameExists = request.getClientId() != null
-                ? projectRepository.existsByNameAndClientId(trimmedName, request.getClientId())
-                : projectRepository.existsByNameAndClientIdIsNull(trimmedName);
+                ? projectRepository.existsByNameAndClientIdAndComplexityLevel(trimmedName, request.getClientId(), complexity)
+                : projectRepository.existsByNameAndClientIdIsNullAndComplexityLevel(trimmedName, complexity);
         if (nameExists) {
             throw new BadRequestException(
-                    "Project '" + trimmedName + "' already exists for this client.");
+                    "Project '" + trimmedName + "' with complexity '" + complexity + "' already exists for this client.");
         }
 
         // Validate billing type
@@ -141,13 +142,14 @@ public class ProjectService {
                         "Project", "id", id));
 
         String trimmedName = request.getName() != null ? request.getName().trim() : "";
-        // Check name uniqueness among OTHER projects for this client
+        String complexity = request.getComplexityLevel() != null ? request.getComplexityLevel() : project.getComplexityLevel();
+        // Check name uniqueness among OTHER projects for this client & complexity
         boolean nameExists = request.getClientId() != null
-                ? projectRepository.existsByNameAndClientIdAndIdNot(trimmedName, request.getClientId(), id)
-                : projectRepository.existsByNameAndClientIdIsNullAndIdNot(trimmedName, id);
+                ? projectRepository.existsByNameAndClientIdAndComplexityLevelAndIdNot(trimmedName, request.getClientId(), complexity, id)
+                : projectRepository.existsByNameAndClientIdIsNullAndComplexityLevelAndIdNot(trimmedName, complexity, id);
         if (nameExists) {
             throw new BadRequestException(
-                    "Project '" + trimmedName + "' already exists for this client.");
+                    "Project '" + trimmedName + "' with complexity '" + complexity + "' already exists for this client.");
         }
 
         // Validate billing type
@@ -309,3 +311,14 @@ public class ProjectService {
                 .build();
     }
 }
+
+
+
+
+
+
+
+
+
+
+

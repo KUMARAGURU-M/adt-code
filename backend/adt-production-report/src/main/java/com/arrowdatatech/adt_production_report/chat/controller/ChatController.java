@@ -76,6 +76,16 @@ public class ChatController {
     }
 
     /**
+     * Delete a chat message (and its media file if any).
+     */
+    @DeleteMapping("/messages/{messageId}")
+    public ResponseEntity<ApiResponse<Void>> deleteMessage(@PathVariable UUID messageId) {
+        UUID currentUserId = SecurityUtils.getCurrentUserId();
+        chatService.deleteMessage(currentUserId, messageId);
+        return ResponseEntity.ok(ApiResponse.success("Message deleted successfully", null));
+    }
+
+    /**
      * Admin-only: Retrieve all conversation threads in the system.
      */
     @GetMapping("/admin/conversations")
@@ -117,6 +127,14 @@ public class ChatController {
         return ResponseEntity.ok(ApiResponse.success("All conversations cleared successfully", null));
     }
 }
+
+
+
+
+
+
+
+
 
 
 

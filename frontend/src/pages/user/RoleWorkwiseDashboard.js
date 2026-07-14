@@ -86,7 +86,7 @@ export default function RoleWorkwiseDashboard() {
       );
     }
 
-    const isLockedRole = roles.includes('Team Leader') || roles.includes('Manager') || roles.includes('Employee');
+    const isLockedRole = roles.includes('Team Leader') || roles.includes('Manager') || roles.includes('Executive');
     const isCheckedIn = !!attendanceToday?.checkInTime;
 
     if (isLockedRole && !isCheckedIn && (activeTab === 'workwise' || activeTab === 'tasks')) {
@@ -119,7 +119,7 @@ export default function RoleWorkwiseDashboard() {
 
   return (
     <div className="role-workwise-dashboard" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      
+
       {/* Top bar */}
       <div className="emp-topbar">
         {/* Timestamp - Date on left */}
@@ -146,10 +146,10 @@ export default function RoleWorkwiseDashboard() {
                 <div className="emp-stat-status">
                   <span
                     className={`emp-status-dot ${summary.status === 'Running'
-                        ? 'active'
-                        : summary.status === 'Stopped'
-                          ? 'stopped'
-                          : ''
+                      ? 'active'
+                      : summary.status === 'Stopped'
+                        ? 'stopped'
+                        : ''
                       }`}
                   />
                   {summary.status}

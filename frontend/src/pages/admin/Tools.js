@@ -7,9 +7,9 @@ import { apiCall } from "../../utils/api";
 const roleClass = (role) => ({
   Admin: "role--admin",
   Manager: "role--manager",
-  Employee: "role--employee",
+  Executive: "role--executive",
   Viewer: "role--viewer",
-}[role] || "role--employee");
+}[role] || "role--executive");
 
 const avatarColor = (initial = "A") => {
   const colors = [
@@ -90,13 +90,13 @@ function EmployeeTable({
     <div className="tm-section tm-section--emp">
       <div className="tm-section-header">
         <span className="tm-section-title">
-          {toolName} — Employee Access
+          {toolName} — Executive Access
         </span>
 
         <div className="tm-dropdown-wrapper">
           <button className="tm-btn-add"
             onClick={() => setShowDropdown(p => !p)}>
-            + Add Employee ▾
+            + Add Executive ▾
           </button>
 
           {showDropdown && (
@@ -137,7 +137,7 @@ function EmployeeTable({
             {entries.length === 0 ? (
               <tr>
                 <td colSpan={6} className="tm-empty">
-                  No employees added yet. Click "+ Add Employee" to add.
+                  No executives added yet. Click "+ Add Executive" to add.
                 </td>
               </tr>
             ) : entries.map(emp => {
@@ -157,7 +157,7 @@ function EmployeeTable({
                   <td className="tm-cell-muted">{emp.email}</td>
                   <td>
                     <span className={`emp-role ${roleClass(emp.role)}`}>
-                      {emp.role || "Employee"}
+                      {emp.role || "Executive"}
                     </span>
                   </td>
                   <td>
@@ -178,7 +178,7 @@ function EmployeeTable({
                       </button>
                       <button
                         className="tm-action-btn tm-action-btn--delete"
-                        title="Remove Employee"
+                        title="Remove Executive"
                         onClick={() => onRemoveUser(emp)}>
                         <DeleteIcon />
                       </button>
@@ -235,7 +235,7 @@ export default function Tools() {
         id: u.id,
         fullName: u.fullName || u.email,
         email: u.email,
-        role: u.role || "Employee",
+        role: u.role || "Executive",
       })));
       if (toolList && toolList.length > 0) {
         setActiveTab(toolList[0].id);
@@ -418,7 +418,7 @@ export default function Tools() {
 
       {/* ── Remove Confirm Modal ── */}
       {showDelModal && delEntry && (
-        <Modal title="Remove Employee"
+        <Modal title="Remove Executive"
           onClose={() => setShowDelModal(false)}
           confirm>
           <p className="modal-confirm-text">
@@ -437,3 +437,7 @@ export default function Tools() {
     </div>
   );
 }
+
+
+
+

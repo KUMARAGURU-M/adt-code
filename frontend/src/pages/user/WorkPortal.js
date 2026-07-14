@@ -28,13 +28,13 @@ const WorkPortal = () => {
           {/* BACK BUTTON */}
           <button
             className="wp-back-btn"
-            onClick={() => navigate('/employee/dashboard')}
+            onClick={() => navigate('/executive/dashboard')}
           >
             ⬅ Back to WorkWise
           </button>
 
           <span className="wp-user-greeting">
-            Welcome, Employee
+            Welcome, Executive
           </span>
 
         </div>
@@ -124,3 +124,4 @@ const WorkPortal = () => {
 };
 
 export default WorkPortal;
+

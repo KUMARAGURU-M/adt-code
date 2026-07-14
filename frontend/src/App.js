@@ -102,11 +102,11 @@ const getAllowedRoutes = (roles) => {
     ];
   }
 
-  if (roles.includes('Employee')) {
+  if (roles.includes('Executive')) {
     return [
-      '/employee/workwise',
-      '/employee/production',
-      '/employee/hourly-graph'
+      '/executive/workwise',
+      '/executive/production',
+      '/executive/hourly-graph'
     ];
   }
 
@@ -131,7 +131,7 @@ const AdminLayout = ({ children }) => {
     if (allowedRoutes.length > 0) {
       return <Navigate to={allowedRoutes[0]} replace />;
     } else {
-      return <Navigate to="/employee/dashboard" replace />;
+      return <Navigate to="/executive/dashboard" replace />;
     }
   }
 
@@ -170,7 +170,7 @@ function App() {
         <Route path="/login" element={<Login />} />
 
         {/* Employee */}
-        <Route path="/employee/dashboard" element={<EmpDashboard />} />
+        <Route path="/executive/dashboard" element={<EmpDashboard />} />
         <Route path="/workportal" element={<WorkPortal />} />
 
         {/* Role-Prefixed Routes */}

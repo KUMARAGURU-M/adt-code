@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
   Send, Paperclip, ChevronLeft, X, Search, FileText,
-  Download, MessageSquare, Loader2
+  Download, MessageSquare, Loader2, Trash2
 } from 'lucide-react';
 import { apiCall, getCurrentUser, getAccessToken } from '../../utils/api';
 import './ChatWidget.css';
@@ -250,6 +250,18 @@ export default function ChatWidget() {
     }
   };
 
+  const handleDeleteFile = async (messageId) => {
+    if (!window.confirm('Are you sure you want to delete this shared file? This will permanently remove it from both users.')) return;
+
+    try {
+      await apiCall(`/chat/messages/${messageId}`, 'DELETE');
+      setMessages(prev => prev.filter(m => m.id !== messageId));
+    } catch (err) {
+      console.error('Failed to delete file:', err);
+      alert('Failed to delete file. Please try again.');
+    }
+  };
+
   const triggerFileSelect = () => {
     fileInputRef.current?.click();
   };
@@ -276,6 +288,20 @@ export default function ChatWidget() {
     c.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     c.role.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Sort contacts so that those with new/unread messages are at the top, then by last message timestamp descending, then alphabetically
+  const sortedContacts = [...filteredContacts].sort((a, b) => {
+    if (a.unreadCount > 0 && b.unreadCount === 0) return -1;
+    if (a.unreadCount === 0 && b.unreadCount > 0) return 1;
+
+    if (a.lastMessageAt && b.lastMessageAt) {
+      return new Date(b.lastMessageAt) - new Date(a.lastMessageAt);
+    }
+    if (a.lastMessageAt) return -1;
+    if (b.lastMessageAt) return 1;
+
+    return a.fullName.localeCompare(b.fullName);
+  });
 
   const getInitials = (name) => {
     if (!name) return 'U';
@@ -315,7 +341,6 @@ export default function ChatWidget() {
                 </button>
                 <div className="header-info">
                   <span className="contact-name">{activeChat.fullName}</span>
-                  <span className="contact-role">{activeChat.role}</span>
                 </div>
               </div>
             ) : (
@@ -344,8 +369,8 @@ export default function ChatWidget() {
                   />
                 </div>
                 <div className="contacts-list">
-                  {filteredContacts.length > 0 ? (
-                    filteredContacts.map(contact => (
+                  {sortedContacts.length > 0 ? (
+                    sortedContacts.map(contact => (
                       <div
                         key={contact.id}
                         className="contact-card"
@@ -359,12 +384,11 @@ export default function ChatWidget() {
                             <span className="name">{contact.fullName}</span>
                             <span className="code">#{contact.userCode}</span>
                           </div>
-                          <div className="contact-card-footer">
-                            <span className="role">{contact.role}</span>
-                            {contact.unreadCount > 0 && (
+                          {contact.unreadCount > 0 && (
+                            <div className="contact-card-footer">
                               <span className="contact-unread-badge">{contact.unreadCount}</span>
-                            )}
-                          </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))
@@ -407,15 +431,27 @@ export default function ChatWidget() {
                                   </div>
                                 </div>
                               )}
-                              <a
-                                href={`${process.env.REACT_APP_API_URL}${msg.mediaFile.url}`}
-                                download
-                                target="_blank"
-                                rel="noreferrer"
-                                className="file-download-btn"
-                              >
-                                <Download size={14} />
-                              </a>
+                              <div className="file-actions" style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                                <a
+                                  href={`${process.env.REACT_APP_API_URL}${msg.mediaFile.url}`}
+                                  download
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="file-download-btn"
+                                >
+                                  <Download size={14} />
+                                </a>
+                                {isSelf && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteFile(msg.id)}
+                                    className="file-delete-btn"
+                                    title="Delete File"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           ) : (
                             /* Plain text Renders */

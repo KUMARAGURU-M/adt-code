@@ -17,6 +17,18 @@ const emptyForm = {
   hourlyRate: "0.00",
   active: true,
   workflowId: "",
+  complexitiesSelected: {
+    "Simple": false,
+    "Medium": false,
+    "Complex": false,
+    "Heavy Complex": false
+  },
+  complexityRates: {
+    "Simple": "0.00",
+    "Medium": "0.00",
+    "Complex": "0.00",
+    "Heavy Complex": "0.00"
+  }
 };
 
 // ── Helpers ───────────────────────────────────────────────────────
@@ -234,13 +246,29 @@ export default function Projects() {
   };
 
   // ── Validation ─────────────────────────────────────────────
-  const validate = (f) => {
+  const validate = (f, isEdit = false) => {
     const e = {};
     if (!f.name.trim()) e.name = "Project is required.";
     if (!f.billingType) e.billingType = "Billing Type is required.";
-    if (!f.complexity) e.complexity = "Complexity Level is required.";
-    if (!f.ratePerPage || isNaN(f.ratePerPage)) {
-      e.ratePerPage = "Valid rate required.";
+    if (isEdit) {
+      if (!f.complexity) e.complexity = "Complexity Level is required.";
+      if (!f.ratePerPage || isNaN(f.ratePerPage) || parseFloat(f.ratePerPage) < 0) {
+        e.ratePerPage = "Valid rate required.";
+      }
+    } else {
+      const selected = Object.keys(f.complexitiesSelected || {}).filter(
+        c => f.complexitiesSelected[c]
+      );
+      if (selected.length === 0) {
+        e.complexities = "At least one complexity level must be selected.";
+      } else {
+        selected.forEach(comp => {
+          const r = f.complexityRates?.[comp];
+          if (!r || isNaN(r) || parseFloat(r) < 0) {
+            e[`rate_${comp}`] = "Valid rate required.";
+          }
+        });
+      }
     }
     return e;
   };
@@ -253,21 +281,29 @@ export default function Projects() {
   };
 
   const handleCreate = async () => {
-    const e = validate(form);
+    const e = validate(form, false);
     if (Object.keys(e).length) { setErrors(e); return; }
     try {
       setSaving(true);
-      await apiCall("/projects", "POST", {
-        name: form.name.trim(),
-        description: form.description || null,
-        type: form.billingType,
-        complexityLevel: form.complexity,
-        ratePerPage: parseFloat(form.ratePerPage) || 0,
-        hourlyRate: parseFloat(form.hourlyRate) || null,
-        clientId: form.clientId || null,
-        workflowId: form.workflowId || null,
-        isActive: form.active,
-      });
+      const selected = Object.keys(form.complexitiesSelected || {}).filter(
+        c => form.complexitiesSelected[c]
+      );
+
+      for (const comp of selected) {
+        const rate = parseFloat(form.complexityRates?.[comp]) || 0;
+        await apiCall("/projects", "POST", {
+          name: `${form.name.trim()}`,
+          description: form.description || null,
+          type: form.billingType,
+          complexityLevel: comp,
+          ratePerPage: rate,
+          hourlyRate: parseFloat(form.hourlyRate) || null,
+          clientId: form.clientId || null,
+          workflowId: form.workflowId || null,
+          isActive: form.active,
+        });
+      }
+
       await loadProjects();
       setShowAddModal(false);
     } catch (err) {
@@ -290,13 +326,25 @@ export default function Projects() {
       clientId: project.clientId || null,
       workflowId: project.workflowId || "",
       active: project.status === "Active",
+      complexitiesSelected: {
+        "Simple": false,
+        "Medium": false,
+        "Complex": false,
+        "Heavy Complex": false
+      },
+      complexityRates: {
+        "Simple": "0.00",
+        "Medium": "0.00",
+        "Complex": "0.00",
+        "Heavy Complex": "0.00"
+      }
     });
     setErrors({});
     setShowEditModal(true);
   };
 
   const handleUpdate = async () => {
-    const e = validate(form);
+    const e = validate(form, true);
     if (Object.keys(e).length) { setErrors(e); return; }
     try {
       setSaving(true);
@@ -1017,50 +1065,144 @@ function ProjectForm({ form, errors, onChange, showActive, clients = [], workflo
         )}
       </div>
 
-      {/* Complexity Level */}
-      <div className="form-group">
-        <label className="form-label">
-          Complexity Level <span className="required">*</span>
-        </label>
-        <select
-          className={`form-select ${errors.complexity ? "form-input--error" : ""
-            } ${getComplexityClass(form.complexity)}`}
-          value={form.complexity}
-          onChange={e => onChange("complexity", e.target.value)}
-        >
-          {COMPLEXITY_LEVELS.map(c => (
-            <option key={c} value={c}
-              className={getComplexityClass(c)}>
-              {c}
-            </option>
-          ))}
-        </select>
-        {errors.complexity && (
-          <span className="form-error">{errors.complexity}</span>
-        )}
-      </div>
+      {!showActive ? (
+        <div className="form-group">
+          <label className="form-label" style={{ fontWeight: 600, marginBottom: "8px" }}>
+            Complexity Levels & Rates <span className="required">*</span>
+          </label>
+          <div style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "10px",
+            background: "#f8fafc",
+            padding: "12px",
+            borderRadius: "6px",
+            border: "1px solid #edf2f7"
+          }}>
+            {COMPLEXITY_LEVELS.map(comp => {
+              const isChecked = form.complexitiesSelected?.[comp] || false;
+              const rateVal = form.complexityRates?.[comp] || "0.00";
+              const rateErr = errors[`rate_${comp}`];
 
-      {/* Rate Per Page */}
-      <div className="form-group">
-        <label className="form-label">
-          Rate Per Page (₹) <span className="required">*</span>
-        </label>
-        <input
-          className={`form-input ${errors.ratePerPage ? "form-input--error" : ""
-            }`}
-          type="number"
-          min="0"
-          step="0.01"
-          value={form.ratePerPage}
-          onChange={e => onChange("ratePerPage", e.target.value)}
-        />
-        <span className="form-hint">
-          Amount per page for PDF/EPUB/XML/HTML conversion
-        </span>
-        {errors.ratePerPage && (
-          <span className="form-error">{errors.ratePerPage}</span>
-        )}
-      </div>
+              return (
+                <div key={comp} style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: "12px",
+                  padding: "6px",
+                  borderRadius: "4px",
+                  background: isChecked ? "#fff" : "transparent",
+                  border: isChecked ? "1px solid #edf2f7" : "1px solid transparent"
+                }}>
+                  <label className="checkbox-label" style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    cursor: "pointer",
+                    margin: 0,
+                    flex: 1
+                  }}>
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={e => {
+                        const updatedSelected = { ...form.complexitiesSelected, [comp]: e.target.checked };
+                        onChange("complexitiesSelected", updatedSelected);
+                        onChange("complexities", undefined);
+                      }}
+                    />
+                    <span className={`badge ${getComplexityClass(comp)}`}>
+                      {comp}
+                    </span>
+                  </label>
+
+                  <div style={{ display: "flex", flexDirection: "column", width: "120px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                      <span style={{ fontSize: "0.82rem", color: "#a0aec0" }}>₹</span>
+                      <input
+                        className={`form-input ${rateErr ? "form-input--error" : ""}`}
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="0.00"
+                        value={rateVal}
+                        disabled={!isChecked}
+                        onChange={e => {
+                          const updatedRates = { ...form.complexityRates, [comp]: e.target.value };
+                          onChange("complexityRates", updatedRates);
+                          onChange(`rate_${comp}`, undefined);
+                        }}
+                        style={{
+                          margin: 0,
+                          padding: "5px 8px",
+                          fontSize: "0.82rem",
+                          textAlign: "right",
+                          background: isChecked ? "#fff" : "#edf2f7",
+                          cursor: isChecked ? "text" : "not-allowed"
+                        }}
+                      />
+                    </div>
+                    {rateErr && (
+                      <span className="form-error" style={{ fontSize: "0.72rem", marginTop: "2px", textAlign: "right" }}>
+                        {rateErr}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {errors.complexities && (
+            <span className="form-error" style={{ marginTop: "4px" }}>{errors.complexities}</span>
+          )}
+        </div>
+      ) : (
+        <>
+          <div className="form-group">
+            <label className="form-label">
+              Complexity Level <span className="required">*</span>
+            </label>
+            <select
+              className={`form-select ${errors.complexity ? "form-input--error" : ""
+                } ${getComplexityClass(form.complexity)}`}
+              value={form.complexity}
+              onChange={e => onChange("complexity", e.target.value)}
+            >
+              {COMPLEXITY_LEVELS.map(c => (
+                <option key={c} value={c}
+                  className={getComplexityClass(c)}>
+                  {c}
+                </option>
+              ))}
+            </select>
+            {errors.complexity && (
+              <span className="form-error">{errors.complexity}</span>
+            )}
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">
+              Rate Per Page (₹) <span className="required">*</span>
+            </label>
+            <input
+              className={`form-input ${errors.ratePerPage ? "form-input--error" : ""
+                }`}
+              type="number"
+              min="0"
+              step="0.01"
+              value={form.ratePerPage}
+              onChange={e => onChange("ratePerPage", e.target.value)}
+            />
+            <span className="form-hint">
+              Amount per page for PDF/EPUB/XML/HTML conversion
+            </span>
+            {errors.ratePerPage && (
+              <span className="form-error">{errors.ratePerPage}</span>
+            )}
+          </div>
+        </>
+      )}
 
       {/* Hourly Rate */}
       <div className="form-group">

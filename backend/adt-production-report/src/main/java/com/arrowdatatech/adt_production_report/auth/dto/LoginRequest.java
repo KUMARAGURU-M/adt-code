@@ -20,7 +20,7 @@ public class LoginRequest {
     private String password;
 
     @JsonProperty("loginType")
-    private String loginType = "Employee";
+    private String loginType = "Executive";
 
     @JsonProperty("captchaCode")
     private String captchaCode;

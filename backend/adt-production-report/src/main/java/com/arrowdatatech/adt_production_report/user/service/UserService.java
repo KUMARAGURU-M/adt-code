@@ -96,7 +96,7 @@ public class UserService {
             case "admin": return 1;
             case "manager": return 2;
             case "team leader": return 3;
-            case "employee": return 4;
+            case "executive": return 4;
             case "viewer": return 5;
             default: return 99;
         }
@@ -216,7 +216,7 @@ public class UserService {
 
         // 4. Assign role
         String roleName = request.getRoleName() != null
-                ? request.getRoleName() : "Employee";
+                ? request.getRoleName() : "Executive";
         assignRoleToUser(user, roleName);
 
         // Sync to AttendanceEmployee
@@ -315,7 +315,7 @@ public class UserService {
             String roleToUse = request.getRoleName();
             if (roleToUse == null) {
                 List<String> roles = roleAssignmentRepository.findRoleNamesByUserId(userId);
-                roleToUse = roles.isEmpty() ? "Employee" : roles.get(0);
+                roleToUse = roles.isEmpty() ? "Executive" : roles.get(0);
             }
             final String finalRole = roleToUse;
             
@@ -491,7 +491,7 @@ public class UserService {
         // Sync to AttendanceEmployee if exists
         try {
             attendanceEmployeeRepository.findByUserId(userId).ifPresent(emp -> {
-                emp.setCategory(request.getRoleName() != null ? request.getRoleName() : "Employee");
+                emp.setCategory(request.getRoleName() != null ? request.getRoleName() : "Executive");
                 emp.setUpdatedAt(OffsetDateTime.now());
                 attendanceEmployeeRepository.save(emp);
                 log.info("Synchronized AttendanceEmployee category on role assign for userId {}", userId);
@@ -663,7 +663,7 @@ public class UserService {
 
     private void syncAttendanceEmployeeOnCreate(User user, EmployeeProfile profile, String roleName) {
         try {
-            String category = roleName != null ? roleName : "Employee";
+            String category = roleName != null ? roleName : "Executive";
             
             // Check if there is an existing unlinked AttendanceEmployee with the same name
             List<AttendanceEmployee> existing = attendanceEmployeeRepository.searchEmployees(null, profile.getFullName().trim());
@@ -705,13 +705,13 @@ public class UserService {
     }
 
     private String mapRoleToCategory(String roleName) {
-        if (roleName == null) return "Employee";
+        if (roleName == null) return "Executive";
         switch (roleName) {
             case "Admin": return "Admin";
             case "Manager": return "Manager";
             case "Team Leader": return "Team Leader";
-            case "Employee": return "Employee";
-            default: return "Employee";
+            case "Executive": return "Executive";
+            default: return "Executive";
         }
     }
 
@@ -725,7 +725,7 @@ public class UserService {
         List<String> roles = roleAssignmentRepository
                 .findRoleNamesByUserId(user.getId());
 
-        String primaryRole = roles.isEmpty() ? "Employee" : roles.get(0);
+        String primaryRole = roles.isEmpty() ? "Executive" : roles.get(0);
 
         String currentShift = shiftAssignmentRepository
                 .findByUserIdAndEffectiveToIsNull(user.getId())

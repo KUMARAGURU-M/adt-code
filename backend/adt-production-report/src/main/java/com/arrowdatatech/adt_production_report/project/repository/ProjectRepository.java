@@ -25,6 +25,14 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
 
     boolean existsByNameAndClientIdIsNullAndIdNot(String name, UUID id);
 
+    boolean existsByNameAndClientIdAndComplexityLevel(String name, UUID clientId, String complexityLevel);
+
+    boolean existsByNameAndClientIdIsNullAndComplexityLevel(String name, String complexityLevel);
+
+    boolean existsByNameAndClientIdAndComplexityLevelAndIdNot(String name, UUID clientId, String complexityLevel, UUID id);
+
+    boolean existsByNameAndClientIdIsNullAndComplexityLevelAndIdNot(String name, String complexityLevel, UUID id);
+
     // All active projects - admin project management page
     List<Project> findByIsActiveTrueOrderByNameAsc();
 
