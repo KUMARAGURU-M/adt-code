@@ -116,13 +116,14 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
     @Query("SELECT COUNT(t) FROM Task t")
     long countTotalTasks();
 
-    @Query("SELECT DISTINCT t.process.name FROM Task t WHERE t.project.id = :projectId")
+    @Query("SELECT DISTINCT t.process.name FROM Task t WHERE t.project.id = :projectId AND t.process IS NOT NULL")
     List<String> findProcessNamesByProjectId(@Param("projectId") UUID projectId);
 
     @Query("""
            SELECT DISTINCT t.project.id, t.process.name
            FROM Task t
            WHERE t.project.id IN :projectIds
+           AND t.process IS NOT NULL
            """)
     List<Object[]> findProcessNamesByProjectIds(@Param("projectIds") List<UUID> projectIds);
 }

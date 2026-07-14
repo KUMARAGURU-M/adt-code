@@ -329,10 +329,15 @@ public class TaskService {
 
         taskJobRepository.deleteByTaskId(id);
         taskEmployeeRepository.deleteByTaskId(id);
-        taskRepository.deleteById(id);
+
+        // Soft-delete: set deletedAt so @SQLRestriction("deleted_at IS NULL") hides it.
+        // Hard deleteById() would violate the entity's soft-delete contract and can
+        // break subsequent queries that JOIN through this task's FK relations.
+        task.setDeletedAt(OffsetDateTime.now());
+        taskRepository.save(task);
 
         logAction("DELETE", task);
-        log.info("Task deleted: {}", task.getTaskTitle());
+        log.info("Task soft-deleted: {}", task.getTaskTitle());
     }
 
     // ─────────────────────────────────────────────
