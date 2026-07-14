@@ -4,7 +4,7 @@ import './Production.css';
 import { apiCall } from '../../utils/api';
 import productionIcon from '../../img/production.png';
 const STATUS_OPTIONS = [
-  'FINISH', 'WIP', 'YTS', 'RTU', 'UPLOADED', 'PENDING', 'HOLD', 'QUERY'
+  'FINISH', 'WIP', 'YTS', 'RTU', 'PENDING', 'HOLD', 'QUERY'
 ];
 
 // ── Bulk Edit Modal (Production) ────────────────────────────────────────────
