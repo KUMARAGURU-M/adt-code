@@ -701,6 +701,11 @@ public class JobService {
             job.setEmployeeNames(joined.isEmpty() ? null : joined);
         }
 
+        if (request.getRefType() != null) {
+            job.setReferenceType(request.getRefType().equals("-") || request.getRefType().isBlank()
+                    ? null : request.getRefType());
+        }
+
         job.setUpdatedAt(OffsetDateTime.now());
         job = jobRepository.save(job);
 

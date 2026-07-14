@@ -7,6 +7,8 @@ const STATUS_OPTIONS = [
   'FINISH', 'WIP', 'YTS', 'RTU', 'PENDING', 'HOLD', 'QUERY'
 ];
 
+const REF_TYPES = ['-', 'BE-REF', 'CH-REF', 'PE-REF', 'CH_BE-REF', 'REF TYPE', 'BK/CH-REF', 'FN-REF', 'BK/FN-REF', 'CH/FN-REF', 'PG/FN-REF'];
+
 // ── Bulk Edit Modal (Production) ────────────────────────────────────────────
 const PROD_BULK_FIELDS = [
   { key: 'processStatus', label: 'Process Status', type: 'select', options: STATUS_OPTIONS },
@@ -318,12 +320,14 @@ const Production = () => {
       const currentQcStatus = newEdits.hasOwnProperty('qcStatus') ? newEdits.qcStatus : (job.qcStatus || 'PENDING');
       const currentEndDate = newEdits.hasOwnProperty('endDate') ? newEdits.endDate : (job.endDate || '');
       const currentEmployees = newEdits.hasOwnProperty('employees') ? newEdits.employees : (job.employees ? job.employees.join(', ') : '');
+      const currentRefType = newEdits.hasOwnProperty('refType') ? newEdits.refType : (job.referenceType || '');
 
       const matchesOriginal =
         currentProcessStatus === (job.processStatus || 'PENDING') &&
         currentQcStatus === (job.qcStatus || 'PENDING') &&
         currentEndDate === (job.endDate || '') &&
-        currentEmployees === (job.employees ? job.employees.join(', ') : '');
+        currentEmployees === (job.employees ? job.employees.join(', ') : '') &&
+        currentRefType === (job.referenceType || '');
 
       if (matchesOriginal) {
         const updated = { ...prev };
@@ -353,6 +357,7 @@ const Production = () => {
       processStatus: rowEdits.hasOwnProperty('processStatus') ? rowEdits.processStatus : job.processStatus,
       qcStatus: rowEdits.hasOwnProperty('qcStatus') ? rowEdits.qcStatus : job.qcStatus,
       endDate: rowEdits.hasOwnProperty('endDate') ? rowEdits.endDate : job.endDate,
+      refType: rowEdits.hasOwnProperty('refType') ? rowEdits.refType : (job.referenceType || ''),
       employees: rowEdits.hasOwnProperty('employees')
         ? rowEdits.employees.split(',').map(s => s.trim()).filter(Boolean)
         : (job.employees || [])
@@ -630,6 +635,7 @@ const Production = () => {
                     <th>Page</th>
                     <th>PDF Type</th>
                     <th>Complexity</th>
+                    <th style={{ minWidth: '130px' }}>Ref Type</th>
                     <th style={{ minWidth: '180px' }}>Employees Assigned</th>
                     <th>Start Date</th>
                     <th style={{ minWidth: '130px' }}>Process Status</th>
@@ -721,6 +727,19 @@ const Production = () => {
                         </td>
                         <td className="complexity-col">
                           <ComplexityBadge value={job.complexity} />
+                        </td>
+                        <td className="reftype-col">
+                          <select
+                            className="inline-select"
+                            value={rowEdits.hasOwnProperty('refType') ? rowEdits.refType : (job.referenceType || '')}
+                            onChange={e => handleCellChange(job.id, 'refType', e.target.value)}
+                            disabled={isSaving}
+                          >
+                            <option value="">—</option>
+                            {REF_TYPES.map(opt => (
+                              <option key={opt} value={opt}>{opt}</option>
+                            ))}
+                          </select>
                         </td>
                         <td className="employees-col">
                           <div className={`employee-input-wrapper${isSaving ? ' is-disabled' : ''}`}>

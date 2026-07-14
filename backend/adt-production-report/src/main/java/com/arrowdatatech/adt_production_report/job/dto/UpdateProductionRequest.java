@@ -23,4 +23,7 @@ public class UpdateProductionRequest {
 
     @JsonProperty("employees")
     private java.util.List<String> employees;
+
+    @JsonProperty("refType")
+    private String refType;
 }

@@ -20,7 +20,7 @@ const STATUS_OPTIONS = [
 ];
 const FILE_STATUS_OPTIONS = ['UPLOADED', 'RTU', 'QUERY', 'HOLD'];
 const BILLING_STATUS_OPTIONS = ['CREDITED', 'PENDING', 'INVOICED'];
-const REF_TYPES = ['-', 'BE-REF', 'CH-REF', 'PE-REF', 'CH_BE-REF'];
+const REF_TYPES = ['-', 'BE-REF', 'CH-REF', 'PE-REF', 'CH_BE-REF', 'REF TYPE', 'BK/CH-REF', 'FN-REF', 'BK/FN-REF', 'CH/FN-REF', 'PG/FN-REF'];
 
 const ALL_BULK_FIELDS = [
   { key: 'receiveDate', label: 'RECEIVED DATE', mandatory: true },
