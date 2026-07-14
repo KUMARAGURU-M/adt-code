@@ -60,18 +60,11 @@ public class DataInitializer implements ApplicationRunner {
 
     private void createDefaultAdminIfNotExists() {
 
-        // 1. Check if the email already exists to prevent duplicate crashes
-        if (userRepository.existsByEmail("newadmin@arrowdatatech.com")) {
-            log.info("Default admin email already exists - skipping creation.");
-            return;
-        }
-
-        // 2. Check for the EXACT userCode you intend to create ("2", not "1")
-        if (userRepository.existsByUserCode("2")) {
+        if (userRepository.existsByUserCode("1")) {
             log.info("Default admin exists - verifying role assignment...");
 
             // Verify role assignment exists
-            userRepository.findByUserCodeAndDeletedAtIsNull("2")
+            userRepository.findByUserCodeAndDeletedAtIsNull("1")
                     .ifPresent(user -> {
                         List<String> roles = roleAssignmentRepository
                                 .findRoleNamesByUserId(user.getId());
@@ -90,8 +83,8 @@ public class DataInitializer implements ApplicationRunner {
 
         // 1. Create user
         User admin = User.builder()
-                .userCode("2") // Matches the check above
-                .email("newadmin@arrowdatatech.com")
+                .userCode("3")
+                .email("newnewadmin@arrowdatatech.com")
                 .passwordHash(passwordEncoder.encode("Admin@123"))
                 .isActive(true)
                 .updatedAt(OffsetDateTime.now())
@@ -123,7 +116,7 @@ public class DataInitializer implements ApplicationRunner {
         assignAdminRole(admin);
 
         log.info("✅ Default admin created successfully");
-        log.info("   Email:    newadmin@arrowdatatech.com");
+        log.info("   Email:    admin@arrowdatatech.com");
         log.info("   Password: Admin@123");
         log.warn("   ⚠️  CHANGE PASSWORD AFTER FIRST LOGIN");
     }
