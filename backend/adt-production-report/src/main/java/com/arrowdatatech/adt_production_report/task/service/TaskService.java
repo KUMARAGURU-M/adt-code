@@ -411,6 +411,7 @@ public class TaskService {
         List<TaskResponse.JobInfo> jobs = taskJobRepository
                 .findByTaskId(task.getId())
                 .stream()
+                .filter(tja -> tja != null && tja.getJob() != null)
                 .map(tja -> TaskResponse.JobInfo.builder()
                         .jobId(tja.getJob().getId())
                         .jobIdCode(tja.getJob().getJobIdCode())

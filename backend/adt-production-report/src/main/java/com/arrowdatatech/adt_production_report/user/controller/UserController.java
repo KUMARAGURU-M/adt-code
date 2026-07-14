@@ -104,11 +104,20 @@ public class UserController {
 
     // POST /users/{id}/set-password - Admin sets password for user
     @PostMapping("/{id}/set-password")
-    @PreAuthorize("hasRole('Admin')")
+    @PreAuthorize("hasAnyRole('Admin', 'Manager')")
     public ResponseEntity<ApiResponse<Void>> setPassword(
             @PathVariable UUID id,
             @Valid @RequestBody SetPasswordRequest request) {
         userService.setPassword(id, request);
+        return ResponseEntity.ok(
+                ApiResponse.success("Password updated successfully", null));
+    }
+
+    // POST /users/reset-password - Self reset password
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(
+            @Valid @RequestBody ResetPasswordRequest request) {
+        userService.resetPassword(request);
         return ResponseEntity.ok(
                 ApiResponse.success("Password updated successfully", null));
     }

@@ -396,6 +396,8 @@ const SetPasswordModal = ({ user, onClose, onSet }) => {
   const [pw, setPw] = useState('');
   const [cpw, setCpw] = useState('');
   const [err, setErr] = useState('');
+  const [showPw, setShowPw] = useState(false);
+  const [showCpw, setShowCpw] = useState(false);
 
   const handleSet = () => {
     if (pw.length < 6) { setErr('Password must be at least 6 characters.'); return; }
@@ -409,24 +411,34 @@ const SetPasswordModal = ({ user, onClose, onSet }) => {
 
       <div className="form-group">
         <label className="form-label">New Password <span className="req">*</span></label>
-        <input
-          type="password"
-          className="form-input"
-          placeholder="Enter new password (min 6 characters)"
-          value={pw}
-          onChange={e => { setPw(e.target.value); setErr(''); }}
-        />
+        <div className="pwd-input-wrap">
+          <input
+            type={showPw ? 'text' : 'password'}
+            className="form-input"
+            placeholder="Enter new password (min 6 characters)"
+            value={pw}
+            onChange={e => { setPw(e.target.value); setErr(''); }}
+          />
+          <button type="button" className="pwd-toggle-btn" onClick={() => setShowPw(v => !v)} tabIndex={-1}>
+            {showPw ? '🙈' : '👁'}
+          </button>
+        </div>
       </div>
 
       <div className="form-group">
         <label className="form-label">Confirm Password <span className="req">*</span></label>
-        <input
-          type="password"
-          className="form-input"
-          placeholder="Confirm new password"
-          value={cpw}
-          onChange={e => { setCpw(e.target.value); setErr(''); }}
-        />
+        <div className="pwd-input-wrap">
+          <input
+            type={showCpw ? 'text' : 'password'}
+            className="form-input"
+            placeholder="Confirm new password"
+            value={cpw}
+            onChange={e => { setCpw(e.target.value); setErr(''); }}
+          />
+          <button type="button" className="pwd-toggle-btn" onClick={() => setShowCpw(v => !v)} tabIndex={-1}>
+            {showCpw ? '🙈' : '👁'}
+          </button>
+        </div>
       </div>
 
       {err && <p className="form-error">{err}</p>}

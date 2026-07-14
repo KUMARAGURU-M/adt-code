@@ -48,6 +48,7 @@ public class SecurityConfig {
                 .requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html").permitAll()
                 
                 // 4. SECURE API ENDPOINTS
+                .requestMatchers("/api/users/reset-password").authenticated()
                 .requestMatchers("/api/users/approvers").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/users", "/api/users/**").hasAnyRole("Admin", "Manager", "Team Leader")
                 .requestMatchers("/api/users", "/api/users/**").hasAnyRole("Admin", "Manager")

@@ -423,6 +423,35 @@
   border-color: #00a3ff;
 }
 
+/* Show/hide password toggle */
+.pwd-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.pwd-input-wrap .form-input {
+  padding-right: 40px !important;
+}
+
+.pwd-toggle-btn {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0;
+  line-height: 1;
+  color: #94a3b8;
+  transition: color 0.15s;
+  user-select: none;
+}
+
+.pwd-toggle-btn:hover {
+  color: #475569;
+}
+
 .form-select {
   width: 100%;
   padding: 9px 12px;

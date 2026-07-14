@@ -105,6 +105,7 @@ public class WorkwiseService {
                     taskJobRepository.findByTaskId(t.getId());
 
             List<MyTaskOption.JobInfo> jobs = jobLinks.stream()
+                    .filter(tja -> tja != null && tja.getJob() != null)
                     .map(tja -> MyTaskOption.JobInfo.builder()
                             .jobId(tja.getJob().getId())
                             .jobIdCode(tja.getJob().getJobIdCode())
@@ -176,6 +177,7 @@ public class WorkwiseService {
                 taskJobRepository.findByTaskId(t.getId());
 
         List<MyTaskOption.JobInfo> jobs = jobLinks.stream()
+                .filter(tja -> tja != null && tja.getJob() != null)
                 .map(tja -> MyTaskOption.JobInfo.builder()
                         .jobId(tja.getJob().getId())
                         .jobIdCode(tja.getJob().getJobIdCode())

@@ -473,6 +473,39 @@ public class UserService {
     }
 
     // ─────────────────────────────────────────────
+    // RESET PASSWORD (Self password reset)
+    // ─────────────────────────────────────────────
+    @Transactional
+    public void resetPassword(ResetPasswordRequest request) {
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new BadRequestException("Passwords do not match.");
+        }
+        if (request.getNewPassword().length() < 6) {
+            throw new BadRequestException("Password must be at least 6 characters.");
+        }
+
+        User user = getCurrentUser();
+
+        // Verify current password
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPasswordHash())) {
+            throw new BadRequestException("Incorrect current password.");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        user.setUpdatedAt(OffsetDateTime.now());
+        userRepository.save(user);
+
+        // Revoke existing sessions so user must re-login
+        sessionRepository.revokeAllByUserId(user.getId());
+
+        String fullName = user.getEmployeeProfile() != null
+                ? user.getEmployeeProfile().getFullName()
+                : user.getEmail();
+        activityLogService.log(user, "PASSWORD_RESET", "self",
+                user.getId(), fullName, null);
+    }
+
+    // ─────────────────────────────────────────────
     // ASSIGN ROLE
     // ─────────────────────────────────────────────
     @Transactional
