@@ -7,7 +7,7 @@ const STATUS_OPTIONS = [
   'FINISH', 'WIP', 'YTS', 'RTU', 'PENDING', 'HOLD', 'QUERY'
 ];
 
-const REF_TYPES = ['-', 'BE-REF', 'CH-REF', 'PE-REF', 'CH_BE-REF', 'REF TYPE', 'BK/CH-REF', 'FN-REF', 'BK/FN-REF', 'CH/FN-REF', 'PG/FN-REF'];
+const REF_TYPES = ['-', 'BK-REF', 'CH-REF', 'BK/CH-REF', 'FN-REF', 'BK/FN-REF', 'CH/FN-REF', 'PG/FN-REF'];
 
 // ── Bulk Edit Modal (Production) ────────────────────────────────────────────
 const PROD_BULK_FIELDS = [
@@ -735,7 +735,7 @@ const Production = () => {
                             onChange={e => handleCellChange(job.id, 'refType', e.target.value)}
                             disabled={isSaving}
                           >
-                            <option value="">—</option>
+                            <option value=""></option>
                             {REF_TYPES.map(opt => (
                               <option key={opt} value={opt}>{opt}</option>
                             ))}

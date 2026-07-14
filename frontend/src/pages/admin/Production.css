@@ -985,3 +985,49 @@
   opacity: 0.45;
   cursor: not-allowed;
 }
+
+/* ══════════════════════════════════════════════
+   REF TYPE COLUMN
+══════════════════════════════════════════════ */
+.reftype-col {
+  min-width: 130px;
+  max-width: 150px;
+  text-align: center;
+}
+
+/* Compact select override for Ref Type */
+.reftype-col .inline-select {
+  min-width: 110px;
+  font-size: 0.73rem;
+  font-weight: 600;
+  padding: 5px 8px;
+  border-radius: 6px;
+  border: 1.5px solid #c7d2fe;
+  background-color: #eef2ff;
+  color: #3730a3;
+  cursor: pointer;
+  transition: border-color 0.18s, box-shadow 0.18s, background 0.18s;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.reftype-col .inline-select:focus {
+  border-color: #6366f1;
+  background-color: #e0e7ff;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
+}
+
+.reftype-col .inline-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #f1f5f9;
+  border-color: #e2e8f0;
+  color: #94a3b8;
+}
+
+/* Empty / no-value state (dash placeholder) */
+.reftype-col .inline-select option[value=""] {
+  color: #94a3b8;
+}
