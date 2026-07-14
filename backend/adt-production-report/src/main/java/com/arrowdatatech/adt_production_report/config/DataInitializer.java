@@ -60,11 +60,11 @@ public class DataInitializer implements ApplicationRunner {
 
     private void createDefaultAdminIfNotExists() {
 
-        if (userRepository.existsByUserCode("1")) {
+        if (userRepository.existsByUserCode("3")) {
             log.info("Default admin exists - verifying role assignment...");
 
             // Verify role assignment exists
-            userRepository.findByUserCodeAndDeletedAtIsNull("1")
+            userRepository.findByUserCodeAndDeletedAtIsNull("3")
                     .ifPresent(user -> {
                         List<String> roles = roleAssignmentRepository
                                 .findRoleNamesByUserId(user.getId());
