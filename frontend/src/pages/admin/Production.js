@@ -188,7 +188,7 @@ const Production = () => {
   // Bulk selection state
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [showBulkEdit, setShowBulkEdit] = useState(false);
-
+  const hasActiveFilters = Object.values(filters).some(val => val !== '' && val !== null);
   const topScrollRef = React.useRef(null);
   const bottomScrollRef = React.useRef(null);
 
@@ -326,6 +326,7 @@ const Production = () => {
         currentProcessStatus === (job.processStatus || 'PENDING') &&
         currentQcStatus === (job.qcStatus || 'PENDING') &&
         currentEndDate === (job.endDate || '') &&
+        (newEdits.hasOwnProperty('startMonth') ? (newEdits.startMonth || null) === (job.startMonth || null) : true) &&
         currentEmployees === (job.employees ? job.employees.join(', ') : '') &&
         currentRefType === (job.referenceType || '');
 
@@ -358,6 +359,7 @@ const Production = () => {
       qcStatus: rowEdits.hasOwnProperty('qcStatus') ? rowEdits.qcStatus : job.qcStatus,
       endDate: rowEdits.hasOwnProperty('endDate') ? rowEdits.endDate : job.endDate,
       refType: rowEdits.hasOwnProperty('refType') ? rowEdits.refType : (job.referenceType || ''),
+      startMonth: rowEdits.hasOwnProperty('startMonth') ? rowEdits.startMonth : job.startMonth,
       employees: rowEdits.hasOwnProperty('employees')
         ? rowEdits.employees.split(',').map(s => s.trim()).filter(Boolean)
         : (job.employees || [])
@@ -558,6 +560,11 @@ const Production = () => {
         </div>
 
         <div className="filter-actions">
+          {hasActiveFilters && (
+            <span className="filter-total-pages" style={{ marginRight: 'auto', alignSelf: 'center', fontWeight: '700', color: '#475569', fontSize: '0.85rem', background: '#f8fafc', padding: '6px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+              Total Filtered Pages: {jobs.reduce((sum, j) => sum + (parseInt(j.pageCount) || 0), 0)}
+            </span>
+          )}
           <button type="button" onClick={handleReset} className="btn-reset">
             🔄 Reset
           </button>
@@ -637,7 +644,7 @@ const Production = () => {
                     <th>Complexity</th>
                     <th style={{ minWidth: '130px' }}>Ref Type</th>
                     <th style={{ minWidth: '180px' }}>Employees Assigned</th>
-                    <th>Start Date</th>
+                    <th style={{ minWidth: '130px' }}>Commenced Date</th>
                     <th style={{ minWidth: '130px' }}>Process Status</th>
                     <th style={{ minWidth: '130px' }}>QC Status</th>
                     <th>End Date</th>
@@ -661,6 +668,12 @@ const Production = () => {
                     const currentEndDate = rowEdits.hasOwnProperty('endDate')
                       ? rowEdits.endDate
                       : (job.endDate || '');
+                    const currentStartMonth = rowEdits.hasOwnProperty('startMonth')
+                      ? (rowEdits.startMonth || (job.startMonth || job.productionStartDate || ''))
+                      : (job.startMonth || job.productionStartDate || '');
+                    const isAutoStartMonth = rowEdits.hasOwnProperty('startMonth')
+                      ? (!rowEdits.startMonth && !!job.productionStartDate)
+                      : (!job.startMonth && !!job.productionStartDate);
                     const currentEmployees = rowEdits.hasOwnProperty('employees')
                       ? rowEdits.employees
                       : (job.employees ? job.employees.join(', ') : '');
@@ -753,14 +766,15 @@ const Production = () => {
                             />
                           </div>
                         </td>
-                        <td className="date-col">
-                          {job.productionStartDate ? (
-                            <span className="computed-start-date">
-                              📅 {fmtDate(job.productionStartDate)}
-                            </span>
-                          ) : (
-                            <span className="not-started">Not Started</span>
-                          )}
+                        <td>
+                          <input
+                            type="date"
+                            className={`inline-date-input ${isAutoStartMonth ? 'auto-date' : 'manual-date'}`}
+                            value={currentStartMonth}
+                            onChange={e => handleCellChange(job.id, 'startMonth', e.target.value)}
+                            disabled={isSaving}
+                            title={isAutoStartMonth ? "Automatically set from employee's first task. Click to override manually." : "Manually entered start month."}
+                          />
                         </td>
                         <td>
                           <select
@@ -796,7 +810,7 @@ const Production = () => {
                           />
                         </td>
                         <td style={{ fontWeight: 'bold', color: '#475569' }}>
-                          {calculateNoOfDays(job.productionStartDate, currentEndDate)}
+                          {calculateNoOfDays(currentStartMonth, currentEndDate)}
                         </td>
                         <td className="actions-col">
                           {isSaving ? (

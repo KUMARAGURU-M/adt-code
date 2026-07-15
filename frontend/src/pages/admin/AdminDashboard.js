@@ -15,7 +15,7 @@ const AdminDashboard = () => {
   const [attendanceToday, setAttendanceToday] = useState(null);
   const [checkingInOut, setCheckingInOut] = useState(false);
   const [attendanceError, setAttendanceError] = useState('');
-  
+
   const [dashboardData, setDashboardData] = useState(null);
   const [loadingStats, setLoadingStats] = useState(true);
 
@@ -67,6 +67,8 @@ const AdminDashboard = () => {
   };
 
   const handleCheckOut = async () => {
+    const confirmCheckOut = window.confirm("Are you sure you want to Check-Out?");
+    if (!confirmCheckOut) return;
     setCheckingInOut(true);
     setAttendanceError('');
     try {
@@ -158,7 +160,7 @@ const AdminDashboard = () => {
             <p>Manual Check-In and Check-Out time logs</p>
           </div>
         </div>
-        
+
         <div className="emp-checkin-status-row">
           <div className="emp-checkin-time-box">
             <span className="time-box-label">Check-In Time</span>
@@ -174,16 +176,16 @@ const AdminDashboard = () => {
           </div>
           <div className="emp-checkin-actions">
             {!attendanceToday?.checkInTime ? (
-              <button 
-                className="checkin-btn btn-checkin" 
+              <button
+                className="checkin-btn btn-checkin"
                 onClick={handleCheckIn}
                 disabled={checkingInOut}
               >
                 {checkingInOut ? 'Processing...' : '▶ Check In'}
               </button>
             ) : !attendanceToday?.checkOutTime ? (
-              <button 
-                className="checkin-btn btn-checkout" 
+              <button
+                className="checkin-btn btn-checkout"
                 onClick={handleCheckOut}
                 disabled={checkingInOut}
               >
@@ -260,7 +262,7 @@ const AdminDashboard = () => {
                         return '—';
                       }
                     };
-                    
+
                     let statusLabel = 'Not Present';
                     let statusCls = 'status-absent';
                     if (ci.checkInTime) {

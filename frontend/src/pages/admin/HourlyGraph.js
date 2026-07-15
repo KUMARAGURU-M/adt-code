@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from "react";
 import "./HourlyGraph.css";
 import { apiCall, getCurrentUser } from "../../utils/api";
 
-const HOUR_ACCENT_CLASSES = ["h1", "h2", "h3", "h4", "h5", "h6", "h7", "h8"];
+const HOUR_ACCENT_CLASSES = ["h1", "h2", "h3", "h4", "h5", "h6", "h7", "h8", "h9", "h10", "h11", "h12"];
 const hourAccent = (i) => HOUR_ACCENT_CLASSES[i % HOUR_ACCENT_CLASSES.length];
 
 const ordinal = (n) => {
@@ -11,6 +11,28 @@ const ordinal = (n) => {
     if (j === 2 && k !== 12) return `${n}nd`;
     if (j === 3 && k !== 13) return `${n}rd`;
     return `${n}th`;
+};
+
+const playBeep = () => {
+    try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const playTone = (time, duration) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(880, time); // A5 note
+            gain.gain.setValueAtTime(0.08, time);
+            gain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+            osc.start(time);
+            osc.stop(time + duration);
+        };
+        playTone(audioCtx.currentTime, 0.25);
+        playTone(audioCtx.currentTime + 0.3, 0.25);
+    } catch (err) {
+        console.warn('Could not play reminder beep:', err);
+    }
 };
 
 const ROW_BANDS = ["band-a", "band-b", "band-c", "band-d", "band-e", "band-f"];
@@ -85,7 +107,7 @@ export default function HourlyGraph() {
     const [periodDate, setPeriodDate] = useState(TODAY);
     const [selectedUserId, setSelectedUserId] = useState(null);
     const [activeDay, setActiveDay] = useState("");
-    const [hourCount, setHourCount] = useState(8);
+    const [hourCount, setHourCount] = useState(12);
     const [rows, setRows] = useState([]);
 
     // Master data from DB
@@ -110,6 +132,14 @@ export default function HourlyGraph() {
     const [error, setError] = useState("");
     const [isCheckedIn, setIsCheckedIn] = useState(true); // Default to true to prevent screen flash
     const [notification, setNotification] = useState(null); // Floating pop-up notification
+    const lastNotifiedHourRef = useRef(null);
+
+    // Request desktop notification permission if supported and not asked yet
+    useEffect(() => {
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+    }, []);
 
     const dateInputRef = useRef(null);
     const monthYearLabel = new Date(periodDate).toLocaleDateString("en-GB", { month: "long", year: "numeric" });
@@ -199,7 +229,7 @@ export default function HourlyGraph() {
     // Keep hourCount in sync with maximum hours array length in rows
     useEffect(() => {
         if (rows.length > 0) {
-            const maxHours = Math.max(...rows.map(r => r.hours?.length || 0), 8);
+            const maxHours = Math.max(...rows.map(r => r.hours?.length || 0), 12);
             setHourCount(maxHours);
         }
     }, [rows]);
@@ -209,6 +239,23 @@ export default function HourlyGraph() {
         if (isAdmin || rows.length === 0) return;
         const myRow = rows.find(r => r.userId === currentUserId);
         if (!myRow) return;
+
+        const sendDesktopNotification = (hourIdx) => {
+            if ('Notification' in window && Notification.permission === 'granted') {
+                try {
+                    const n = new Notification('Hourly Production Reminder', {
+                        body: `It's time to log your production for the ${ordinal(hourIdx + 1)} hour! You have a 10-minute active window to enter process and count.`,
+                        tag: `hourly-reminder-${hourIdx}`,
+                        requireInteraction: true
+                    });
+                    n.onclick = () => {
+                        window.focus();
+                    };
+                } catch (e) {
+                    console.warn('Desktop notification failed:', e);
+                }
+            }
+        };
 
         const checkReminder = () => {
             for (let i = 0; i < hourCount; i++) {
@@ -222,6 +269,12 @@ export default function HourlyGraph() {
                             hourIdx: i,
                             message: `🔔 It's time to log your production for the ${ordinal(i + 1)} hour! You have a 10-minute active window to enter process and count.`
                         });
+
+                        if (lastNotifiedHourRef.current !== i) {
+                            lastNotifiedHourRef.current = i;
+                            playBeep();
+                            sendDesktopNotification(i);
+                        }
                         return;
                     }
                 }

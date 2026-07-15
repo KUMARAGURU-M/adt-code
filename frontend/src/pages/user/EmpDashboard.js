@@ -69,6 +69,8 @@ export default function EmpDashboard() {
   };
 
   const handleCheckOut = async () => {
+    const confirmCheckOut = window.confirm("Are you sure you want to Check-Out?");
+    if (!confirmCheckOut) return;
     setCheckingInOut(true);
     setAttendanceError('');
     try {

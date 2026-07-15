@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getCurrentUser, apiCall, getRolePrefix } from '../../utils/api';
 import './HourlyReminder.css';
@@ -11,10 +11,40 @@ const ordinal = (n) => {
   return `${n}th`;
 };
 
+const playBeep = () => {
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const playTone = (time, duration) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, time); // A5 note
+      gain.gain.setValueAtTime(0.08, time);
+      gain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+      osc.start(time);
+      osc.stop(time + duration);
+    };
+    playTone(audioCtx.currentTime, 0.25);
+    playTone(audioCtx.currentTime + 0.3, 0.25);
+  } catch (err) {
+    console.warn('Could not play reminder beep:', err);
+  }
+};
+
 export default function HourlyReminder() {
   const [notification, setNotification] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const lastNotifiedHourRef = useRef(null);
+
+  // Request desktop notification permission if supported and not asked yet
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, []);
 
   useEffect(() => {
     const user = getCurrentUser();
@@ -22,6 +52,25 @@ export default function HourlyReminder() {
 
     // Do not show the popup if the user is already on the Hourly Graph page to avoid double popups
     const isHourlyGraphPage = location.pathname.endsWith('/hourly-graph');
+
+    const sendDesktopNotification = (hourIdx) => {
+      if ('Notification' in window && Notification.permission === 'granted') {
+        try {
+          const n = new Notification('Hourly Production Reminder', {
+            body: `It's time to log your production for the ${ordinal(hourIdx + 1)} hour! You have a 10-minute active window to enter process and count.`,
+            tag: `hourly-reminder-${hourIdx}`,
+            requireInteraction: true
+          });
+          n.onclick = () => {
+            window.focus();
+            const prefix = getRolePrefix(user.roles);
+            navigate(`/${prefix}/hourly-graph`);
+          };
+        } catch (e) {
+          console.warn('Desktop notification failed:', e);
+        }
+      }
+    };
 
     const checkReminder = async () => {
       try {
@@ -35,7 +84,7 @@ export default function HourlyReminder() {
           return;
         }
 
-        const maxHours = Math.max(...rows.map(r => r.hours?.length || 0), 8);
+        const maxHours = Math.max(...rows.map(r => r.hours?.length || 0), 12);
 
         // 2. Find if any active hour needs logging
         for (let i = 0; i < maxHours; i++) {
@@ -49,6 +98,12 @@ export default function HourlyReminder() {
                 hourIdx: i,
                 message: `🔔 It's time to log your production for the ${ordinal(i + 1)} hour! You have a 10-minute active window to enter process and count.`
               });
+
+              if (lastNotifiedHourRef.current !== i) {
+                lastNotifiedHourRef.current = i;
+                playBeep();
+                sendDesktopNotification(i);
+              }
               return;
             }
           }
@@ -97,7 +152,7 @@ export default function HourlyReminder() {
     }, 60000);
 
     return () => clearInterval(interval);
-  }, [location.pathname]);
+  }, [location.pathname, navigate]);
 
   if (!notification) return null;
 
@@ -120,3 +175,5 @@ export default function HourlyReminder() {
     </div>
   );
 }
+
+

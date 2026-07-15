@@ -140,7 +140,8 @@ class JobProductionServiceTest {
         request.setQcStatus("WIP");
         LocalDate customEndDate = LocalDate.of(2026, 6, 15);
         request.setEndDate(customEndDate);
-
+        LocalDate customStartMonth = LocalDate.of(2026, 6, 1);
+        request.setStartMonth(customStartMonth);
         // Execute service method
         JobResponse response = jobService.updateProductionStatus(jobId, request);
 

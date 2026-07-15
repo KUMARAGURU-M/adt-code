@@ -425,7 +425,7 @@
   border-spacing: 0;
   font-size: 12px;
   font-family: var(--hg-font);
-  min-width: 1900px;
+  min-width: 2800px;
 }
 
 .hg-target-table {
@@ -528,6 +528,26 @@
 .hg-table thead th.th-h8 {
   background: #e7e9f0;
   color: var(--hg-text-sub);
+}
+
+.hg-table thead th.th-h9 {
+  background: #f3e8ff;
+  color: #7e22ce;
+}
+
+.hg-table thead th.th-h10 {
+  background: #fed7aa;
+  color: #c2410c;
+}
+
+.hg-table thead th.th-h11 {
+  background: #d9f99d;
+  color: #4d7c0f;
+}
+
+.hg-table thead th.th-h12 {
+  background: #bae6fd;
+  color: #0369a1;
 }
 
 .th-hour-process,
@@ -722,6 +742,23 @@
 .td-h8 {
   background: rgba(146, 151, 171, 0.07);
 }
+
+.td-h9 {
+  background: rgba(126, 34, 206, 0.05);
+}
+
+.td-h10 {
+  background: rgba(194, 65, 12, 0.05);
+}
+
+.td-h11 {
+  background: rgba(77, 124, 15, 0.05);
+}
+
+.td-h12 {
+  background: rgba(3, 105, 161, 0.05);
+}
+
 
 /* ══════════════════════════════════════════
    INPUTS & SELECTS

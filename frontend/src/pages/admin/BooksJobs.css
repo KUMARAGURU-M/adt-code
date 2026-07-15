@@ -197,7 +197,8 @@
 .bj-table-wrapper {
   background: white;
   overflow-x: auto;
-  overflow-y: hidden;
+  overflow-y: auto;
+  max-height: calc(100vh - 320px);
 }
 
 .bj-table {
@@ -213,6 +214,10 @@
 }
 
 .bj-table th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: #f8fafc;
   padding: 14px 15px;
   color: #475569;
   font-weight: 800;
@@ -1150,7 +1155,11 @@
 }
 
 .bj-th-check {
-  background: #f8fafc;
+  position: sticky;
+  left: 0;
+  top: 0;
+  z-index: 11;
+  background: #f8fafc !important;
 }
 
 .bj-row-checkbox {

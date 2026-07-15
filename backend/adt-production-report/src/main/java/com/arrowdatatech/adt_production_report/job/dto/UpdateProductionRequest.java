@@ -21,6 +21,9 @@ public class UpdateProductionRequest {
     @JsonProperty("endDate")
     private LocalDate endDate;
 
+    @JsonProperty("startMonth")
+    private LocalDate startMonth;
+
     @JsonProperty("employees")
     private java.util.List<String> employees;
 

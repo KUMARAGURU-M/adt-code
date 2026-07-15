@@ -1251,6 +1251,7 @@ const BooksJobs = () => {
 
   // All filtering is server-side; rows = already filtered page
   const rows = jobs;
+  const hasActiveFilters = Object.values(filters).some(val => val !== '' && val !== null);
 
   // ── Scroll sync refs ────────────────────────────────────────
   const topScrollRef = React.useRef(null);
@@ -1653,6 +1654,11 @@ const BooksJobs = () => {
         </div>
 
         <div className="bj-filter-actions">
+          {hasActiveFilters && (
+            <span className="bj-filter-total-pages" style={{ marginRight: 'auto', alignSelf: 'center', fontWeight: '700', color: '#4a5568', fontSize: '0.85rem', background: '#f1f5f9', padding: '6px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+              Total Filtered Pages: {jobs.reduce((sum, j) => sum + (parseInt(j.pageCount) || 0), 0)}
+            </span>
+          )}
           <button className="bj-search-btn" onClick={handleSearch}>
             🔍 Search
           </button>

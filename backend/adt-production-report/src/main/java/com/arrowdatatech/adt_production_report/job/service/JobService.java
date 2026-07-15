@@ -692,7 +692,7 @@ public class JobService {
         }
         // Always copy, since endDate can be set to null or cleared
         job.setEndDate(request.getEndDate());
-
+        job.setStartMonth(request.getStartMonth());
         if (request.getEmployees() != null) {
             String joined = request.getEmployees().stream()
                     .map(String::trim)
