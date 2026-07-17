@@ -33,7 +33,7 @@ public class ActivityLogService {
             String ipAddress = extractIpAddress();
             String userAgent = extractUserAgent();
 
-            ActivityLog log = ActivityLog.builder()
+            ActivityLog activityLog = ActivityLog.builder()
                     .user(user)
                     .action(action)
                     .entityType(entityType)
@@ -44,7 +44,7 @@ public class ActivityLogService {
                     .userAgent(userAgent)
                     .build();
 
-            activityLogRepository.save(log);
+            activityLogRepository.save(activityLog);
         } catch (Exception e) {
             // Never let logging failure break the main flow
             log.error("Failed to write activity log: {}", e.getMessage());

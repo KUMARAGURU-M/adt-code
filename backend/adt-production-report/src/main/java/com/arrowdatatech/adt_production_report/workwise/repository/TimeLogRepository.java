@@ -22,11 +22,13 @@ public interface TimeLogRepository extends JpaRepository<TimeLog, UUID> {
 
     @Query("""
             SELECT t FROM TimeLog t
+            LEFT JOIN t.project p
+            LEFT JOIN t.process pr
             WHERE t.user.id = :userId
-            AND (:clientId IS NULL OR (t.project IS NOT NULL AND t.project.client.id = :clientId))
-            AND (:projectId IS NULL OR t.project.id = :projectId)
-            AND (:workflowId IS NULL OR (t.project IS NOT NULL AND t.project.workflow.id = :workflowId))
-            AND (:processId IS NULL OR t.process.id = :processId)
+            AND (:clientId IS NULL OR (p IS NOT NULL AND p.client.id = :clientId))
+            AND (:projectId IS NULL OR p.id = :projectId)
+            AND (:workflowId IS NULL OR (p IS NOT NULL AND p.workflow.id = :workflowId))
+            AND (:processId IS NULL OR pr.id = :processId)
             AND (:status IS NULL OR t.status = :status)
             AND (CAST(:startDate AS date) IS NULL OR t.logDate >= :startDate)
             AND (CAST(:endDate AS date) IS NULL OR t.logDate <= :endDate)
@@ -46,9 +48,11 @@ public interface TimeLogRepository extends JpaRepository<TimeLog, UUID> {
 
     @Query("""
             SELECT t FROM TimeLog t
+            LEFT JOIN t.project p
+            LEFT JOIN t.process pr
             WHERE (:userId IS NULL OR t.user.id = :userId)
-            AND (:projectId IS NULL OR t.project.id = :projectId)
-            AND (:processId IS NULL OR t.process.id = :processId)
+            AND (:projectId IS NULL OR p.id = :projectId)
+            AND (:processId IS NULL OR pr.id = :processId)
             AND (:status IS NULL OR t.status = :status)
             AND (CAST(:startDate AS date) IS NULL OR t.logDate >= :startDate)
             AND (CAST(:endDate AS date) IS NULL OR t.logDate <= :endDate)

@@ -12,7 +12,7 @@ import "./Invoice.css";
 import sign from "../../assets/images/sign.png";
 import letterpad from "../../assets/images/letterpad.png";
 import html2canvas from "html2canvas";
-import apiCall, { API_BASE } from "../../utils/api";
+import apiCall, { API_BASE, getCurrentUser } from "../../utils/api";
 
 // ─────────────────────────────────────────────────────────────
 // CONSTANTS
@@ -140,7 +140,7 @@ function Toggle({ checked, onChange, label }) {
 // ─────────────────────────────────────────────────────────────
 // HISTORY SECTION COMPONENT
 // ─────────────────────────────────────────────────────────────
-function HistorySection({ onClose, historyList = [], summary = {}, onDelete, onUpdatePayment, onRehydrate }) {
+function HistorySection({ onClose, historyList = [], summary = {}, onDelete, onUpdatePayment, onRehydrate, hasPermission }) {
   const [expandedId, setExpandedId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
@@ -243,6 +243,7 @@ function HistorySection({ onClose, historyList = [], summary = {}, onDelete, onU
                     className={`inv-hist-status-select inv-hist-status--${(h.paymentStatus || "").toLowerCase().replace(/\s+/g, "")}`}
                     value={h.paymentStatus}
                     style={{ marginRight: "10px", padding: "4px 8px", borderRadius: "4px", border: "1px solid #ccc", background: "#fff", fontWeight: "600" }}
+                    disabled={!hasPermission('invoices.update')}
                     onChange={e => onUpdatePayment(h.id, e.target.value, h.grandTotal)}
                   >
                     {["Pending", "Paid", "Overdue", "Partially Paid"].map(s => (
@@ -287,7 +288,9 @@ function HistorySection({ onClose, historyList = [], summary = {}, onDelete, onU
                   </table>
                   <div className="inv-hist-detail-actions" style={{ display: "flex", gap: "10px", marginTop: "12px" }}>
                     <button className="inv-btn inv-btn--outline inv-btn--sm" onClick={() => onRehydrate(h)}>👁 Re-preview</button>
-                    <button className="inv-btn inv-btn--secondary inv-btn--sm" style={{ backgroundColor: "#ef4444", color: "#fff" }} onClick={() => onDelete(h.id)}>✕ Delete</button>
+                    {hasPermission('invoices.delete') && (
+                      <button className="inv-btn inv-btn--secondary inv-btn--sm" style={{ backgroundColor: "#ef4444", color: "#fff" }} onClick={() => onDelete(h.id)}>✕ Delete</button>
+                    )}
                   </div>
                 </div>
               )}
@@ -303,6 +306,8 @@ function HistorySection({ onClose, historyList = [], summary = {}, onDelete, onU
 // MAIN COMPONENT
 // ─────────────────────────────────────────────────────────────
 export default function Invoice() {
+  const currentUser = getCurrentUser();
+  const hasPermission = (perm) => currentUser?.roles?.includes('Admin') || currentUser?.permissions?.includes(perm);
 
   // rowId + field identify which cell is open; rect gives the anchor for fixed positioning
   const [activeDropdown, setActiveDropdown] = useState({ rowId: null, field: null, rect: null });
@@ -690,8 +695,8 @@ export default function Invoice() {
   const filteredDPs = unbilledJobs.filter(dp => {
     if (filterProject !== "All Projects" && dp.project !== filterProject) return false;
     if (filterWorkflow !== "All Task Names" && (!dp.workflow || !dp.workflow.includes(filterWorkflow))) return false;
-    if (filterComplexity !== "All" && dp.complexity.toUpperCase() !== filterComplexity.toUpperCase()) return false;
-    if (filterFileStatus !== "All" && dp.fileStatus.toUpperCase() !== filterFileStatus.toUpperCase()) return false;
+    if (filterComplexity !== "All" && dp.complexity !== filterComplexity) return false;
+    if (filterFileStatus !== "All" && dp.fileStatus !== filterFileStatus) return false;
     if (filterStartDate && (!dp.startDate || dp.startDate < filterStartDate)) return false;
     if (filterEndDate && (!dp.endDate || dp.endDate > filterEndDate)) return false;
     return true;
@@ -1137,7 +1142,7 @@ export default function Invoice() {
             <button className="inv-btn inv-btn--primary" onClick={exportPDF}>🖨 Print / Save PDF</button>
           )}
           <button className="inv-btn inv-btn--primary" onClick={() => setShowPreview(true)} disabled={invoiceMode === "overlay" && !overlayFile}>👁 Preview</button>
-          {invoiceMode === "standard" && (
+          {invoiceMode === "standard" && hasPermission('invoices.create') && (
             <button className="inv-btn inv-btn--success" onClick={handleSaveInvoice}>💾 Save Invoice</button>
           )}
         </div>
@@ -1168,6 +1173,7 @@ export default function Invoice() {
           onDelete={handleDeleteInvoice}
           onUpdatePayment={handleUpdatePayment}
           onRehydrate={handleRehydrateInvoice}
+          hasPermission={hasPermission}
         />
       )}
 
@@ -1207,9 +1213,15 @@ export default function Invoice() {
                       >
                         {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                       </select>
-                      <button className="inv-btn inv-btn--outline inv-btn--sm" onClick={openEditClient}>✏ Edit</button>
-                      <button className="inv-btn inv-btn--primary inv-btn--sm" onClick={openAddClient}>+ New</button>
-                      <button className="inv-btn inv-btn--outline inv-btn--sm" onClick={handleDeleteClient} style={{ color: '#dc3545', borderColor: '#dc3545' }}>🗑 Delete</button>
+                      {hasPermission('invoices.update') && (
+                        <button className="inv-btn inv-btn--outline inv-btn--sm" onClick={openEditClient}>✏ Edit</button>
+                      )}
+                      {hasPermission('invoices.create') && (
+                        <button className="inv-btn inv-btn--primary inv-btn--sm" onClick={openAddClient}>+ New</button>
+                      )}
+                      {hasPermission('invoices.delete') && (
+                        <button className="inv-btn inv-btn--outline inv-btn--sm" onClick={handleDeleteClient} style={{ color: '#dc3545', borderColor: '#dc3545' }}>🗑 Delete</button>
+                      )}
                     </div>
                   </div>
                   <div className="inv-field-block">
@@ -1342,9 +1354,11 @@ export default function Invoice() {
                 </div>
                 <div className="inv-proj-add-row">
                   <span className="inv-proj-sel-info">{selectedDPIds.size > 0 ? `${selectedDPIds.size} project${selectedDPIds.size > 1 ? "s" : ""} selected` : "Select projects above"}</span>
-                  <button className={`inv-btn inv-btn--primary ${selectedDPIds.size === 0 ? "inv-btn--disabled" : ""}`} disabled={selectedDPIds.size === 0} onClick={addSelectedToInvoice}>
-                    ➕ Add {selectedDPIds.size > 0 ? selectedDPIds.size : ""} to Invoice Table
-                  </button>
+                  {hasPermission('invoices.create') && (
+                    <button className={`inv-btn inv-btn--primary ${selectedDPIds.size === 0 ? "inv-btn--disabled" : ""}`} disabled={selectedDPIds.size === 0} onClick={addSelectedToInvoice}>
+                      ➕ Add {selectedDPIds.size > 0 ? selectedDPIds.size : ""} to Invoice Table
+                    </button>
+                  )}
                 </div>
               </div>
             )}
@@ -1387,7 +1401,9 @@ export default function Invoice() {
             <div className="inv-card-header">
               <span className="inv-card-icon">📊</span>
               <h2 className="inv-card-title">Invoice Table</h2>
-              <button className="inv-btn inv-btn--sm inv-btn--primary inv-btn--ml" onClick={addEmptyRow}>+ Add Row</button>
+              {hasPermission('invoices.create') && (
+                <button className="inv-btn inv-btn--sm inv-btn--primary inv-btn--ml" onClick={addEmptyRow}>+ Add Row</button>
+              )}
             </div>
             <div className="inv-card-body inv-card-body--noPad">
               <div className="inv-table-scroll">
@@ -1761,8 +1777,8 @@ export default function Invoice() {
                   </select>
                 </div>
                 <div style={{ display: "flex", gap: "8px", alignSelf: "flex-end", flexWrap: "wrap" }}>
-                  {!editingBank && currentBank && <button className="inv-btn inv-btn--outline inv-btn--sm" onClick={startEditBank}>✏ Edit Bank</button>}
-                  <button className="inv-btn inv-btn--success inv-btn--sm" onClick={() => setShowAddBank(true)}>+ Add Bank</button>
+                  {!editingBank && currentBank && hasPermission('invoices.update') && <button className="inv-btn inv-btn--outline inv-btn--sm" onClick={startEditBank}>✏ Edit Bank</button>}
+                  {hasPermission('invoices.create') && <button className="inv-btn inv-btn--success inv-btn--sm" onClick={() => setShowAddBank(true)}>+ Add Bank</button>}
                 </div>
               </div>
 
@@ -2325,6 +2341,3 @@ export default function Invoice() {
     </div>
   );
 }
-
-
-

@@ -29,6 +29,7 @@ public class TaskResponse {
     private String chapterArticleBatch;
     private BigDecimal estimateHours;
     private String serverPath;
+    private UUID assignedById;
     private String assignedByName;
     private Integer totalPages;
     private OffsetDateTime createdAt;

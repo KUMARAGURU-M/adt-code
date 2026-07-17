@@ -50,15 +50,17 @@ public class SecurityConfig {
                 // 4. SECURE API ENDPOINTS
                 .requestMatchers("/api/users/reset-password").authenticated()
                 .requestMatchers("/api/users/approvers").authenticated()
-                .requestMatchers(HttpMethod.GET, "/api/users", "/api/users/**").hasAnyRole("Admin", "Manager", "Team Leader")
-                .requestMatchers("/api/users", "/api/users/**").hasAnyRole("Admin", "Manager")
-                .requestMatchers("/api/attendance/summary/**", "/api/invoices/**", "/api/bank-accounts/**", "/api/roles/**", "/api/settings/**").hasRole("Admin")
+                .requestMatchers(HttpMethod.GET, "/api/users", "/api/users/**").hasAnyAuthority("ROLE_Admin", "ROLE_Manager", "ROLE_Team Leader", "employees.view")
+                .requestMatchers("/api/users", "/api/users/**").hasAnyAuthority("ROLE_Admin", "ROLE_Manager", "employees.create", "employees.update", "employees.delete", "employees.manage_roles")
+                .requestMatchers("/api/attendance/summary/**", "/api/invoices/**", "/api/bank-accounts/**", "/api/roles/**", "/api/settings/**").hasAnyAuthority("ROLE_Admin", "invoices.view", "invoices.create", "invoices.update", "invoices.delete", "roles.view", "roles.create", "roles.update", "roles.delete", "settings.view", "settings.update")
                 .requestMatchers(HttpMethod.GET, "/api/projects", "/api/projects/**", "/api/processes", "/api/processes/**", "/api/shifts", "/api/shifts/**").authenticated()
-                .requestMatchers("/api/projects", "/api/projects/**", "/api/processes/**", "/api/shifts/**", "/api/activity-logs/**").hasAnyRole("Admin", "Manager")
+                .requestMatchers("/api/projects", "/api/projects/**", "/api/processes/**", "/api/shifts/**").hasAnyAuthority("ROLE_Admin", "ROLE_Manager", "projects.create", "projects.update", "projects.delete", "processes.manage", "shifts.manage")
+                .requestMatchers("/api/activity-logs/**").hasAnyAuthority("ROLE_Admin", "ROLE_Manager", "ROLE_Team Leader", "activity_logs.view")
                 .requestMatchers("/api/tasks/my-tasks").authenticated()
-                .requestMatchers("/api/tasks/**", "/api/jobs/**", "/api/reports/**").hasAnyRole("Admin", "Manager", "Team Leader")
-                .requestMatchers("/api/chat/admin/**").hasRole("Admin")
+                .requestMatchers("/api/tasks/**", "/api/jobs/**", "/api/reports/**").hasAnyAuthority("ROLE_Admin", "ROLE_Manager", "ROLE_Team Leader", "tasks.create", "tasks.update", "tasks.delete", "jobs.create", "jobs.update", "jobs.delete", "reports.view")
+                .requestMatchers("/api/chat/admin/**").hasAnyAuthority("ROLE_Admin", "chat_monitor.view", "chat_monitor.delete")
                 .requestMatchers("/api/chat/**", "/api/workwise/**", "/api/leave/**", "/api/notifications/**", "/api/timelog/**").authenticated()
+                .requestMatchers("/api/user-page-access/**").hasAnyAuthority("ROLE_Admin", "roles.view", "roles.update", "page_access.view")
                 
                 // Everything else requires authentication
                 .anyRequest().authenticated()

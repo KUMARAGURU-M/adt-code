@@ -198,7 +198,7 @@
   top: 0;
   z-index: 10;
   background: #f8fafc;
-  padding: 14px 15px;
+  padding: 10px 12px;
   font-weight: 800;
   color: #475569;
   border-bottom: 1px solid #edf2f7;
@@ -209,7 +209,7 @@
 }
 
 .production-table td {
-  padding: 11px 15px;
+  padding: 8px 10px;
   border-bottom: 1px solid #f1f5f9;
   color: #4a5568;
   vertical-align: middle;
@@ -287,8 +287,8 @@
 }
 
 .employees-col {
-  min-width: 250px;
-  max-width: 300px;
+  min-width: 300px;
+  max-width: 400px;
 }
 
 /* Icon wrapper around the employee input */

@@ -34,7 +34,7 @@ public class WorkflowController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('projects.create')")
     public ResponseEntity<ApiResponse<WorkflowResponse>> createWorkflow(@Valid @RequestBody WorkflowRequest request) {
         WorkflowResponse created = workflowService.createWorkflow(request);
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -42,7 +42,7 @@ public class WorkflowController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('projects.update')")
     public ResponseEntity<ApiResponse<WorkflowResponse>> updateWorkflow(
             @PathVariable UUID id,
             @Valid @RequestBody WorkflowRequest request) {
@@ -51,7 +51,7 @@ public class WorkflowController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('projects.delete')")
     public ResponseEntity<ApiResponse<Void>> deleteWorkflow(@PathVariable UUID id) {
         workflowService.deleteWorkflow(id);
         return ResponseEntity.ok(ApiResponse.success("Workflow deleted successfully", null));

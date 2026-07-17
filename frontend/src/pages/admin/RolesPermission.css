@@ -161,7 +161,7 @@
   padding: 16px;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .rp-card-header {
@@ -252,7 +252,7 @@
   border: 1px solid #e8e8e8;
   border-radius: 6px;
   padding: 16px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .rp-perm-name {
@@ -336,7 +336,7 @@
   border-radius: 8px;
   width: 90%;
   max-width: 500px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   display: flex;
   flex-direction: column;
   max-height: 90vh;
@@ -488,8 +488,13 @@
   margin-bottom: 16px;
 }
 
-.mt-2 { margin-top: 8px; }
-.mt-4 { margin-top: 16px; }
+.mt-2 {
+  margin-top: 8px;
+}
+
+.mt-4 {
+  margin-top: 16px;
+}
 
 /* Assign Permission Grid */
 .rp-assign-perm-grid {
@@ -559,11 +564,6 @@
   background-color: #f6ffed;
   color: #52c41a;
   border-color: #b7eb8f;
-}
-
-/* Create Permission Step Grids */
-.rp-step-section {
-  /* no margin-bottom here; use mt-4 utility */
 }
 
 .rp-resource-grid {
@@ -676,4 +676,35 @@
   border-radius: 3px;
   padding: 2px 8px;
   font-weight: 600;
+}
+
+/* Tabs styling */
+.rp-tabs {
+  display: flex;
+  gap: 12px;
+  border-bottom: 2px solid #e8e8e8;
+  margin-bottom: 24px;
+}
+
+.rp-tab-btn {
+  padding: 12px 24px;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  font-size: 15px;
+  font-weight: 600;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  outline: none;
+}
+
+.rp-tab-btn:hover {
+  color: #1890ff;
+}
+
+.rp-tab-btn.active {
+  color: #1890ff;
+  border-bottom-color: #1890ff;
+
 }

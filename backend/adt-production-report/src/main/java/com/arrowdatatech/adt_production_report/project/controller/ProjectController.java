@@ -34,7 +34,7 @@ public class ProjectController {
     // GET /projects/all - Including inactive
     // Used by: Admin Project Management page
     @GetMapping("/all")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('projects.view')")
     public ResponseEntity<ApiResponse<List<ProjectResponse>>> getAllIncludingInactive() {
         List<ProjectResponse> projects =
                 projectService.getAllProjectsIncludingInactive();
@@ -53,7 +53,7 @@ public class ProjectController {
 
     // POST /projects - Create new project
     @PostMapping
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('projects.create')")
     public ResponseEntity<ApiResponse<ProjectResponse>> createProject(
             @Valid @RequestBody CreateProjectRequest request) {
         ProjectResponse created = projectService.createProject(request);
@@ -65,7 +65,7 @@ public class ProjectController {
 
     // PUT /projects/{id} - Update project
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('projects.update')")
     public ResponseEntity<ApiResponse<ProjectResponse>> updateProject(
             @PathVariable UUID id,
             @Valid @RequestBody CreateProjectRequest request) {
@@ -77,7 +77,7 @@ public class ProjectController {
     // PATCH /projects/{id}/billing-type - Inline billing type change
     // Used by: inline dropdown in project table
     @PatchMapping("/{id}/billing-type")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('projects.update')")
     public ResponseEntity<ApiResponse<ProjectResponse>> updateBillingType(
             @PathVariable UUID id,
             @RequestBody Map<String, String> body) {
@@ -94,7 +94,7 @@ public class ProjectController {
 
     // DELETE /projects/{id} - Soft delete
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('Admin')")
+    @PreAuthorize("hasRole('Admin') or hasAuthority('projects.delete')")
     public ResponseEntity<ApiResponse<Void>> deleteProject(
             @PathVariable UUID id) {
         projectService.deleteProject(id);

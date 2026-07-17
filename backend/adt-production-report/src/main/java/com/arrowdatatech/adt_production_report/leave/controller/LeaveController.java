@@ -33,7 +33,7 @@ public class LeaveController {
     }
 
     @PostMapping("/types")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('leaves.manage_types')")
     public ResponseEntity<ApiResponse<LeaveTypeDto>> createType(
             @RequestBody CreateLeaveTypeRequest req) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -42,7 +42,7 @@ public class LeaveController {
     }
 
     @PutMapping("/types/{id}")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('leaves.manage_types')")
     public ResponseEntity<ApiResponse<LeaveTypeDto>> updateType(
             @PathVariable UUID id,
             @RequestBody CreateLeaveTypeRequest req) {
@@ -51,7 +51,7 @@ public class LeaveController {
     }
 
     @DeleteMapping("/types/{id}")
-    @PreAuthorize("hasRole('Admin')")
+    @PreAuthorize("hasRole('Admin') or hasAuthority('leaves.manage_types')")
     public ResponseEntity<ApiResponse<Void>> deleteType(
             @PathVariable UUID id) {
         leaveService.deleteLeaveType(id);
@@ -62,14 +62,14 @@ public class LeaveController {
     // ── Leave Policies ─────────────────────────────────────────
 
     @GetMapping("/policies")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('leaves.manage_types')")
     public ResponseEntity<ApiResponse<List<LeavePolicyDto>>> getPolicies() {
         return ResponseEntity.ok(ApiResponse.success(
                 "Policies retrieved", leaveService.getAllPolicies()));
     }
 
     @PostMapping("/policies")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('leaves.manage_types')")
     public ResponseEntity<ApiResponse<LeavePolicyDto>> createPolicy(
             @RequestBody CreateLeavePolicyRequest req) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -78,7 +78,7 @@ public class LeaveController {
     }
 
     @PutMapping("/policies/{id}")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('leaves.manage_types')")
     public ResponseEntity<ApiResponse<LeavePolicyDto>> updatePolicy(
             @PathVariable UUID id,
             @RequestBody CreateLeavePolicyRequest req) {
@@ -87,7 +87,7 @@ public class LeaveController {
     }
 
     @DeleteMapping("/policies/{id}")
-    @PreAuthorize("hasRole('Admin')")
+    @PreAuthorize("hasRole('Admin') or hasAuthority('leaves.manage_types')")
     public ResponseEntity<ApiResponse<Void>> deletePolicy(
             @PathVariable UUID id) {
         leaveService.deletePolicy(id);
@@ -98,7 +98,7 @@ public class LeaveController {
     // ── Leave Requests — Admin ─────────────────────────────────
 
     @GetMapping("/requests")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('leaves.view_all')")
     public ResponseEntity<ApiResponse<PagedResponse<LeaveRequestDto>>>
     searchRequests(
             @RequestParam(required = false) UUID userId,
@@ -123,7 +123,7 @@ public class LeaveController {
     }
 
     @PostMapping("/requests")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('leaves.create')")
     public ResponseEntity<ApiResponse<LeaveRequestDto>> createRequest(
             @RequestBody CreateLeaveRequestRequest req) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -132,7 +132,7 @@ public class LeaveController {
     }
 
     @PutMapping("/requests/{id}")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('leaves.update')")
     public ResponseEntity<ApiResponse<LeaveRequestDto>> updateRequest(
             @PathVariable UUID id,
             @RequestBody CreateLeaveRequestRequest req) {
@@ -142,7 +142,7 @@ public class LeaveController {
 
     // PATCH /leave/requests/{id}/review — Approve or Reject
     @PatchMapping("/requests/{id}/review")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('leaves.approve')")
     public ResponseEntity<ApiResponse<LeaveRequestDto>> reviewRequest(
             @PathVariable UUID id,
             @RequestBody ReviewLeaveRequest req) {
@@ -151,7 +151,7 @@ public class LeaveController {
     }
 
     @DeleteMapping("/requests/{id}")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('leaves.delete')")
     public ResponseEntity<ApiResponse<Void>> deleteRequest(
             @PathVariable UUID id) {
         leaveService.deleteRequest(id);
@@ -202,7 +202,7 @@ public class LeaveController {
 
     // GET /leave/balances?year=2026  — admin view all balances
     @GetMapping("/balances")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('leaves.view_all')")
     public ResponseEntity<ApiResponse<List<LeaveBalanceDto>>> getAllBalances(
             @RequestParam(defaultValue = "0") int year) {
         if (year == 0) year = java.time.Year.now().getValue();
@@ -212,7 +212,7 @@ public class LeaveController {
 
     // POST /leave/balances/allocate  — admin allocates leave
     @PostMapping("/balances/allocate")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('leaves.approve')")
     public ResponseEntity<ApiResponse<LeaveBalanceDto>> allocateBalance(
             @RequestBody Map<String, Object> body) {
         UUID userId      = UUID.fromString((String) body.get("userId"));

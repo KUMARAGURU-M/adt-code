@@ -27,7 +27,7 @@ public class AttendanceController {
 
     // GET /attendance/employees
     @GetMapping("/employees")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('attendance.view')")
     public ResponseEntity<ApiResponse<List<AttendanceEmployeeResponse>>>
     getEmployees(
             @RequestParam(required = false) String category,
@@ -41,7 +41,7 @@ public class AttendanceController {
 
     // POST /attendance/employees
     @PostMapping("/employees")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('attendance.update')")
     public ResponseEntity<ApiResponse<AttendanceEmployeeResponse>>
     createEmployee(
             @RequestBody CreateAttendanceEmployeeRequest request) {
@@ -54,7 +54,7 @@ public class AttendanceController {
 
     // PUT /attendance/employees/{id}
     @PutMapping("/employees/{id}")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('attendance.update')")
     public ResponseEntity<ApiResponse<AttendanceEmployeeResponse>>
     updateEmployee(
             @PathVariable UUID id,
@@ -68,7 +68,7 @@ public class AttendanceController {
 
     // DELETE /attendance/employees/{id}
     @DeleteMapping("/employees/{id}")
-    @PreAuthorize("hasRole('Admin')")
+    @PreAuthorize("hasRole('Admin') or hasAuthority('attendance.update')")
     public ResponseEntity<ApiResponse<Void>> deleteEmployee(
             @PathVariable UUID id) {
 
@@ -82,7 +82,7 @@ public class AttendanceController {
     // GET /attendance/monthly?year=2026&month=4
     // Returns employees + attendance grid + salary details for month
     @GetMapping("/monthly")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('attendance.view')")
     public ResponseEntity<ApiResponse<MonthlyAttendanceResponse>>
     getMonthly(
             @RequestParam int year,
@@ -96,7 +96,7 @@ public class AttendanceController {
 
     // DELETE /attendance/monthly?year=2026&month=4
     @DeleteMapping("/monthly")
-    @PreAuthorize("hasRole('Admin')")
+    @PreAuthorize("hasRole('Admin') or hasAuthority('attendance.update')")
     public ResponseEntity<ApiResponse<Void>>
     clearMonthly(
             @RequestParam int year,
@@ -110,7 +110,7 @@ public class AttendanceController {
     // POST /attendance/monthly/save
     // Bulk save entire month's attendance
     @PostMapping("/monthly/save")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('attendance.update')")
     public ResponseEntity<ApiResponse<Void>> saveMonthly(
             @RequestBody BulkAttendanceRequest request) {
 
@@ -122,7 +122,7 @@ public class AttendanceController {
     // PATCH /attendance/cell
     // Real-time single cell update on every click
     @PatchMapping("/cell")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('attendance.update')")
     public ResponseEntity<ApiResponse<Void>> updateCell(
             @RequestBody Map<String, String> body) {
 
@@ -138,7 +138,7 @@ public class AttendanceController {
     // POST /attendance/quick-mark
     // Mark all employees for a specific day
     @PostMapping("/quick-mark")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('attendance.update')")
     public ResponseEntity<ApiResponse<Void>> quickMark(
             @RequestBody Map<String, Object> body) {
 
@@ -157,7 +157,7 @@ public class AttendanceController {
     // POST /attendance/salary-detail
     // Upsert salary detail for one employee for a month
     @PostMapping("/salary-detail")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('attendance.update')")
     public ResponseEntity<ApiResponse<SalaryDetailDto>> updateSalaryDetail(
             @RequestBody UpdateSalaryDetailRequest request) {
 
@@ -191,7 +191,7 @@ public class AttendanceController {
     }
 
     @GetMapping("/check-ins")
-    @PreAuthorize("hasAnyRole('Admin','Manager','Team Leader')")
+    @PreAuthorize("hasAnyRole('Admin','Manager','Team Leader') or hasAuthority('attendance.view')")
     public ResponseEntity<ApiResponse<List<AttendanceRecordResponse>>> getDailyCheckIns(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         List<AttendanceRecordResponse> result = attendanceService.getDailyCheckIns(date);

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import "./Project.css";
-import { apiCall } from "../../utils/api";
+import { apiCall, getCurrentUser } from "../../utils/api";
 
 
 // ── Constants ─────────────────────────────────────────────────────
@@ -89,6 +89,8 @@ export default function Projects() {
   // Clients management state
   const [showClientManagerModal, setShowClientManagerModal] = useState(false);
   const [clientDraftName, setClientDraftName] = useState("");
+  const currentUser = getCurrentUser();
+  const hasPermission = (perm) => currentUser?.roles?.includes('Admin') || currentUser?.permissions?.includes(perm);
   const [clientDraftAddress, setClientDraftAddress] = useState("");
   const [editingClientId, setEditingClientId] = useState(null);
   const [editingClientName, setEditingClientName] = useState("");
@@ -447,15 +449,21 @@ export default function Projects() {
           <h1>Project Management</h1>
         </div>
         <div style={{ display: "flex", gap: "10px" }}>
-          <button className="btn-add-project" style={{ background: "#038e52ff" }} onClick={() => setShowClientManagerModal(true)}>
-            💼 Manage Client
-          </button>
-          <button className="btn-add-project" style={{ background: "#4a5568" }} onClick={() => setShowWorkflowModal(true)}>
-            ⚙️ Manage Task Name
-          </button>
-          <button className="btn-add-project" onClick={handleOpenAdd}>
-            + Add Project
-          </button>
+          {hasPermission('projects.create') && (
+            <button className="btn-add-project" style={{ background: "#038e52ff" }} onClick={() => setShowClientManagerModal(true)}>
+              💼 Manage Client
+            </button>
+          )}
+          {hasPermission('projects.create') && (
+            <button className="btn-add-project" style={{ background: "#4a5568" }} onClick={() => setShowWorkflowModal(true)}>
+              ⚙️ Manage Task Name
+            </button>
+          )}
+          {hasPermission('projects.create') && (
+            <button className="btn-add-project" onClick={handleOpenAdd}>
+              + Add Project
+            </button>
+          )}
         </div>
       </div>
 
@@ -515,16 +523,20 @@ export default function Projects() {
                   </span>
                 </td>
                 <td className="pm-actions">
-                  <button
-                    className="action-btn action-btn--edit"
-                    onClick={() => handleOpenEdit(project)}
-                    title="Edit"
-                  >✏️</button>
-                  <button
-                    className="action-btn action-btn--delete"
-                    onClick={() => handleOpenDelete(project)}
-                    title="Delete"
-                  >🗑️</button>
+                  {hasPermission('projects.update') && (
+                    <button
+                      className="action-btn action-btn--edit"
+                      onClick={() => handleOpenEdit(project)}
+                      title="Edit"
+                    >✏️</button>
+                  )}
+                  {hasPermission('projects.delete') && (
+                    <button
+                      className="action-btn action-btn--delete"
+                      onClick={() => handleOpenDelete(project)}
+                      title="Delete"
+                    >🗑️</button>
+                  )}
                 </td>
               </tr>
             ))}

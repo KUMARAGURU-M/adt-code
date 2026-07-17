@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from "react";
 import "./Leave.css";
-import { apiCall } from "../../utils/api";
+import { apiCall, getCurrentUser } from "../../utils/api";
 
 // ── Helpers ───────────────────────────────────────────────────────
-const STATUS_OPTIONS   = ["All Status","Pending","Approved","Rejected","Cancelled"];
-const MONTHS           = ["January","February","March","April","May","June",
-                          "July","August","September","October","November","December"];
+const STATUS_OPTIONS = ["All Status", "Pending", "Approved", "Rejected", "Cancelled"];
+const MONTHS = ["January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"];
 
 const calcDays = (start, end) => {
   if (!start || !end) return "";
@@ -14,9 +14,9 @@ const calcDays = (start, end) => {
 };
 
 const statusClass = (s) => ({
-  Pending:   "lv-badge--pending",
-  Approved:  "lv-badge--approved",
-  Rejected:  "lv-badge--rejected",
+  Pending: "lv-badge--pending",
+  Approved: "lv-badge--approved",
+  Rejected: "lv-badge--rejected",
   Cancelled: "lv-badge--rejected",
 }[s] || "");
 
@@ -29,22 +29,22 @@ const Modal = ({ onClose, children }) => (
 );
 
 // ══ TAB 1 — LEAVE REQUESTS ═══════════════════════════════════════
-const LeaveRequests = ({ leaveTypes, employees }) => {
-  const [requests,       setRequests]       = useState([]);
-  const [loading,        setLoading]        = useState(true);
+const LeaveRequests = ({ leaveTypes, employees, hasPermission }) => {
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [filterEmployee, setFilterEmployee] = useState("");
-  const [filterStatus,   setFilterStatus]   = useState("");
-  const [filterType,     setFilterType]     = useState("");
-  const [showAdd,  setShowAdd]  = useState(false);
+  const [filterStatus, setFilterStatus] = useState("");
+  const [filterType, setFilterType] = useState("");
+  const [showAdd, setShowAdd] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
-  const [showDel,  setShowDel]  = useState(false);
+  const [showDel, setShowDel] = useState(false);
   const [selected, setSelected] = useState(null);
 
   const emptyReq = {
-    userId:"", leaveTypeId:"", approverId:"",
-    startDate:"", endDate:"", reason:"", status:"Pending", adminNote:""
+    userId: "", leaveTypeId: "", approverId: "",
+    startDate: "", endDate: "", reason: "", status: "Pending", adminNote: ""
   };
-  const [form,   setForm]   = useState(emptyReq);
+  const [form, setForm] = useState(emptyReq);
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
 
@@ -56,11 +56,11 @@ const LeaveRequests = ({ leaveTypes, employees }) => {
   const load = useCallback(async () => {
     try {
       setLoading(true);
-      const params = new URLSearchParams({ page:0, size:100 });
-      if (filterEmployee) params.set("userId",      filterEmployee);
+      const params = new URLSearchParams({ page: 0, size: 100 });
+      if (filterEmployee) params.set("userId", filterEmployee);
       if (filterStatus && filterStatus !== "All Status")
-                         params.set("status",     filterStatus);
-      if (filterType)    params.set("leaveTypeId", filterType);
+        params.set("status", filterStatus);
+      if (filterType) params.set("leaveTypeId", filterType);
       const data = await apiCall(`/leave/requests?${params}`);
       setRequests(data.content || []);
     } catch (e) {
@@ -72,10 +72,10 @@ const LeaveRequests = ({ leaveTypes, employees }) => {
 
   const validate = (f) => {
     const e = {};
-    if (!f.userId)      e.userId      = "Employee is required.";
+    if (!f.userId) e.userId = "Employee is required.";
     if (!f.leaveTypeId) e.leaveTypeId = "Leave type is required.";
-    if (!f.startDate)   e.startDate   = "Start date is required.";
-    if (!f.endDate)     e.endDate     = "End date is required.";
+    if (!f.startDate) e.startDate = "Start date is required.";
+    if (!f.endDate) e.endDate = "End date is required.";
     return e;
   };
 
@@ -85,14 +85,14 @@ const LeaveRequests = ({ leaveTypes, employees }) => {
     setSaving(true);
     try {
       await apiCall("/leave/requests", "POST", {
-        userId:       form.userId,
-        leaveTypeId:  form.leaveTypeId,
-        approverId:   form.approverId || null,
-        startDate:    form.startDate,
-        endDate:      form.endDate,
-        reason:       form.reason || null,
-        status:       form.status,
-        adminNote:    form.adminNote || null,
+        userId: form.userId,
+        leaveTypeId: form.leaveTypeId,
+        approverId: form.approverId || null,
+        startDate: form.startDate,
+        endDate: form.endDate,
+        reason: form.reason || null,
+        status: form.status,
+        adminNote: form.adminNote || null,
       });
       setShowAdd(false);
       await load();
@@ -106,14 +106,14 @@ const LeaveRequests = ({ leaveTypes, employees }) => {
     setSaving(true);
     try {
       await apiCall(`/leave/requests/${selected.id}`, "PUT", {
-        userId:       form.userId,
-        leaveTypeId:  form.leaveTypeId,
-        approverId:   form.approverId || null,
-        startDate:    form.startDate,
-        endDate:      form.endDate,
-        reason:       form.reason || null,
-        status:       form.status,
-        adminNote:    form.adminNote || null,
+        userId: form.userId,
+        leaveTypeId: form.leaveTypeId,
+        approverId: form.approverId || null,
+        startDate: form.startDate,
+        endDate: form.endDate,
+        reason: form.reason || null,
+        status: form.status,
+        adminNote: form.adminNote || null,
       });
       setShowEdit(false);
       await load();
@@ -124,7 +124,7 @@ const LeaveRequests = ({ leaveTypes, employees }) => {
   const handleReview = async (id, status) => {
     try {
       await apiCall(`/leave/requests/${id}/review`, "PATCH",
-                    { status, adminNote: null });
+        { status, adminNote: null });
       await load();
     } catch (err) { alert("Error: " + err.message); }
   };
@@ -140,14 +140,14 @@ const LeaveRequests = ({ leaveTypes, employees }) => {
   const openEdit = (r) => {
     setSelected(r);
     setForm({
-      userId:      r.userId,
+      userId: r.userId,
       leaveTypeId: r.leaveTypeId,
-      approverId:  r.approverId || "",
-      startDate:   r.startDate  || "",
-      endDate:     r.endDate    || "",
-      reason:      r.reason     || "",
-      status:      r.status,
-      adminNote:   r.adminNote  || "",
+      approverId: r.approverId || "",
+      startDate: r.startDate || "",
+      endDate: r.endDate || "",
+      reason: r.reason || "",
+      status: r.status,
+      adminNote: r.adminNote || "",
     });
     setErrors({});
     setShowEdit(true);
@@ -188,17 +188,19 @@ const LeaveRequests = ({ leaveTypes, employees }) => {
             ))}
           </select>
         </div>
-        <button className="lv-btn-primary" style={{ marginTop:22 }}
-          onClick={() => {
-            setForm(emptyReq); setErrors({}); setShowAdd(true);
-          }}>
-          + Add Request
-        </button>
+        {hasPermission('leaves.create') && (
+          <button className="lv-btn-primary" style={{ marginTop: 22 }}
+            onClick={() => {
+              setForm(emptyReq); setErrors({}); setShowAdd(true);
+            }}>
+            + Add Request
+          </button>
+        )}
       </div>
 
       {loading ? (
         <div className="lv-table-card" style={{
-          padding:"40px", textAlign:"center", color:"#888"
+          padding: "40px", textAlign: "center", color: "#888"
         }}>
           Loading...
         </div>
@@ -244,25 +246,29 @@ const LeaveRequests = ({ leaveTypes, employees }) => {
                     </td>
                     <td>
                       <div className="lv-actions">
-                        {isPending && (
+                        {isPending && hasPermission('leaves.approve') && (
                           <>
                             <button className="lv-action-btn"
                               title="Approve"
-                              onClick={() => handleReview(r.id,"Approved")}>
+                              onClick={() => handleReview(r.id, "Approved")}>
                               ✅
                             </button>
                             <button className="lv-action-btn"
                               title="Reject"
-                              onClick={() => handleReview(r.id,"Rejected")}>
+                              onClick={() => handleReview(r.id, "Rejected")}>
                               ❌
                             </button>
                           </>
                         )}
-                        <button className="lv-action-btn"
-                          onClick={() => openEdit(r)} title="Edit">✏️</button>
-                        <button className="lv-action-btn"
-                          onClick={() => { setSelected(r); setShowDel(true); }}
-                          title="Delete">🗑️</button>
+                        {hasPermission('leaves.update') && (
+                          <button className="lv-action-btn"
+                            onClick={() => openEdit(r)} title="Edit">✏️</button>
+                        )}
+                        {hasPermission('leaves.delete') && (
+                          <button className="lv-action-btn"
+                            onClick={() => { setSelected(r); setShowDel(true); }}
+                            title="Delete">🗑️</button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -329,7 +335,7 @@ const LeaveRequests = ({ leaveTypes, employees }) => {
 };
 
 function LeaveRequestForm({ form, set, errors, leaveTypes,
-                             employees, showStatus }) {
+  employees, showStatus }) {
   return (
     <div className="lv-form-body">
       <div className="lv-form-row">
@@ -338,9 +344,8 @@ function LeaveRequestForm({ form, set, errors, leaveTypes,
             Employee <span className="lv-req">*</span>
           </label>
           <select
-            className={`lv-form-select${
-              errors.userId ? " lv-input--error" : ""
-            }`}
+            className={`lv-form-select${errors.userId ? " lv-input--error" : ""
+              }`}
             value={form.userId}
             onChange={e => set("userId", e.target.value)}>
             <option value="">-- Select Employee --</option>
@@ -357,9 +362,8 @@ function LeaveRequestForm({ form, set, errors, leaveTypes,
             Leave Type <span className="lv-req">*</span>
           </label>
           <select
-            className={`lv-form-select${
-              errors.leaveTypeId ? " lv-input--error" : ""
-            }`}
+            className={`lv-form-select${errors.leaveTypeId ? " lv-input--error" : ""
+              }`}
             value={form.leaveTypeId}
             onChange={e => set("leaveTypeId", e.target.value)}>
             <option value="">-- Select Type --</option>
@@ -378,9 +382,8 @@ function LeaveRequestForm({ form, set, errors, leaveTypes,
             Start Date <span className="lv-req">*</span>
           </label>
           <input type="date"
-            className={`lv-form-input${
-              errors.startDate ? " lv-input--error" : ""
-            }`}
+            className={`lv-form-input${errors.startDate ? " lv-input--error" : ""
+              }`}
             value={form.startDate}
             onChange={e => set("startDate", e.target.value)} />
           {errors.startDate && (
@@ -392,9 +395,8 @@ function LeaveRequestForm({ form, set, errors, leaveTypes,
             End Date <span className="lv-req">*</span>
           </label>
           <input type="date"
-            className={`lv-form-input${
-              errors.endDate ? " lv-input--error" : ""
-            }`}
+            className={`lv-form-input${errors.endDate ? " lv-input--error" : ""
+              }`}
             value={form.endDate}
             onChange={e => set("endDate", e.target.value)} />
           {errors.endDate && (
@@ -403,7 +405,7 @@ function LeaveRequestForm({ form, set, errors, leaveTypes,
         </div>
       </div>
       {form.startDate && form.endDate && (
-        <p style={{ fontSize:"0.82rem", color:"#6366f1", margin:"0 0 8px" }}>
+        <p style={{ fontSize: "0.82rem", color: "#6366f1", margin: "0 0 8px" }}>
           📅 {calcDays(form.startDate, form.endDate)} day(s)
         </p>
       )}
@@ -432,7 +434,7 @@ function LeaveRequestForm({ form, set, errors, leaveTypes,
             <select className="lv-form-select"
               value={form.status}
               onChange={e => set("status", e.target.value)}>
-              {["Pending","Approved","Rejected","Cancelled"].map(s => (
+              {["Pending", "Approved", "Rejected", "Cancelled"].map(s => (
                 <option key={s}>{s}</option>
               ))}
             </select>
@@ -451,24 +453,24 @@ function LeaveRequestForm({ form, set, errors, leaveTypes,
 }
 
 // ══ TAB 2 — LEAVE TYPES ══════════════════════════════════════════
-const LeaveTypes = () => {
-  const [types,   setTypes]   = useState([]);
+const LeaveTypes = ({ hasPermission }) => {
+  const [types, setTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
-  const [showEdit,setShowEdit]= useState(false);
+  const [showEdit, setShowEdit] = useState(false);
   const [showDel, setShowDel] = useState(false);
-  const [selected,setSelected]= useState(null);
-  const [saving,  setSaving]  = useState(false);
+  const [selected, setSelected] = useState(null);
+  const [saving, setSaving] = useState(false);
 
   const emptyType = {
-    code:"", name:"", description:"", maxDaysPerYear:"",
-    carryForward:false, requiresApproval:true, status:"Active"
+    code: "", name: "", description: "", maxDaysPerYear: "",
+    carryForward: false, requiresApproval: true, status: "Active"
   };
-  const [form,   setForm]   = useState(emptyType);
+  const [form, setForm] = useState(emptyType);
   const [errors, setErrors] = useState({});
-  const set = (k,v) => {
-    setForm(p => ({ ...p, [k]:v }));
-    setErrors(p => ({ ...p, [k]:"" }));
+  const set = (k, v) => {
+    setForm(p => ({ ...p, [k]: v }));
+    setErrors(p => ({ ...p, [k]: "" }));
   };
 
   const load = async () => {
@@ -494,12 +496,12 @@ const LeaveTypes = () => {
     setSaving(true);
     try {
       await apiCall("/leave/types", "POST", {
-        code:             form.code.toUpperCase().trim(),
-        name:             form.name.trim(),
-        description:      form.description || null,
-        maxDaysPerYear:   form.maxDaysPerYear
-                            ? Number(form.maxDaysPerYear) : null,
-        carryForward:     form.carryForward,
+        code: form.code.toUpperCase().trim(),
+        name: form.name.trim(),
+        description: form.description || null,
+        maxDaysPerYear: form.maxDaysPerYear
+          ? Number(form.maxDaysPerYear) : null,
+        carryForward: form.carryForward,
         requiresApproval: form.requiresApproval,
       });
       setShowAdd(false);
@@ -514,11 +516,11 @@ const LeaveTypes = () => {
     setSaving(true);
     try {
       await apiCall(`/leave/types/${selected.id}`, "PUT", {
-        name:             form.name.trim(),
-        description:      form.description || null,
-        maxDaysPerYear:   form.maxDaysPerYear
-                            ? Number(form.maxDaysPerYear) : null,
-        carryForward:     form.carryForward,
+        name: form.name.trim(),
+        description: form.description || null,
+        maxDaysPerYear: form.maxDaysPerYear
+          ? Number(form.maxDaysPerYear) : null,
+        carryForward: form.carryForward,
         requiresApproval: form.requiresApproval,
       });
       setShowEdit(false);
@@ -544,19 +546,23 @@ const LeaveTypes = () => {
 
   return (
     <div>
-      <div style={{ display:"flex", justifyContent:"flex-end",
-                    marginBottom:16 }}>
-        <button className="lv-btn-primary"
-          onClick={() => {
-            setForm(emptyType); setErrors({}); setShowAdd(true);
-          }}>
-          + Add Leave Type
-        </button>
-      </div>
+      {hasPermission('leaves.manage_types') && (
+        <div style={{
+          display: "flex", justifyContent: "flex-end",
+          marginBottom: 16
+        }}>
+          <button className="lv-btn-primary"
+            onClick={() => {
+              setForm(emptyType); setErrors({}); setShowAdd(true);
+            }}>
+            + Add Leave Type
+          </button>
+        </div>
+      )}
 
       {loading ? (
         <div className="lv-table-card" style={{
-          padding:"40px", textAlign:"center", color:"#888"
+          padding: "40px", textAlign: "center", color: "#888"
         }}>Loading...</div>
       ) : (
         <div className="lv-table-card">
@@ -581,34 +587,33 @@ const LeaveTypes = () => {
                   <td className="lv-name-cell">{t.name}</td>
                   <td>{t.maxDaysPerYear || "-"}</td>
                   <td>
-                    <span className={`lv-bool ${
-                      t.carryForward ? "lv-bool--yes" : "lv-bool--no"
-                    }`}>
+                    <span className={`lv-bool ${t.carryForward ? "lv-bool--yes" : "lv-bool--no"
+                      }`}>
                       {t.carryForward ? "Yes" : "No"}
                     </span>
                   </td>
                   <td>
-                    <span className={`lv-bool ${
-                      t.requiresApproval ? "lv-bool--yes" : "lv-bool--no"
-                    }`}>
+                    <span className={`lv-bool ${t.requiresApproval ? "lv-bool--yes" : "lv-bool--no"
+                      }`}>
                       {t.requiresApproval ? "Yes" : "No"}
                     </span>
                   </td>
                   <td>
-                    <span className={`lv-badge ${
-                      t.isActive ? "lv-badge--approved" : "lv-badge--rejected"
-                    }`}>
+                    <span className={`lv-badge ${t.isActive ? "lv-badge--approved" : "lv-badge--rejected"
+                      }`}>
                       {t.isActive ? "Active" : "Inactive"}
                     </span>
                   </td>
                   <td>
-                    <div className="lv-actions">
-                      <button className="lv-action-btn"
-                        onClick={() => openEdit(t)} title="Edit">✏️</button>
-                      <button className="lv-action-btn"
-                        onClick={() => { setSelected(t); setShowDel(true); }}
-                        title="Delete">🗑️</button>
-                    </div>
+                    {hasPermission('leaves.manage_types') && (
+                      <div className="lv-actions">
+                        <button className="lv-action-btn"
+                          onClick={() => openEdit(t)} title="Edit">✏️</button>
+                        <button className="lv-action-btn"
+                          onClick={() => { setSelected(t); setShowDel(true); }}
+                          title="Delete">🗑️</button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -745,24 +750,24 @@ function LeaveTypeForm({ form, set, errors, showStatus }) {
 }
 
 // ══ TAB 3 — POLICIES ═════════════════════════════════════════════
-const Policies = () => {
+const Policies = ({ hasPermission }) => {
   const [policies, setPolicies] = useState([]);
-  const [loading,  setLoading]  = useState(true);
-  const [showAdd,  setShowAdd]  = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [showAdd, setShowAdd] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
-  const [showDel,  setShowDel]  = useState(false);
+  const [showDel, setShowDel] = useState(false);
   const [selected, setSelected] = useState(null);
-  const [saving,   setSaving]   = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const emptyPolicy = {
-    name:"", description:"", defaultAnnualDays:12, probationDays:0,
-    yearStartMonth:"January", yearStartDay:1, status:"Active"
+    name: "", description: "", defaultAnnualDays: 12, probationDays: 0,
+    yearStartMonth: "January", yearStartDay: 1, status: "Active"
   };
-  const [form,   setForm]   = useState(emptyPolicy);
+  const [form, setForm] = useState(emptyPolicy);
   const [errors, setErrors] = useState({});
-  const set = (k,v) => {
-    setForm(p => ({ ...p, [k]:v }));
-    setErrors(p => ({ ...p, [k]:"" }));
+  const set = (k, v) => {
+    setForm(p => ({ ...p, [k]: v }));
+    setErrors(p => ({ ...p, [k]: "" }));
   };
 
   const load = async () => {
@@ -777,8 +782,8 @@ const Policies = () => {
 
   const validate = (f) => {
     const e = {};
-    if (!f.name?.trim())          e.name             = "Policy name is required.";
-    if (!f.defaultAnnualDays)     e.defaultAnnualDays = "Annual leave days is required.";
+    if (!f.name?.trim()) e.name = "Policy name is required.";
+    if (!f.defaultAnnualDays) e.defaultAnnualDays = "Annual leave days is required.";
     return e;
   };
 
@@ -788,12 +793,12 @@ const Policies = () => {
     setSaving(true);
     try {
       await apiCall("/leave/policies", "POST", {
-        name:             form.name.trim(),
-        description:      form.description || null,
+        name: form.name.trim(),
+        description: form.description || null,
         defaultAnnualDays: Number(form.defaultAnnualDays),
-        probationDays:    Number(form.probationDays) || 0,
-        yearStartMonth:   form.yearStartMonth,
-        yearStartDay:     Number(form.yearStartDay),
+        probationDays: Number(form.probationDays) || 0,
+        yearStartMonth: form.yearStartMonth,
+        yearStartDay: Number(form.yearStartDay),
       });
       setShowAdd(false);
       await load();
@@ -807,12 +812,12 @@ const Policies = () => {
     setSaving(true);
     try {
       await apiCall(`/leave/policies/${selected.id}`, "PUT", {
-        name:             form.name.trim(),
-        description:      form.description || null,
+        name: form.name.trim(),
+        description: form.description || null,
         defaultAnnualDays: Number(form.defaultAnnualDays),
-        probationDays:    Number(form.probationDays) || 0,
-        yearStartMonth:   form.yearStartMonth,
-        yearStartDay:     Number(form.yearStartDay),
+        probationDays: Number(form.probationDays) || 0,
+        yearStartMonth: form.yearStartMonth,
+        yearStartDay: Number(form.yearStartDay),
       });
       setShowEdit(false);
       await load();
@@ -830,19 +835,23 @@ const Policies = () => {
 
   return (
     <div>
-      <div style={{ display:"flex", justifyContent:"flex-end",
-                    marginBottom:16 }}>
-        <button className="lv-btn-primary"
-          onClick={() => {
-            setForm(emptyPolicy); setErrors({}); setShowAdd(true);
-          }}>
-          + Add Policy
-        </button>
-      </div>
+      {hasPermission('leaves.manage_types') && (
+        <div style={{
+          display: "flex", justifyContent: "flex-end",
+          marginBottom: 16
+        }}>
+          <button className="lv-btn-primary"
+            onClick={() => {
+              setForm(emptyPolicy); setErrors({}); setShowAdd(true);
+            }}>
+            + Add Policy
+          </button>
+        </div>
+      )}
 
       {loading ? (
         <div className="lv-table-card" style={{
-          padding:"40px", textAlign:"center", color:"#888"
+          padding: "40px", textAlign: "center", color: "#888"
         }}>Loading...</div>
       ) : (
         <div className="lv-table-card">
@@ -871,33 +880,35 @@ const Policies = () => {
                   <td>{p.probationDays} days</td>
                   <td>{p.yearStartMonth} {p.yearStartDay}</td>
                   <td>
-                    <span className={`lv-badge ${
-                      p.isActive
+                    <span className={`lv-badge ${p.isActive
                         ? "lv-badge--approved"
                         : "lv-badge--rejected"
-                    }`}>
+                      }`}>
                       {p.isActive ? "Active" : "Inactive"}
                     </span>
                   </td>
                   <td>
-                    <div className="lv-actions">
-                      <button className="lv-action-btn"
-                        onClick={() => {
-                          setSelected(p);
-                          setForm({ ...p,
-                            defaultAnnualDays: p.defaultAnnualDays || 12,
-                            probationDays: p.probationDays || 0,
-                          });
-                          setErrors({});
-                          setShowEdit(true);
-                        }}
-                        title="Edit">✏️</button>
-                      <button className="lv-action-btn"
-                        onClick={() => {
-                          setSelected(p); setShowDel(true);
-                        }}
-                        title="Delete">🗑️</button>
-                    </div>
+                    {hasPermission('leaves.manage_types') && (
+                      <div className="lv-actions">
+                        <button className="lv-action-btn"
+                          onClick={() => {
+                            setSelected(p);
+                            setForm({
+                              ...p,
+                              defaultAnnualDays: p.defaultAnnualDays || 12,
+                              probationDays: p.probationDays || 0,
+                            });
+                            setErrors({});
+                            setShowEdit(true);
+                          }}
+                          title="Edit">✏️</button>
+                        <button className="lv-action-btn"
+                          onClick={() => {
+                            setSelected(p); setShowDel(true);
+                          }}
+                          title="Delete">🗑️</button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -985,9 +996,8 @@ function PolicyForm({ form, set, errors, showStatus }) {
           Default Annual Leave Days <span className="lv-req">*</span>
         </label>
         <input type="number" min="0"
-          className={`lv-form-input${
-            errors.defaultAnnualDays ? " lv-input--error" : ""
-          }`}
+          className={`lv-form-input${errors.defaultAnnualDays ? " lv-input--error" : ""
+            }`}
           value={form.defaultAnnualDays}
           onChange={e => set("defaultAnnualDays", e.target.value)} />
         {errors.defaultAnnualDays && (
@@ -1033,10 +1043,10 @@ function PolicyForm({ form, set, errors, showStatus }) {
 
 // ══ TAB 4 — BALANCES ═════════════════════════════════════════════
 const Balances = ({ employees }) => {
-  const [balances,       setBalances]       = useState([]);
-  const [loading,        setLoading]        = useState(true);
+  const [balances, setBalances] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [filterEmployee, setFilterEmployee] = useState("");
-  const [year,           setYear]           = useState(
+  const [year, setYear] = useState(
     new Date().getFullYear());
 
   const load = useCallback(async () => {
@@ -1073,7 +1083,7 @@ const Balances = ({ employees }) => {
           <select className="lv-filter-select"
             value={year}
             onChange={e => setYear(Number(e.target.value))}>
-            {[2024,2025,2026,2027].map(y => (
+            {[2024, 2025, 2026, 2027].map(y => (
               <option key={y} value={y}>{y}</option>
             ))}
           </select>
@@ -1082,7 +1092,7 @@ const Balances = ({ employees }) => {
 
       {loading ? (
         <div className="lv-table-card" style={{
-          padding:"40px", textAlign:"center", color:"#888"
+          padding: "40px", textAlign: "center", color: "#888"
         }}>Loading...</div>
       ) : (
         <div className="lv-table-card">
@@ -1123,16 +1133,20 @@ const Balances = ({ employees }) => {
 
 // ══ MAIN COMPONENT ════════════════════════════════════════════════
 const TABS = [
-  { key:"requests", label:"Leave Requests", icon:"📋" },
-  { key:"types",    label:"Leave Types",    icon:"🏷️" },
-  { key:"policies", label:"Policies",       icon:"📄" },
-  { key:"balances", label:"Balances",       icon:"💰" },
+  { key: "requests", label: "Leave Requests", icon: "📋" },
+  { key: "types", label: "Leave Types", icon: "🏷️" },
+  { key: "policies", label: "Policies", icon: "📄" },
+  { key: "balances", label: "Balances", icon: "💰" },
 ];
 
 const Leave = () => {
-  const [activeTab,  setActiveTab]  = useState("requests");
+  const [activeTab, setActiveTab] = useState("requests");
   const [leaveTypes, setLeaveTypes] = useState([]);
-  const [employees,  setEmployees]  = useState([]);
+  const [employees, setEmployees] = useState([]);
+
+  const currentUser = getCurrentUser();
+  const roles = currentUser?.roles || [];
+  const hasPermission = (perm) => roles.includes('Admin') || currentUser?.permissions?.includes(perm);
 
   // Load shared data once
   useEffect(() => {
@@ -1144,7 +1158,7 @@ const Leave = () => {
         ]);
         setLeaveTypes(types || []);
         setEmployees((users || []).map(u => ({
-          id:       u.id,
+          id: u.id,
           fullName: u.fullName || u.email,
         })));
       } catch (e) { console.error(e.message); }
@@ -1162,7 +1176,7 @@ const Leave = () => {
       <div className="lv-tabs">
         {TABS.map(tab => (
           <button key={tab.key}
-            className={`lv-tab${activeTab===tab.key?" lv-tab--active":""}`}
+            className={`lv-tab${activeTab === tab.key ? " lv-tab--active" : ""}`}
             onClick={() => setActiveTab(tab.key)}>
             <span className="lv-tab-icon">{tab.icon}</span>
             {tab.label}
@@ -1172,10 +1186,10 @@ const Leave = () => {
 
       <div className="lv-content">
         {activeTab === "requests" && (
-          <LeaveRequests leaveTypes={leaveTypes} employees={employees} />
+          <LeaveRequests leaveTypes={leaveTypes} employees={employees} hasPermission={hasPermission} />
         )}
-        {activeTab === "types"    && <LeaveTypes />}
-        {activeTab === "policies" && <Policies />}
+        {activeTab === "types" && <LeaveTypes hasPermission={hasPermission} />}
+        {activeTab === "policies" && <Policies hasPermission={hasPermission} />}
         {activeTab === "balances" && (
           <Balances employees={employees} />
         )}

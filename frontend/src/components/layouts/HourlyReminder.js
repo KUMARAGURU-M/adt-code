@@ -32,6 +32,11 @@ const playBeep = () => {
     console.warn('Could not play reminder beep:', err);
   }
 };
+// ── Local date helper: returns YYYY-MM-DD in the browser's local timezone ────
+const getLocalDate = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 
 export default function HourlyReminder() {
   const [notification, setNotification] = useState(null);
@@ -49,6 +54,9 @@ export default function HourlyReminder() {
   useEffect(() => {
     const user = getCurrentUser();
     if (!user) return;
+
+    // Reset last notified hour on page switch/navigation
+    lastNotifiedHourRef.current = null;
 
     // Do not show the popup if the user is already on the Hourly Graph page to avoid double popups
     const isHourlyGraphPage = location.pathname.endsWith('/hourly-graph');
@@ -74,8 +82,8 @@ export default function HourlyReminder() {
 
     const checkReminder = async () => {
       try {
-        // 1. Fetch today's logs
-        const todayStr = new Date().toISOString().slice(0, 10);
+        // 1. Fetch today's logs using browser local date, not UTC
+        const todayStr = getLocalDate();
         const data = await apiCall(`/hourly-graph/logs?date=${todayStr}`);
         const rows = data?.rows || [];
         const myRow = rows.find(r => r.userId === user.userId);
@@ -94,13 +102,12 @@ export default function HourlyReminder() {
             const hProc = typeof hData === 'object' && hData !== null ? (hData.process || '') : '';
 
             if (!hValue || !hProc) {
-              setNotification({
-                hourIdx: i,
-                message: `🔔 It's time to log your production for the ${ordinal(i + 1)} hour! You have a 10-minute active window to enter process and count.`
-              });
-
               if (lastNotifiedHourRef.current !== i) {
                 lastNotifiedHourRef.current = i;
+                setNotification({
+                  hourIdx: i,
+                  message: `🔔 It's time to log your production for the ${ordinal(i + 1)} hour! You have a 10-minute active window to enter process and count.`
+                });
                 playBeep();
                 sendDesktopNotification(i);
               }
@@ -116,25 +123,39 @@ export default function HourlyReminder() {
 
     const isHourActive = (hourIdx, checkInTimeStr) => {
       if (!checkInTimeStr) return false;
-      const [sh] = checkInTimeStr.split(':').map(Number);
-      const targetHour = (sh + 1 + hourIdx) % 24;
+      const parts = checkInTimeStr.split(':').map(Number);
+      const sh = parts[0] || 0;
+      const sm = parts[1] || 0;
 
-      const now = new Date();
-      let targetTimeToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), targetHour, 0, 0);
-
-      if (sh > targetHour) {
-        if (now.getHours() >= sh) {
-          targetTimeToday.setDate(targetTimeToday.getDate() + 1);
-        }
-      } else {
-        if (now.getHours() < sh) {
-          targetTimeToday.setDate(targetTimeToday.getDate() - 1);
-        }
+      // Force calculations to Asia/Kolkata (IST) timezone to match server-side check-in timezone
+      let nowMins;
+      try {
+        const formatter = new Intl.DateTimeFormat('en-US', {
+          timeZone: 'Asia/Kolkata',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        });
+        const p = formatter.formatToParts(new Date());
+        const hour = parseInt(p.find(x => x.type === 'hour').value, 10);
+        const minute = parseInt(p.find(x => x.type === 'minute').value, 10);
+        nowMins = hour * 60 + minute;
+      } catch (e) {
+        const d = new Date();
+        nowMins = d.getHours() * 60 + d.getMinutes();
       }
 
-      const diffMs = now - targetTimeToday;
-      const diffMin = diffMs / 1000 / 60;
-      return diffMin >= 0 && diffMin <= 10;
+      // Window starts exactly (hourIdx + 1) hours after check-in, preserving minutes.
+      // e.g. check-in 8:50 → 1st window: 9:50–10:00, 2nd: 10:50–11:00
+      const checkInTotalMins = sh * 60 + sm;
+      const windowStartMins = (checkInTotalMins + (hourIdx + 1) * 60) % (24 * 60);
+      const windowEndMins = (windowStartMins + 10) % (24 * 60);
+
+      if (windowStartMins <= windowEndMins) {
+        return nowMins >= windowStartMins && nowMins < windowEndMins;
+      } else {
+        return nowMins >= windowStartMins || nowMins < windowEndMins;
+      }
     };
 
     // Run check immediately on mount/path change
@@ -175,5 +196,4 @@ export default function HourlyReminder() {
     </div>
   );
 }
-
 

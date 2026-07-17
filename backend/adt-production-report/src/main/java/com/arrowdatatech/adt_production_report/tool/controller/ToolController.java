@@ -29,7 +29,7 @@ public class ToolController {
     // GET /tools/{toolId}/access
     // Returns all users with their access status for this tool
     @GetMapping("/{toolId}/access")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('tools.view')")
     public ResponseEntity<ApiResponse<List<ToolAccessDto>>> getToolAccess(
             @PathVariable UUID toolId) {
         return ResponseEntity.ok(ApiResponse.success(
@@ -39,7 +39,7 @@ public class ToolController {
 
     // POST /tools/access — set access (Granted or Denied) for a user
     @PostMapping("/access")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('tools.manage')")
     public ResponseEntity<ApiResponse<ToolAccessDto>> setAccess(
             @RequestBody SetToolAccessRequest request) {
         return ResponseEntity.ok(ApiResponse.success(
@@ -49,7 +49,7 @@ public class ToolController {
     // DELETE /tools/{toolId}/access/{userId}
     // Remove a user from the tool access list entirely
     @DeleteMapping("/{toolId}/access/{userId}")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('tools.manage')")
     public ResponseEntity<ApiResponse<Void>> removeAccess(
             @PathVariable UUID toolId,
             @PathVariable UUID userId) {

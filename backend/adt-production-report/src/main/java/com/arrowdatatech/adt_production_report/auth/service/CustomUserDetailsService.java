@@ -2,6 +2,7 @@ package com.arrowdatatech.adt_production_report.auth.service;
 
 import com.arrowdatatech.adt_production_report.common.exception.ResourceNotFoundException;
 import com.arrowdatatech.adt_production_report.user.entity.User;
+import com.arrowdatatech.adt_production_report.role.repository.PermissionRepository;
 import com.arrowdatatech.adt_production_report.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 public class CustomUserDetailsService implements UserDetailsService {
 
     private final UserRepository userRepository;
+    private final PermissionRepository permissionRepository;
 
     // Spring Security calls this during authentication
     // identifier = email OR user_code
@@ -34,6 +36,13 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .stream()
                 .map(ura -> new SimpleGrantedAuthority("ROLE_" + ura.getRole().getName()))
                 .collect(Collectors.toList());
+
+        List<SimpleGrantedAuthority> permAuthorities = permissionRepository
+                .findPermissionCodesByUserId(user.getId())
+                .stream()
+                .map(SimpleGrantedAuthority::new)
+                .collect(Collectors.toList());
+        authorities.addAll(permAuthorities);
 
         return org.springframework.security.core.userdetails.User.builder()
                 .username(user.getId().toString())
@@ -55,6 +64,13 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .stream()
                 .map(ura -> new SimpleGrantedAuthority("ROLE_" + ura.getRole().getName()))
                 .collect(Collectors.toList());
+        
+        List<SimpleGrantedAuthority> permAuthorities = permissionRepository
+                .findPermissionCodesByUserId(user.getId())
+                .stream()
+                .map(SimpleGrantedAuthority::new)
+                .collect(Collectors.toList());
+        authorities.addAll(permAuthorities);
 
         return org.springframework.security.core.userdetails.User.builder()
                 .username(user.getId().toString())

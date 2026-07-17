@@ -32,7 +32,7 @@ public class ShiftController {
     // GET /shifts/all - All shifts with assigned employees
     // Used by: Shift Management admin page
     @GetMapping("/all")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('shifts.view')")
     public ResponseEntity<ApiResponse<List<ShiftResponse>>> getAllShifts() {
         List<ShiftResponse> shifts =
                 shiftService.getAllShiftsWithEmployees();
@@ -52,7 +52,7 @@ public class ShiftController {
     // GET /shifts/employees - All employees with current shift info
     // Used by: Allotment Board dropdown
     @GetMapping("/employees")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('shifts.view')")
     public ResponseEntity<ApiResponse<List<AllEmployeeForShiftResponse>>>
     getAllEmployeesWithShiftInfo() {
         List<AllEmployeeForShiftResponse> employees =
@@ -63,7 +63,7 @@ public class ShiftController {
 
     // GET /shifts/{id}/employees - Employees currently in a shift
     @GetMapping("/{id}/employees")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('shifts.view')")
     public ResponseEntity<ApiResponse<List<ShiftEmployeeResponse>>>
     getEmployeesForShift(@PathVariable UUID id) {
         List<ShiftEmployeeResponse> employees =
@@ -74,7 +74,7 @@ public class ShiftController {
 
     // POST /shifts - Create shift
     @PostMapping
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('shifts.manage')")
     public ResponseEntity<ApiResponse<ShiftResponse>> createShift(
             @Valid @RequestBody CreateShiftRequest request) {
         ShiftResponse created = shiftService.createShift(request);
@@ -86,7 +86,7 @@ public class ShiftController {
 
     // PUT /shifts/{id} - Update shift
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('shifts.manage')")
     public ResponseEntity<ApiResponse<ShiftResponse>> updateShift(
             @PathVariable UUID id,
             @Valid @RequestBody CreateShiftRequest request) {
@@ -97,7 +97,7 @@ public class ShiftController {
 
     // DELETE /shifts/{id}
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('Admin')")
+    @PreAuthorize("hasRole('Admin') or hasAuthority('shifts.manage')")
     public ResponseEntity<ApiResponse<Void>> deleteShift(
             @PathVariable UUID id) {
         shiftService.deleteShift(id);
@@ -107,7 +107,7 @@ public class ShiftController {
 
     // POST /shifts/{id}/assign - Assign employees to shift (Allotment Board)
     @PostMapping("/{id}/assign")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('shifts.manage')")
     public ResponseEntity<ApiResponse<ShiftAssignmentResponse>> assignEmployees(
             @PathVariable UUID id,
             @Valid @RequestBody AssignShiftRequest request) {
@@ -120,7 +120,7 @@ public class ShiftController {
     // DELETE /shifts/{shiftId}/employees/{userId}
     // Remove one employee from a shift
     @DeleteMapping("/{shiftId}/employees/{userId}")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('shifts.manage')")
     public ResponseEntity<ApiResponse<Void>> removeEmployee(
             @PathVariable UUID shiftId,
             @PathVariable UUID userId) {

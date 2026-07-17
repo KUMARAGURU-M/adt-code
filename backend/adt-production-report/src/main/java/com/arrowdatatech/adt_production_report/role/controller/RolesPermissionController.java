@@ -22,7 +22,7 @@ public class RolesPermissionController {
     // ── Roles ──────────────────────────────────────────────────
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('roles.view')")
     public ResponseEntity<ApiResponse<List<RoleDto>>> getAllRoles(
             @RequestParam(required = false) Boolean active) {
         return ResponseEntity.ok(ApiResponse.success(
@@ -30,7 +30,7 @@ public class RolesPermissionController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('roles.view')")
     public ResponseEntity<ApiResponse<RoleDto>> getRole(
             @PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success(
@@ -38,7 +38,7 @@ public class RolesPermissionController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('Admin')")
+    @PreAuthorize("hasRole('Admin') or hasAuthority('roles.create')")
     public ResponseEntity<ApiResponse<RoleDto>> createRole(
             @RequestBody CreateRoleRequest req) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -47,7 +47,7 @@ public class RolesPermissionController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('Admin')")
+    @PreAuthorize("hasRole('Admin') or hasAuthority('roles.update')")
     public ResponseEntity<ApiResponse<RoleDto>> updateRole(
             @PathVariable UUID id,
             @RequestBody CreateRoleRequest req) {
@@ -56,7 +56,7 @@ public class RolesPermissionController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('Admin')")
+    @PreAuthorize("hasRole('Admin') or hasAuthority('roles.delete')")
     public ResponseEntity<ApiResponse<Void>> deleteRole(
             @PathVariable UUID id) {
         service.deleteRole(id);
@@ -66,7 +66,7 @@ public class RolesPermissionController {
 
     // PUT /roles/{id}/permissions — assign permissions (full replacement)
     @PutMapping("/{id}/permissions")
-    @PreAuthorize("hasRole('Admin')")
+    @PreAuthorize("hasRole('Admin') or hasAuthority('roles.update')")
     public ResponseEntity<ApiResponse<RoleDto>> assignPermissions(
             @PathVariable UUID id,
             @RequestBody AssignPermissionsRequest req) {
@@ -78,7 +78,7 @@ public class RolesPermissionController {
     // ── Permissions ────────────────────────────────────────────
 
     @GetMapping("/permissions")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('roles.view')")
     public ResponseEntity<ApiResponse<PagedPermissionsResponse>> getPermissions(
             @RequestParam(required = false) String resource,
             @RequestParam(defaultValue = "0") int page,
@@ -89,7 +89,7 @@ public class RolesPermissionController {
     }
 
     @GetMapping("/permissions/all")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('roles.view')")
     public ResponseEntity<ApiResponse<List<PermissionDto>>>
     getAllPermissions() {
         return ResponseEntity.ok(ApiResponse.success(
@@ -98,7 +98,7 @@ public class RolesPermissionController {
 
     // POST /roles/permissions — bulk create (resource × action matrix)
     @PostMapping("/permissions")
-    @PreAuthorize("hasRole('Admin')")
+    @PreAuthorize("hasRole('Admin') or hasAuthority('roles.create')")
     public ResponseEntity<ApiResponse<List<PermissionDto>>> createPermissions(
             @RequestBody CreatePermissionRequest req) {
         List<PermissionDto> created = service.createPermissions(req);
@@ -108,7 +108,7 @@ public class RolesPermissionController {
     }
 
     @PutMapping("/permissions/{id}")
-    @PreAuthorize("hasRole('Admin')")
+    @PreAuthorize("hasRole('Admin') or hasAuthority('roles.update')")
     public ResponseEntity<ApiResponse<PermissionDto>> updatePermission(
             @PathVariable UUID id,
             @RequestBody CreatePermissionRequest req) {
@@ -117,7 +117,7 @@ public class RolesPermissionController {
     }
 
     @DeleteMapping("/permissions/{id}")
-    @PreAuthorize("hasRole('Admin')")
+    @PreAuthorize("hasRole('Admin') or hasAuthority('roles.delete')")
     public ResponseEntity<ApiResponse<Void>> deletePermission(
             @PathVariable UUID id) {
         service.deletePermission(id);

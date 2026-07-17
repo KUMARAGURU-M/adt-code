@@ -335,10 +335,10 @@ public class HourlyGraphService {
 
                 // If values or process is modified, check the 10-minute active window
                 if (!inVal.equals(exVal) || !inProc.equals(exProc)) {
-                    int checkInHour = checkInTime.getHour();
-                    LocalTime targetHourTime = LocalTime.of((checkInHour + 1 + i) % 24, 0);
-                    LocalTime windowStart = targetHourTime;
-                    LocalTime windowEnd = targetHourTime.plusMinutes(10);
+                    // Window starts exactly (i+1) hours after check-in, preserving minutes.
+                    // e.g. check-in 8:50 → 1st window: 9:50–10:00, not 9:00–9:10
+                    LocalTime windowStart = checkInTime.plusHours((long)(i + 1));
+                    LocalTime windowEnd   = windowStart.plusMinutes(10);
 
                     boolean isWithinWindow;
                     if (windowStart.isBefore(windowEnd)) {
@@ -349,7 +349,7 @@ public class HourlyGraphService {
 
                     if (!isWithinWindow) {
                         throw new BadRequestException("Hourly update for the " + ordinal(i + 1) +
-                                " hour is only active for 10 minutes from " + targetHourTime.toString().substring(0, 5) +
+                                " hour is only active for 10 minutes from " + windowStart.toString().substring(0, 5) +
                                 " (allowed window: " + windowStart.toString().substring(0, 5) + " - " + windowEnd.toString().substring(0, 5) +
                                 "). Active hour is relative to check-in time: " + checkInTime.toString().substring(0, 5) + ".");
                     }

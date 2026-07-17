@@ -27,7 +27,7 @@ public class TaskController {
     // GET /tasks/search - Filtered search with pagination
     // Used by: Task Management admin page table
     @GetMapping("/search")
-    @PreAuthorize("hasAnyRole('Admin','Manager','Team Leader')")
+    @PreAuthorize("hasAnyRole('Admin','Manager','Team Leader') or hasAuthority('tasks.view')")
     public ResponseEntity<ApiResponse<PagedResponse<TaskResponse>>> searchTasks(
             @RequestParam(required = false) UUID projectId,
             @RequestParam(required = false) UUID clientId,
@@ -71,7 +71,8 @@ public class TaskController {
             @RequestParam UUID userId) {
         UUID currentUserId = SecurityUtils.getCurrentUserId();
         if (!currentUserId.equals(userId) && !SecurityUtils.hasRole("Admin")
-                && !SecurityUtils.hasRole("Manager") && !SecurityUtils.hasRole("Team Leader")) {
+                && !SecurityUtils.hasRole("Manager") && !SecurityUtils.hasRole("Team Leader")
+                && !SecurityUtils.hasAuthority("tasks.view")) {
             throw new BadRequestException("You are not allowed to view other users' tasks.");
         }
         List<TaskResponse> tasks = taskService.getTasksForEmployee(userId);
@@ -80,7 +81,7 @@ public class TaskController {
 
     // POST /tasks - Create task
     @PostMapping
-    @PreAuthorize("hasAnyRole('Admin','Manager','Team Leader')")
+    @PreAuthorize("hasAnyRole('Admin','Manager','Team Leader') or hasAuthority('tasks.create')")
     public ResponseEntity<ApiResponse<TaskResponse>> createTask(
             @RequestBody CreateTaskRequest request) {
         TaskResponse created = taskService.createTask(request);
@@ -91,7 +92,7 @@ public class TaskController {
 
     // PUT /tasks/{id} - Update task
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('Admin','Manager','Team Leader')")
+    @PreAuthorize("hasAnyRole('Admin','Manager','Team Leader') or hasAuthority('tasks.update')")
     public ResponseEntity<ApiResponse<TaskResponse>> updateTask(
             @PathVariable UUID id,
             @RequestBody CreateTaskRequest request) {
@@ -118,7 +119,7 @@ public class TaskController {
 
     // DELETE /tasks/{id}
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('tasks.delete')")
     public ResponseEntity<ApiResponse<Void>> deleteTask(
             @PathVariable UUID id) {
         taskService.deleteTask(id);
@@ -129,7 +130,7 @@ public class TaskController {
     // POST /tasks/remove-duplicates
     // Matches the "Remove Duplicates" button on frontend
     @PostMapping("/remove-duplicates")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('tasks.delete')")
     public ResponseEntity<ApiResponse<Map<String, Integer>>> removeDuplicates() {
         int removed = taskService.removeDuplicates();
         return ResponseEntity.ok(
@@ -137,5 +138,4 @@ public class TaskController {
                         Map.of("removedCount", removed)));
     }
 }
-
 

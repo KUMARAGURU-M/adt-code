@@ -24,7 +24,7 @@ public class UserController {
 
     // GET /users - All users for User Management table
     @GetMapping
-    @PreAuthorize("hasAnyRole('Admin','Manager','Team Leader')")
+    @PreAuthorize("hasAnyRole('Admin','Manager','Team Leader') or hasAuthority('employees.view')")
     public ResponseEntity<ApiResponse<List<UserListResponse>>> getAllUsers() {
         List<UserListResponse> users = userService.getAllUsers();
         return ResponseEntity.ok(
@@ -41,7 +41,7 @@ public class UserController {
 
     // GET /users/search?q=&page=0&size=25
     @GetMapping("/search")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('employees.view')")
     public ResponseEntity<ApiResponse<PagedResponse<UserListResponse>>> searchUsers(
             @RequestParam(required = false) String q,
             @RequestParam(defaultValue = "0") int page,
@@ -64,7 +64,7 @@ public class UserController {
 
     // GET /users/{id} - User detail
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('employees.view')")
     public ResponseEntity<ApiResponse<UserResponse>> getUserById(
             @PathVariable UUID id) {
         UserResponse user = userService.getUserById(id);
@@ -73,7 +73,7 @@ public class UserController {
 
     // POST /users - Create new user
     @PostMapping
-    @PreAuthorize("hasRole('Admin')")
+    @PreAuthorize("hasRole('Admin') or hasAuthority('employees.create')")
     public ResponseEntity<ApiResponse<UserResponse>> createUser(
             @Valid @RequestBody CreateUserRequest request) {
         UserResponse created = userService.createUser(request);
@@ -84,7 +84,7 @@ public class UserController {
 
     // PUT /users/{id} - Update user
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('employees.update')")
     public ResponseEntity<ApiResponse<UserResponse>> updateUser(
             @PathVariable UUID id,
             @Valid @RequestBody UpdateUserRequest request) {
@@ -95,7 +95,7 @@ public class UserController {
 
     // DELETE /users/{id} - Soft delete user
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('Admin')")
+    @PreAuthorize("hasRole('Admin') or hasAuthority('employees.delete')")
     public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable UUID id) {
         userService.deleteUser(id);
         return ResponseEntity.ok(
@@ -104,7 +104,7 @@ public class UserController {
 
     // POST /users/{id}/set-password - Admin sets password for user
     @PostMapping("/{id}/set-password")
-    @PreAuthorize("hasAnyRole('Admin', 'Manager')")
+    @PreAuthorize("hasAnyRole('Admin', 'Manager') or hasAuthority('employees.update')")
     public ResponseEntity<ApiResponse<Void>> setPassword(
             @PathVariable UUID id,
             @Valid @RequestBody SetPasswordRequest request) {
@@ -124,7 +124,7 @@ public class UserController {
 
     // POST /users/{id}/assign-role - Assign role to user
     @PostMapping("/{id}/assign-role")
-    @PreAuthorize("hasRole('Admin')")
+    @PreAuthorize("hasRole('Admin') or hasAuthority('employees.manage_roles')")
     public ResponseEntity<ApiResponse<Void>> assignRole(
             @PathVariable UUID id,
             @Valid @RequestBody AssignRoleRequest request) {
@@ -135,7 +135,7 @@ public class UserController {
 
     // POST /users/{id}/assign-projects - Assign projects and processes
     @PostMapping("/{id}/assign-projects")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('employees.update')")
     public ResponseEntity<ApiResponse<Void>> assignProjectsAndProcesses(
             @PathVariable UUID id,
             @Valid @RequestBody AssignProjectsRequest request) {
@@ -146,7 +146,7 @@ public class UserController {
 
     // GET /users/{id}/assigned-projects - Get current assignments
     @GetMapping("/{id}/assigned-projects")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('employees.view')")
     public ResponseEntity<ApiResponse<AssignedProjectsResponse>> getAssignedProjects(
             @PathVariable UUID id) {
         AssignedProjectsResponse response =

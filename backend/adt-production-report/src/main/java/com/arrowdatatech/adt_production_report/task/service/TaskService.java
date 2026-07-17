@@ -223,46 +223,29 @@ public class TaskService {
 
         if (request.getAssignedBy() != null) {
             userRepository.findByIdWithProfile(request.getAssignedBy())
-                    .ifPresent(task::setAssignedBy);
+                    .ifPresentOrElse(task::setAssignedBy, () -> task.setAssignedBy(null));
+        } else {
+            task.setAssignedBy(null);
         }
 
-        if (request.getTaskTitle() != null
-                && !request.getTaskTitle().isBlank()) {
-            task.setTaskTitle(request.getTaskTitle());
+        if (request.getTaskTitle() == null || request.getTaskTitle().trim().isBlank()) {
+            throw new BadRequestException("Task title is required.");
         }
-        if (request.getDescription() != null) {
-            task.setDescription(request.getDescription());
-        }
-        if (request.getStatus() != null) {
-            task.setStatus(request.getStatus());
-        }
-        if (request.getDueDate() != null) {
-            task.setDueDate(request.getDueDate());
-        }
-        if (request.getAssignedPages() != null) {
-            task.setAssignedPages(request.getAssignedPages());
-        }
-        if (request.getAssignedPagesStr() != null) {
-            task.setAssignedPagesStr(request.getAssignedPagesStr());
-        }
-        if (request.getComplexity() != null) {
-            task.setComplexity(request.getComplexity());
-        }
-        if (request.getChapterArticleBatch() != null) {
-            task.setChapterArticleBatch(request.getChapterArticleBatch());
-        }
-        if (request.getEstimateHours() != null) {
-            task.setEstimateHours(request.getEstimateHours());
-        }
-        if (request.getServerPath() != null) {
-            task.setServerPath(request.getServerPath());
-        }
-        if (request.getTotalPages() != null) {
-            task.setTotalPages(request.getTotalPages());
-        }
+        task.setTaskTitle(request.getTaskTitle().trim());
+
+        task.setDescription(emptyToNull(request.getDescription()));
+        task.setStatus(request.getStatus() != null && !request.getStatus().isBlank() ? request.getStatus().trim() : "PENDING");
+        task.setDueDate(request.getDueDate());
+        task.setAssignedPages(request.getAssignedPages());
+        task.setAssignedPagesStr(emptyToNull(request.getAssignedPagesStr()));
+        task.setComplexity(emptyToNull(request.getComplexity()));
+        task.setChapterArticleBatch(emptyToNull(request.getChapterArticleBatch()));
+        task.setEstimateHours(request.getEstimateHours() != null ? request.getEstimateHours() : java.math.BigDecimal.ZERO);
+        task.setServerPath(emptyToNull(request.getServerPath()));
+        task.setTotalPages(request.getTotalPages());
 
         task.setUpdatedAt(OffsetDateTime.now());
-        task = taskRepository.save(task);
+        taskRepository.save(task);
 
         if (request.getJobAssignments() != null) {
             taskJobRepository.deleteByTaskId(id);
@@ -331,8 +314,6 @@ public class TaskService {
         taskEmployeeRepository.deleteByTaskId(id);
 
         // Soft-delete: set deletedAt so @SQLRestriction("deleted_at IS NULL") hides it.
-        // Hard deleteById() would violate the entity's soft-delete contract and can
-        // break subsequent queries that JOIN through this task's FK relations.
         task.setDeletedAt(OffsetDateTime.now());
         taskRepository.save(task);
 
@@ -364,6 +345,10 @@ public class TaskService {
         }
         log.info("Removed {} duplicate tasks", removed);
         return removed;
+    }
+
+    private String emptyToNull(String value) {
+        return (value == null || value.isBlank()) ? null : value.trim();
     }
 
     // ─────────────────────────────────────────────
@@ -411,7 +396,6 @@ public class TaskService {
         List<TaskResponse.JobInfo> jobs = taskJobRepository
                 .findByTaskId(task.getId())
                 .stream()
-                .filter(tja -> tja != null && tja.getJob() != null)
                 .map(tja -> TaskResponse.JobInfo.builder()
                         .jobId(tja.getJob().getId())
                         .jobIdCode(tja.getJob().getJobIdCode())
@@ -440,8 +424,10 @@ public class TaskService {
                 })
                 .collect(Collectors.toList());
 
+        UUID assignedById = null;
         String assignedByName = null;
         if (task.getAssignedBy() != null) {
+            assignedById = task.getAssignedBy().getId();
             assignedByName = task.getAssignedBy().getEmployeeProfile() != null
                     ? task.getAssignedBy().getEmployeeProfile().getFullName()
                     : task.getAssignedBy().getEmail();
@@ -483,6 +469,7 @@ public class TaskService {
                 .chapterArticleBatch(task.getChapterArticleBatch())
                 .estimateHours(task.getEstimateHours())
                 .serverPath(task.getServerPath())
+                .assignedById(assignedById)
                 .assignedByName(assignedByName)
                 .totalPages(task.getTotalPages())
                 .createdAt(task.getCreatedAt())

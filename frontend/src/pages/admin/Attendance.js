@@ -3,7 +3,7 @@ import React, {
 } from 'react';
 import './Attendance.css';
 
-import { apiCall } from '../../utils/api';
+import { apiCall, getCurrentUser } from '../../utils/api';
 
 // ── Constants ─────────────────────────────────────────────────────
 const STATUS = {
@@ -107,15 +107,16 @@ const CYCLE_SUNDAY = {
   '': 'PH', PH: 'WO', WO: 'P', P: 'A', A: 'H', H: 'PH',
 };
 
-const StatusCell = ({ value, onChange, isSunday }) => {
+const StatusCell = ({ value, onChange, isSunday, disabled }) => {
   const cycle = isSunday ? CYCLE_SUNDAY : CYCLE_WEEKDAY;
   const s = STATUS[value] || STATUS['-'];
   return (
     <button
       className={`att-cell att-cell-${(value || 'empty').toLowerCase()}`}
-      style={{ color: s.color, borderColor: s.color + '40' }}
-      onClick={() => onChange(cycle[value] ?? (isSunday ? 'PH' : ''))}
+      style={{ color: s.color, borderColor: s.color + '40', cursor: disabled ? 'default' : 'pointer' }}
+      onClick={() => !disabled && onChange(cycle[value] ?? (isSunday ? 'PH' : ''))}
       title={s.label}
+      disabled={disabled}
     >
       {value || '·'}
     </button>
@@ -130,6 +131,9 @@ const Attendance = () => {
   const [attendance, setAttendance] = useState({});
   const [salaryDetails, setSalaryDetails] = useState({});
   const [hiddenEmpIds, setHiddenEmpIds] = useState(new Set());
+
+  const currentUser = getCurrentUser();
+  const hasPermission = (perm) => currentUser?.roles?.includes('Admin') || currentUser?.permissions?.includes(perm);
 
   const [selYear, setSelYear] = useState(CURRENT_YEAR);
   const [selMonth, setSelMonth] = useState(CURRENT_MONTH);
@@ -622,20 +626,24 @@ const Attendance = () => {
         <div className="att-header-actions" style={{ display: 'flex', gap: '10px' }}>
           {activeView === 'monthly' && (
             <>
-              <button
-                className="att-btn-mark"
-                style={{ backgroundColor: '#dc2626', borderColor: '#b91c1c' }}
-                onClick={handleClearMonthData}
-              >
-                🗑️ Clear Month Data
-              </button>
-              <button
-                className="att-btn-mark"
-                onClick={handleSaveAttendance}
-                disabled={savingAttendance}
-              >
-                {savingAttendance ? 'Saving...' : '💾 Update Attendance'}
-              </button>
+              {hasPermission('attendance.update') && (
+                <button
+                  className="att-btn-mark"
+                  style={{ backgroundColor: '#dc2626', borderColor: '#b91c1c' }}
+                  onClick={handleClearMonthData}
+                >
+                  🗑️ Clear Month Data
+                </button>
+              )}
+              {hasPermission('attendance.update') && (
+                <button
+                  className="att-btn-mark"
+                  onClick={handleSaveAttendance}
+                  disabled={savingAttendance}
+                >
+                  {savingAttendance ? 'Saving...' : '💾 Update Attendance'}
+                </button>
+              )}
             </>
           )}
         </div>
@@ -748,34 +756,36 @@ const Attendance = () => {
                 </tr>
 
                 {/* Quick mark row */}
-                <tr className="att-mark-row">
-                  <td colSpan={3} className="att-mark-label">
-                    Quick Mark Day →
-                  </td>
-                  {days.map(({ day, isSunday }) => (
-                    <td key={day}
-                      className={isSunday ? 'att-sunday-col' : ''}>
-                      <div className="att-quick-btns">
-                        <select className="att-quick-select"
-                          onChange={e => {
-                            const v = e.target.value;
-                            if (v) {
-                              quickMarkDay(day, v);
-                              e.target.value = '';
-                            }
-                          }}>
-                          <option value="">▼</option>
-                          <option value="P">Present (P)</option>
-                          <option value="A">Absent (A)</option>
-                          <option value="PH">Paid Holiday (PH)</option>
-                          <option value="H">Half Day (H)</option>
-                          <option value="CLEAR">Clear</option>
-                        </select>
-                      </div>
+                {hasPermission('attendance.update') && (
+                  <tr className="att-mark-row">
+                    <td colSpan={3} className="att-mark-label">
+                      Quick Mark Day →
                     </td>
-                  ))}
-                  <td colSpan={5} />
-                </tr>
+                    {days.map(({ day, isSunday }) => (
+                      <td key={day}
+                        className={isSunday ? 'att-sunday-col' : ''}>
+                        <div className="att-quick-btns">
+                          <select className="att-quick-select"
+                            onChange={e => {
+                              const v = e.target.value;
+                              if (v) {
+                                quickMarkDay(day, v);
+                                e.target.value = '';
+                              }
+                            }}>
+                            <option value="">▼</option>
+                            <option value="P">Present (P)</option>
+                            <option value="A">Absent (A)</option>
+                            <option value="PH">Paid Holiday (PH)</option>
+                            <option value="H">Half Day (H)</option>
+                            <option value="CLEAR">Clear</option>
+                          </select>
+                        </div>
+                      </td>
+                    ))}
+                    <td colSpan={5} />
+                  </tr>
+                )}
               </thead>
               <tbody>
                 {filtered.map((emp, idx) => {
@@ -806,6 +816,7 @@ const Attendance = () => {
                             onChange={val =>
                               updateCell(emp.id, day, val)}
                             isSunday={isSunday}
+                            disabled={!hasPermission('attendance.update')}
                           />
                         </td>
                       ))}
@@ -918,6 +929,7 @@ const Attendance = () => {
                               style={{ width: '90px' }}
                               value={detail?.baseSalary ?? s.emp.baseSalary ?? 5000}
                               placeholder="5000"
+                              disabled={!hasPermission('attendance.update')}
                               onChange={e =>
                                 updateSalaryDetail(
                                   s.emp.id, 'baseSalary', e.target.value)} />
@@ -925,16 +937,20 @@ const Attendance = () => {
                         </td>
                         <td>
                           <div className="att-actions-cell">
-                            <button className="att-action-btn edit"
-                              onClick={() =>
-                                setModal({ type: 'edit', emp: s.emp })}
-                              title="Edit">✏️</button>
-                            <button className="att-action-btn hide"
-                              onClick={() => toggleHide(s.emp.id)}
-                              title={isHidden
-                                ? 'Unhide Salary' : 'Hide Salary'}>
-                              {isHidden ? '👁️‍🗨️' : '👁️'}
-                            </button>
+                            {hasPermission('attendance.update') && (
+                              <button className="att-action-btn edit"
+                                onClick={() =>
+                                  setModal({ type: 'edit', emp: s.emp })}
+                                title="Edit">✏️</button>
+                            )}
+                            {hasPermission('attendance.update') && (
+                              <button className="att-action-btn hide"
+                                onClick={() => toggleHide(s.emp.id)}
+                                title={isHidden
+                                  ? 'Unhide Salary' : 'Hide Salary'}>
+                                {isHidden ? '👁️‍🗨️' : '👁️'}
+                              </button>
+                            )}
                           </div>
                         </td>
                         <td className="td-center">{s.workingDays}</td>
@@ -973,6 +989,7 @@ const Attendance = () => {
                               className="att-summary-input"
                               value={detail?.incentive ?? ''}
                               placeholder="0"
+                              disabled={!hasPermission('attendance.update')}
                               onChange={e =>
                                 updateSalaryDetail(
                                   s.emp.id, 'incentive', e.target.value)} />
@@ -986,6 +1003,7 @@ const Attendance = () => {
                               className="att-summary-input"
                               value={detail?.advance ?? ''}
                               placeholder="0"
+                              disabled={!hasPermission('attendance.update')}
                               onChange={e =>
                                 updateSalaryDetail(
                                   s.emp.id, 'advance', e.target.value)} />
@@ -1004,6 +1022,7 @@ const Attendance = () => {
                             <select
                               className={`att-summary-select status-${statusVal}`}
                               value={statusVal}
+                              disabled={!hasPermission('attendance.update')}
                               onChange={e =>
                                 updateSalaryDetail(
                                   s.emp.id, 'salaryStatus', e.target.value)}>

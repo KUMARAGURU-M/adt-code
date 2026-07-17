@@ -15,8 +15,8 @@ public interface HourlyProductionLogRepository extends JpaRepository<HourlyProdu
 
     @Query("""
             SELECT h FROM HourlyProductionLog h
-            JOIN FETCH h.user u
-            JOIN FETCH u.employeeProfile ep
+            LEFT JOIN FETCH h.user u
+            LEFT JOIN FETCH u.employeeProfile ep
             WHERE h.date = :date
             """)
     List<HourlyProductionLog> findByDateWithProfile(LocalDate date);

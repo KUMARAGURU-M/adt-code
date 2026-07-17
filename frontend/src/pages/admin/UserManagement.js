@@ -3,16 +3,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import './UserManagement.css';
-import { apiCall, getRolePrefix } from '../../utils/api';
+import { apiCall, getRolePrefix, getCurrentUser } from '../../utils/api';
 
-// ── Static fallback data ─────────────────────────────────────────
-const ALL_ROLES = ['Executive', 'Manager', 'Admin', 'Viewer', 'Team Leader'];
-
-const mapRoleName = (roleVal) => {
-  if (!roleVal) return 'Executive';
-  const match = ALL_ROLES.find(r => r.toLowerCase() === roleVal.toLowerCase());
-  return match || (roleVal.charAt(0).toUpperCase() + roleVal.slice(1));
-};
+const mapRoleName = (roleVal) => roleVal || 'Executive';
 
 /* ─── Overlay wrapper ───────────────────────────────────────────── */
 const Modal = ({ onClose, children }) => (
@@ -26,14 +19,14 @@ const Modal = ({ onClose, children }) => (
 /* ══════════════════════════════════════════════════════════════════
    0. ADD NEW USER
 ══════════════════════════════════════════════════════════════════ */
-const AddUserModal = ({ onClose, onAdd, shifts }) => {
+const AddUserModal = ({ onClose, onAdd, shifts, roles }) => {
   const [form, setForm] = useState({
     id: '',
     name: '',
     email: '',
     phone: '',
     password: '',
-    role: 'executive',
+    role: roles && roles.length > 0 ? roles[0] : 'Executive',
     shiftId: '',
     timezone: 'Asia/Kolkata',
     top: false,
@@ -148,8 +141,8 @@ const AddUserModal = ({ onClose, onAdd, shifts }) => {
           value={form.role}
           onChange={e => set('role', e.target.value)}
         >
-          {ALL_ROLES.map(r => (
-            <option key={r} value={r.toLowerCase()}>{r}</option>
+          {roles.map(r => (
+            <option key={r} value={r}>{r}</option>
           ))}
         </select>
       </div>
@@ -330,7 +323,7 @@ const AssignProjectModal = ({ user, onClose, projects, processes, onSave }) => {
 /* ══════════════════════════════════════════════════════════════════
    2. ASSIGN ROLE
 ══════════════════════════════════════════════════════════════════ */
-const AssignRoleModal = ({ user, onClose, onAssign }) => {
+const AssignRoleModal = ({ user, onClose, onAssign, roles }) => {
   const [role, setRole] = useState('');
 
   const handleAssign = () => {
@@ -346,7 +339,7 @@ const AssignRoleModal = ({ user, onClose, onAssign }) => {
         <label className="form-label">Select Role</label>
         <select className="form-select" value={role} onChange={e => setRole(e.target.value)}>
           <option value="">-- Select Role --</option>
-          {ALL_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+          {roles.map(r => <option key={r} value={r}>{r}</option>)}
         </select>
       </div>
 
@@ -489,7 +482,7 @@ const ResetPasswordModal = ({ user, onClose }) => {
 /* ══════════════════════════════════════════════════════════════════
    6. EDIT USER
 ══════════════════════════════════════════════════════════════════ */
-const EditUserModal = ({ user, onClose, onUpdate, shifts }) => {
+const EditUserModal = ({ user, onClose, onUpdate, shifts, roles }) => {
   const [form, setForm] = useState({
     name: user.name,
     email: user.email,
@@ -550,7 +543,7 @@ const EditUserModal = ({ user, onClose, onUpdate, shifts }) => {
       <div className="form-group">
         <label className="form-label">Role</label>
         <select className="form-select" value={form.role} onChange={e => set('role', e.target.value)}>
-          {ALL_ROLES.map(r => <option key={r} value={r.toLowerCase()}>{r}</option>)}
+          {roles.map(r => <option key={r} value={r}>{r}</option>)}
         </select>
       </div>
 
@@ -639,12 +632,16 @@ const UserManagement = () => {
   const [projects, setProjects] = useState([]);
   const [processes, setProcesses] = useState([]);
   const [shifts, setShifts] = useState([]);
+  const [availableRoles, setAvailableRoles] = useState([]);
   const [modal, setModal] = useState(null);
   const [showAddUser, setShowAddUser] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   const location = useLocation();
+
+  const currentUser = getCurrentUser();
+  const hasPermission = (perm) => currentUser?.roles?.includes('Admin') || currentUser?.permissions?.includes(perm);
 
   // ── Load users from API ──────────────────────────────────────
   const loadUsers = useCallback(async () => {
@@ -658,7 +655,7 @@ const UserManagement = () => {
         name: u.fullName,
         email: u.email,
         phone: u.phone || '-',
-        role: u.role ? u.role.toLowerCase() : 'executive',
+        role: u.role || 'Executive',
         shiftId: u.shiftId || null,
         shift: u.shift || '-',
         top: u.isTopPerformer,
@@ -690,14 +687,16 @@ const UserManagement = () => {
   // ── Load dropdown data from API ──────────────────────────────
   const loadDropdownData = useCallback(async () => {
     try {
-      const [proj, proc, shift] = await Promise.all([
+      const [proj, proc, shift, rolesData] = await Promise.all([
         apiCall('/projects'),
         apiCall('/processes'),
         apiCall('/shifts'),
+        apiCall('/roles'),
       ]);
       setProjects(proj.map(p => ({ id: p.id, name: p.name })));
       setProcesses(proc.map(p => ({ id: p.id, name: p.name })));
       setShifts(shift.map(s => ({ id: s.id, name: s.name })));
+      setAvailableRoles(rolesData.map(r => r.name));
     } catch (err) {
       console.warn('Failed to load dropdown data:', err.message);
     }
@@ -896,9 +895,11 @@ const UserManagement = () => {
           <span className="mgmt-icon">👥</span>
           <h2>User Management</h2>
         </div>
-        <button className="add-user-btn" onClick={() => setShowAddUser(true)}>
-          + Add User
-        </button>
+        {hasPermission('employees.create') && (
+          <button className="add-user-btn" onClick={() => setShowAddUser(true)}>
+            + Add User
+          </button>
+        )}
       </div>
 
       {/* ── Top Scrollbar ── */}
@@ -970,13 +971,13 @@ const UserManagement = () => {
                     }}
                   >
                     <option value="" disabled>⚙️ Actions</option>
-                    <option value="assign">🗒️ Assign Project &amp; Process</option>
-                    <option value="role">🔐 Assign Role</option>
-                    <option value="impersonate">👤 Impersonate User</option>
-                    <option value="setpw">🔑 Set Password</option>
-                    <option value="resetpw">🔄 Reset Password</option>
-                    <option value="edit">✏️ Edit User</option>
-                    <option value="delete">🗑️ Delete User</option>
+                    {hasPermission('employees.update') && <option value="assign">🗒️ Assign Project &amp; Process</option>}
+                    {hasPermission('employees.manage_roles') && <option value="role">🔐 Assign Role</option>}
+                    {currentUser?.roles?.includes('Admin') && <option value="impersonate">👤 Impersonate User</option>}
+                    {hasPermission('employees.update') && <option value="setpw">🔑 Set Password</option>}
+                    {hasPermission('employees.update') && <option value="resetpw">🔄 Reset Password</option>}
+                    {hasPermission('employees.update') && <option value="edit">✏️ Edit User</option>}
+                    {hasPermission('employees.delete') && <option value="delete">🗑️ Delete User</option>}
                   </select>
                 </td>
               </tr>
@@ -991,6 +992,7 @@ const UserManagement = () => {
           onClose={() => setShowAddUser(false)}
           onAdd={handleAdd}
           shifts={shifts}
+          roles={availableRoles}
         />
       )}
 
@@ -1009,6 +1011,7 @@ const UserManagement = () => {
           user={modal.user}
           onClose={close}
           onAssign={handleAssignRole}
+          roles={availableRoles}
         />
       )}
       {modal?.type === 'impersonate' && (
@@ -1037,6 +1040,7 @@ const UserManagement = () => {
           onClose={close}
           onUpdate={handleUpdate}
           shifts={shifts}
+          roles={availableRoles}
         />
       )}
       {modal?.type === 'delete' && (

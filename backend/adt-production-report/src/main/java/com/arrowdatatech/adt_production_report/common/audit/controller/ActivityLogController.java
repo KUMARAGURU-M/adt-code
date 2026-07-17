@@ -14,7 +14,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/activity-logs")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('Admin','Manager')")
+@PreAuthorize("hasAnyRole('Admin','Manager','Team Leader') or hasAuthority('activity_logs.view')")
 public class ActivityLogController {
 
     private final ActivityLogService activityLogService;
@@ -40,3 +40,4 @@ public class ActivityLogController {
         return ResponseEntity.ok(ApiResponse.success("Activity logs retrieved", result));
     }
 }
+

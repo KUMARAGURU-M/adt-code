@@ -45,13 +45,18 @@
 
 .add-user-btn:hover {
   opacity: 0.88;
+
 }
 
 .table-wrapper {
   background: white;
   border-radius: 10px;
   overflow-x: auto;
+  overflow-y: auto;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  max-height: calc(100vh - 240px);
+  min-height: 520px;
+
 }
 
 .user-table {
@@ -63,8 +68,11 @@
 }
 
 .user-table th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   background-color: #f8fafc;
-  padding: 14px 15px;
+  padding: 15px 15px;
   color: #475569;
   font-weight: 800;
   font-size: 14px;
@@ -75,7 +83,7 @@
 }
 
 .user-table td {
-  padding: 11px 15px;
+  padding: 15px 15px;
   border-bottom: 1px solid #f1f5f9;
   color: #4a5568;
   vertical-align: middle;

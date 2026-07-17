@@ -52,57 +52,64 @@ const Sidebar = ({ isMobileOpen, onCloseMobile }) => {
           ? 'Employee'
           : 'User';
 
-  const hasRole = (roleName) => roles.includes(roleName);
+  const hasPermission = (perm) => roles.includes('Admin') || (user?.permissions?.includes(perm));
 
   const filteredMenuItems = menuItems.filter(item => {
-    if (hasRole('Admin')) {
+    if (roles.includes('Admin')) {
       return true;
     }
-    if (hasRole('Manager')) {
-      const allowed = [
-        'DASHBOARD',
-        'WORKWISE',
-        'DIGICONVERTOR',
-        'BOOK/JOB',
-        'PRODUCTION',
-        'TASK',
-        'PROCESS',
-        'SHIFT',
-        'LEAVE',
-        'REPORT',
-        'HOURLY GRAPH',
-        'TIME LOG'
-      ];
-      return allowed.includes(item.name);
+    switch (item.name) {
+      case 'DASHBOARD':
+        return true;
+      case 'USER':
+        return hasPermission('employees.view');
+      case 'WORKWISE':
+        return hasPermission('timelogs.view') || hasPermission('tasks.view');
+      case 'DIGICONVERTOR':
+        return hasPermission('digiconvertor.view');
+      case 'ATTENDANCE':
+        return hasPermission('attendance.view');
+      case 'PROJECT':
+        return hasPermission('projects.view');
+      case 'BOOK/JOB':
+        return hasPermission('jobs.view');
+      case 'PRODUCTION':
+        return hasPermission('production.view');
+      case 'TASK':
+        return hasPermission('tasks.view');
+      case 'PROCESS':
+        return hasPermission('processes.view');
+      case 'SHIFT':
+        return hasPermission('shifts.view');
+      case 'TOOL':
+        return hasPermission('tools.view');
+      case 'LEAVE':
+        return hasPermission('leaves.view') || hasPermission('leaves.view_all');
+      case 'ROLE & PERMISSION':
+        return hasPermission('roles.view');
+      case 'REPORT':
+        return hasPermission('reports.view');
+      case 'HOURLY GRAPH':
+        return hasPermission('hourly_graph.view');
+      case 'ACTIVITY LOG':
+        return hasPermission('activity_logs.view');
+      case 'TIME LOG':
+        return hasPermission('timelogs.view_all');
+      case 'INVOICE':
+        return hasPermission('invoices.view');
+      case 'CHAT MONITOR':
+        return hasPermission('chat_monitor.view');
+      case 'SETTINGS':
+        return hasPermission('settings.view');
+      default:
+        return false;
     }
-    if (hasRole('Team Leader')) {
-      const allowed = [
-        'DASHBOARD',
-        'WORKWISE',
-        'DIGICONVERTOR',
-        'BOOK/JOB',
-        'PRODUCTION',
-        'TASK',
-        'REPORT',
-        'HOURLY GRAPH',
-        'TIME LOG'
-      ];
-      return allowed.includes(item.name);
-    }
-    if (hasRole('Employee')) {
-      const allowed = [
-        'WORKWISE',
-        'PRODUCTION',
-        'HOURLY GRAPH'
-      ];
-      return allowed.includes(item.name);
-    }
-    return false;
   });
 
-  const isAdminOrManager = roles.some(role => role === 'Admin' || role === 'Manager');
+  const canApproveLeaves = roles.includes('Admin') || roles.includes('Manager') || user?.permissions?.includes('leaves.approve') || user?.permissions?.includes('leaves.view_all');
+
   useEffect(() => {
-    if (!isAdminOrManager) return;
+    if (!canApproveLeaves) return;
 
     const fetchPendingCount = async () => {
       try {
@@ -120,7 +127,7 @@ const Sidebar = ({ isMobileOpen, onCloseMobile }) => {
     // Poll for updates every 30 seconds
     const interval = setInterval(fetchPendingCount, 30000);
     return () => clearInterval(interval);
-  }, [location.pathname, isAdminOrManager]);
+  }, [location.pathname, canApproveLeaves]);
 
   const handleNavClick = () => {
     if (onCloseMobile) {

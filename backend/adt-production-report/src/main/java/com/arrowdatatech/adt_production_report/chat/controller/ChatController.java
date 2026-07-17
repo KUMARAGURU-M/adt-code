@@ -89,6 +89,7 @@ public class ChatController {
      * Admin-only: Retrieve all conversation threads in the system.
      */
     @GetMapping("/admin/conversations")
+    @PreAuthorize("hasAnyAuthority('ROLE_Admin', 'chat_monitor.view')")
     public ResponseEntity<ApiResponse<List<ConversationResponse>>> getLatestConversations() {
         List<ConversationResponse> conversations = chatService.getLatestConversations();
         return ResponseEntity.ok(ApiResponse.success("Admin conversation logs retrieved", conversations));
@@ -98,6 +99,7 @@ public class ChatController {
      * Admin-only: Retrieve conversation history between any two users.
      */
     @GetMapping("/admin/conversations/{user1Id}/{user2Id}")
+    @PreAuthorize("hasAnyAuthority('ROLE_Admin', 'chat_monitor.view')")
     public ResponseEntity<ApiResponse<List<ChatMessageResponse>>> getAdminChatHistory(
             @PathVariable UUID user1Id,
             @PathVariable UUID user2Id) {
@@ -109,7 +111,7 @@ public class ChatController {
      * Admin-only: Clear conversation history between two users.
      */
     @DeleteMapping("/admin/conversations/{user1Id}/{user2Id}")
-    @PreAuthorize("hasRole('Admin')")
+    @PreAuthorize("hasAnyAuthority('ROLE_Admin', 'chat_monitor.delete')")
     public ResponseEntity<ApiResponse<Void>> clearConversation(
             @PathVariable UUID user1Id,
             @PathVariable UUID user2Id) {
@@ -121,14 +123,12 @@ public class ChatController {
      * Admin-only: Clear all conversations and chat history in the system.
      */
     @DeleteMapping("/admin/conversations/all")
-    @PreAuthorize("hasRole('Admin')")
+    @PreAuthorize("hasAnyAuthority('ROLE_Admin', 'chat_monitor.delete')")
     public ResponseEntity<ApiResponse<Void>> clearAllConversations() {
         chatService.clearAllConversations();
         return ResponseEntity.ok(ApiResponse.success("All conversations cleared successfully", null));
     }
 }
-
-
 
 
 

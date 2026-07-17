@@ -16,7 +16,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/reports")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('Admin','Manager','Team Leader')")
+@PreAuthorize("hasAnyRole('Admin','Manager','Team Leader') or hasAuthority('reports.view')")
 public class ReportController {
 
     private final ReportService reportService;

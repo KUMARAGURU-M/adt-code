@@ -96,19 +96,28 @@ function EditableHeader({ value, onChange, className = "", placeholder = "Label"
 }
 
 // ── Main Component ────────────────────────────────────────────────────────────
+// ── Local date helper: returns YYYY-MM-DD in the browser's local timezone ────
+// NOTE: do NOT use new Date().toISOString().slice(0, 10) — that gives UTC date
+// which can be "tomorrow" for IST users after 18:30 UTC (6:30 PM IST), causing
+// the backend's LocalDate.now() comparison to fail and silently reject saves.
+const getLocalDate = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
 export default function HourlyGraph() {
-    const TODAY = new Date().toISOString().slice(0, 10);
     const currentUser = getCurrentUser();
     const isAdmin = currentUser?.roles?.includes("Admin");
     const isPrivileged = currentUser?.roles?.some(r => r === "Admin" || r === "Manager" || r === "Team Leader");
     const currentUserId = currentUser?.userId;
     const showTargetGraph = true;
 
-    const [periodDate, setPeriodDate] = useState(TODAY);
+    const [periodDate, setPeriodDate] = useState(getLocalDate);
     const [selectedUserId, setSelectedUserId] = useState(null);
     const [activeDay, setActiveDay] = useState("");
     const [hourCount, setHourCount] = useState(12);
     const [rows, setRows] = useState([]);
+    const [openProjectDropdownRowId, setOpenProjectDropdownRowId] = useState(null);
 
     // Master data from DB
     const [projects, setProjects] = useState([]);
@@ -128,11 +137,25 @@ export default function HourlyGraph() {
     const [search, setSearch] = useState("");
     const [savedAt, setSavedAt] = useState(null);
     const [dirty, setDirty] = useState(false);
+    const [changeCount, setChangeCount] = useState(0);
+    const [autoSaving, setAutoSaving] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [isCheckedIn, setIsCheckedIn] = useState(true); // Default to true to prevent screen flash
     const [notification, setNotification] = useState(null); // Floating pop-up notification
     const lastNotifiedHourRef = useRef(null);
+
+    // Keep a live ref to rows so the auto-save closure never goes stale
+    const rowsRef = useRef(rows);
+    useEffect(() => { rowsRef.current = rows; }, [rows]);
+
+    // Keep a live ref to dirty to avoid overwriting edits during polling
+    const dirtyRef = useRef(dirty);
+    useEffect(() => { dirtyRef.current = dirty; }, [dirty]);
+
+    // Keep a live ref to periodDate for the auto-save closure
+    const periodDateRef = useRef(periodDate);
+    useEffect(() => { periodDateRef.current = periodDate; }, [periodDate]);
 
     // Request desktop notification permission if supported and not asked yet
     useEffect(() => {
@@ -145,7 +168,10 @@ export default function HourlyGraph() {
     const monthYearLabel = new Date(periodDate).toLocaleDateString("en-GB", { month: "long", year: "numeric" });
     const hourLabels = Array.from({ length: hourCount }, (_, i) => ordinal(i + 1));
 
-    const markDirty = () => setDirty(true);
+    const markDirty = () => {
+        setDirty(true);
+        setChangeCount(c => c + 1);
+    };
 
     // ── Fetch Setup and Daily Data ──
     useEffect(() => {
@@ -208,22 +234,33 @@ export default function HourlyGraph() {
     }, [isAdmin]);
 
     useEffect(() => {
-        const loadDailyLogs = async () => {
+        const loadDailyLogs = async (showLoading = true) => {
             try {
-                setLoading(true);
+                if (showLoading) setLoading(true);
                 const data = await apiCall(`/hourly-graph/logs?date=${periodDate}`);
-                setRows(data?.rows || []);
+
+                // Only update rows if the user has no unsaved changes (to prevent overwriting user input)
+                if (!dirtyRef.current) {
+                    setRows(data?.rows || []);
+                }
                 setActiveDay(data?.activeDay || "");
-                setDirty(false);
                 setError("");
             } catch (err) {
                 console.error("Failed to load logs:", err);
                 setError("Failed to fetch hourly production records.");
             } finally {
-                setLoading(false);
+                if (showLoading) setLoading(false);
             }
         };
-        loadDailyLogs();
+
+        loadDailyLogs(true);
+
+        // Periodically refresh data every 60 seconds to capture check-in times and updates without page refresh
+        const pollInterval = setInterval(() => {
+            loadDailyLogs(false);
+        }, 60000);
+
+        return () => clearInterval(pollInterval);
     }, [periodDate]);
 
     // Keep hourCount in sync with maximum hours array length in rows
@@ -265,13 +302,13 @@ export default function HourlyGraph() {
                     const hProc = typeof hData === "object" && hData !== null ? (hData.process || "") : "";
 
                     if (!hValue || !hProc) {
-                        setNotification({
-                            hourIdx: i,
-                            message: `🔔 It's time to log your production for the ${ordinal(i + 1)} hour! You have a 10-minute active window to enter process and count.`
-                        });
-
+                        // Only trigger popup once per new hour (not every 30 s within the same window)
                         if (lastNotifiedHourRef.current !== i) {
                             lastNotifiedHourRef.current = i;
+                            setNotification({
+                                hourIdx: i,
+                                message: `🔔 It's time to log your production for the ${ordinal(i + 1)} hour! You have a 10-minute active window to enter process and count.`
+                            });
                             playBeep();
                             sendDesktopNotification(i);
                         }
@@ -351,29 +388,45 @@ export default function HourlyGraph() {
     // ── Hourly edit timing helper (employees can only edit during active window) ──
     const isHourActive = (hourIdx, shiftName, checkInTimeStr) => {
         if (isAdmin) return true;
-        if (periodDate !== TODAY) return false;
+        if (periodDate !== getLocalDate()) return false; // compare against local date, not UTC
         if (!checkInTimeStr) return false;
 
-        const [sh] = checkInTimeStr.split(":").map(Number);
-        const targetHour = (sh + 1 + hourIdx) % 24;
+        const parts = checkInTimeStr.split(":").map(Number);
+        const sh = parts[0] || 0;
+        const sm = parts[1] || 0;
 
-        const now = new Date();
-        let targetTimeToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), targetHour, 0, 0);
-
-        if (sh > targetHour) {
-            if (now.getHours() >= sh) {
-                targetTimeToday.setDate(targetTimeToday.getDate() + 1);
-            }
-        } else {
-            if (now.getHours() < sh) {
-                targetTimeToday.setDate(targetTimeToday.getDate() - 1);
-            }
+        // Force calculations to Asia/Kolkata (IST) timezone to match server-side check-in timezone
+        let nowMins;
+        try {
+            const formatter = new Intl.DateTimeFormat('en-US', {
+                timeZone: 'Asia/Kolkata',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            });
+            const p = formatter.formatToParts(new Date());
+            const hour = parseInt(p.find(x => x.type === 'hour').value, 10);
+            const minute = parseInt(p.find(x => x.type === 'minute').value, 10);
+            nowMins = hour * 60 + minute;
+        } catch (e) {
+            const d = new Date();
+            nowMins = d.getHours() * 60 + d.getMinutes();
         }
 
-        const diffMs = now - targetTimeToday;
-        const diffMin = diffMs / 1000 / 60;
+        // Window starts exactly (hourIdx + 1) hours after check-in, preserving the minutes.
+        // e.g. check-in 8:50 → 1st hour window: 9:50–10:00, 2nd: 10:50–11:00
+        // e.g. check-in 8:05 → 1st hour window: 9:05–9:15
+        const checkInTotalMins = sh * 60 + sm;
+        const windowStartMins = (checkInTotalMins + (hourIdx + 1) * 60) % (24 * 60);
+        const windowEndMins = (windowStartMins + 10) % (24 * 60);
 
-        return diffMin >= 0 && diffMin <= 10;
+        if (windowStartMins <= windowEndMins) {
+            // Normal case: window does not cross midnight
+            return nowMins >= windowStartMins && nowMins < windowEndMins;
+        } else {
+            // Window crosses midnight (e.g. 23:55 – 00:05)
+            return nowMins >= windowStartMins || nowMins < windowEndMins;
+        }
     };
 
     const canEditHour = (row, hIdx) => {
@@ -381,6 +434,38 @@ export default function HourlyGraph() {
         if (row.userId !== currentUserId) return false;
         return isHourActive(hIdx, row.shift, row.inTime);
     };
+
+    // ── Auto-Save: fires 3 seconds after last change when dirty ──
+    useEffect(() => {
+        if (changeCount === 0) return;
+        const timer = setTimeout(async () => {
+            try {
+                setAutoSaving(true);
+                const currentRows = rowsRef.current;
+                const currentDate = periodDateRef.current;
+                const filteredToSave = isPrivileged
+                    ? currentRows
+                    : currentRows.filter(r => r.userId === currentUserId);
+                if (filteredToSave.length > 0) {
+                    await apiCall("/hourly-graph/logs", "POST", {
+                        date: currentDate,
+                        rows: filteredToSave
+                    });
+                }
+                setSavedAt(new Date());
+                setDirty(false);
+                setError("");
+            } catch (err) {
+                // Show visible error so user knows to save manually
+                setError(`Auto-save failed: ${err.message || "Please click Save Report to save your data."}`);
+                console.warn("Auto-save failed:", err.message);
+            } finally {
+                setAutoSaving(false);
+            }
+        }, 3000);
+        return () => clearTimeout(timer);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [changeCount, isPrivileged, currentUserId]);
 
     // ── Save Function ──
     const handleSave = async () => {
@@ -914,10 +999,12 @@ export default function HourlyGraph() {
                     />
                 </div>
                 <div className="hg-toolbar-actions">
-                    {dirty ? (
+                    {autoSaving ? (
+                        <span className="hg-unsaved-tag">⏳ Auto-saving...</span>
+                    ) : dirty ? (
                         <span className="hg-unsaved-tag">● Unsaved changes</span>
                     ) : savedAt ? (
-                        <span className="hg-saved-tag">✓ Saved {savedAt.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}</span>
+                        <span className="hg-saved-tag">✓ Auto-saved {savedAt.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}</span>
                     ) : null}
                     <button className="hg-save-btn" onClick={handleSave}>💾 Save Report</button>
                 </div>
@@ -986,11 +1073,12 @@ export default function HourlyGraph() {
                                 filteredRows.map((row, idx) => {
                                     const isSelf = row.userId === currentUserId;
                                     const canEditRow = isPrivileged || isSelf;
+                                    const isAbsent = row.shift === "Absent";
 
                                     return (
                                         <tr
                                             key={row.id}
-                                            className={`hg-row ${ROW_BANDS[idx % ROW_BANDS.length]} ${selectedUserId === row.userId ? "hg-row--selected" : ""}`}
+                                            className={`hg-row ${ROW_BANDS[idx % ROW_BANDS.length]} ${selectedUserId === row.userId ? "hg-row--selected" : ""} ${isAbsent ? "hg-row--absent" : ""}`}
                                             style={row.excluded ? { opacity: 0.55, border: "2px dashed rgba(255, 255, 255, 0.4)" } : {}}
                                         >
                                             <td className="td-sno">
@@ -1025,6 +1113,7 @@ export default function HourlyGraph() {
                                                     onChange={(e) => updateRow(row.id, "shift", e.target.value)}
                                                     disabled={!isAdmin}
                                                 >
+                                                    <option value="Absent">Absent</option>
                                                     {shifts.map((s) => (
                                                         <option key={s.id} value={s.name}>{s.name}</option>
                                                     ))}
@@ -1049,19 +1138,91 @@ export default function HourlyGraph() {
                                                 />
                                             </td>
 
-                                            <td className="td-project">
-                                                <select
-                                                    className="hg-cell-select hg-cell-select--project"
-                                                    value={row.project}
-                                                    onChange={(e) => updateRow(row.id, "project", e.target.value)}
-                                                    disabled={!canEditRow}
-                                                >
-                                                    <option value="">—</option>
-                                                    {projects.map((p) => {
-                                                        const formatted = p.clientName ? `${p.clientName}_${p.name}` : p.name;
-                                                        return <option key={p.id} value={formatted}>{formatted}</option>;
-                                                    })}
-                                                </select>
+                                            <td className="td-project" style={{ position: "relative" }}>
+                                                {(!canEditRow || isAbsent) ? (
+                                                    <span className="hg-project-text-disabled" title={row.project || "—"}>
+                                                        {row.project || "—"}
+                                                    </span>
+                                                ) : (
+                                                    (() => {
+                                                        const isDropdownOpen = openProjectDropdownRowId === row.id;
+                                                        const selectedProjects = row.project ? row.project.split(",").map(p => p.trim()).filter(Boolean) : [];
+                                                        
+                                                        return (
+                                                            <div className={`hg-project-multiselect-container ${isDropdownOpen ? "active" : ""}`}>
+                                                                <button
+                                                                    type="button"
+                                                                    className="hg-project-multiselect-trigger hg-cell-select hg-cell-select--project"
+                                                                    onClick={() => {
+                                                                        setOpenProjectDropdownRowId(isDropdownOpen ? null : row.id);
+                                                                    }}
+                                                                    title={row.project || "Select projects..."}
+                                                                >
+                                                                    <span className="hg-trigger-text">
+                                                                        {selectedProjects.length > 0
+                                                                            ? selectedProjects.join(", ")
+                                                                            : "—"}
+                                                                    </span>
+                                                                    <span className="hg-trigger-arrow">▼</span>
+                                                                </button>
+                                                                {isDropdownOpen && (
+                                                                    (() => {
+                                                                        const openUp = filteredRows.length > 1 && idx >= filteredRows.length - 2;
+                                                                        return (
+                                                                            <div className={`hg-project-multiselect-dropdown ${openUp ? "up" : ""}`} onClick={(e) => e.stopPropagation()}>
+                                                                                <div className="hg-dropdown-actions">
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        className="hg-dropdown-action-btn"
+                                                                                        onClick={() => updateRow(row.id, "project", "")}
+                                                                                    >
+                                                                                        Clear All
+                                                                                    </button>
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        className="hg-dropdown-action-btn"
+                                                                                        onClick={() => {
+                                                                                            const allFormatted = projects
+                                                                                                .map(p => p.clientName ? `${p.clientName}_${p.name}` : p.name)
+                                                                                                .join(", ");
+                                                                                            updateRow(row.id, "project", allFormatted);
+                                                                                        }}
+                                                                                    >
+                                                                                        Select All
+                                                                                    </button>
+                                                                                </div>
+                                                                                <div className="hg-dropdown-options">
+                                                                                    {projects.map((p) => {
+                                                                                        const formatted = p.clientName ? `${p.clientName}_${p.name}` : p.name;
+                                                                                        const isChecked = selectedProjects.includes(formatted);
+                                                                                        return (
+                                                                                            <label key={p.id} className={`hg-dropdown-option ${isChecked ? "checked" : ""}`}>
+                                                                                                <input
+                                                                                                    type="checkbox"
+                                                                                                    checked={isChecked}
+                                                                                                    onChange={() => {
+                                                                                                        let nextSelected;
+                                                                                                        if (isChecked) {
+                                                                                                            nextSelected = selectedProjects.filter(sp => sp !== formatted);
+                                                                                                        } else {
+                                                                                                            nextSelected = [...selectedProjects, formatted];
+                                                                                                        }
+                                                                                                        updateRow(row.id, "project", nextSelected.join(", "));
+                                                                                                    }}
+                                                                                                />
+                                                                                                <span className="hg-option-text">{formatted}</span>
+                                                                                            </label>
+                                                                                        );
+                                                                                    })}
+                                                                                </div>
+                                                                            </div>
+                                                                        );
+                                                                    })()
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })()
+                                                )}
                                             </td>
 
                                             {Array.from({ length: hourLabels.length }).map((_, hIdx) => {
@@ -1077,7 +1238,7 @@ export default function HourlyGraph() {
                                                                 className="hg-cell-select hg-cell-select--process"
                                                                 value={hProcess}
                                                                 onChange={(e) => updateHour(row.id, hIdx, "process", e.target.value)}
-                                                                disabled={!isEditable}
+                                                                disabled={!isEditable || isAbsent}
                                                             >
                                                                 <option value="">—</option>
                                                                 {processes.map((p) => (
@@ -1093,7 +1254,7 @@ export default function HourlyGraph() {
                                                                 placeholder=""
                                                                 value={hValue}
                                                                 onChange={(e) => updateHour(row.id, hIdx, "value", e.target.value)}
-                                                                disabled={!isEditable}
+                                                                disabled={!isEditable || isAbsent}
                                                             />
                                                         </td>
                                                     </React.Fragment>
@@ -1117,8 +1278,12 @@ export default function HourlyGraph() {
                     <p>{notification.message}</p>
                 </div>
             )}
+
+            {/* ── Dropdown Overlay ── */}
+            {openProjectDropdownRowId && (
+                <div className="hg-dropdown-overlay" onClick={() => setOpenProjectDropdownRowId(null)} />
+            )}
         </div>
     );
 }
-
 

@@ -105,7 +105,6 @@ public class WorkwiseService {
                     taskJobRepository.findByTaskId(t.getId());
 
             List<MyTaskOption.JobInfo> jobs = jobLinks.stream()
-                    .filter(tja -> tja != null && tja.getJob() != null)
                     .map(tja -> MyTaskOption.JobInfo.builder()
                             .jobId(tja.getJob().getId())
                             .jobIdCode(tja.getJob().getJobIdCode())
@@ -177,7 +176,6 @@ public class WorkwiseService {
                 taskJobRepository.findByTaskId(t.getId());
 
         List<MyTaskOption.JobInfo> jobs = jobLinks.stream()
-                .filter(tja -> tja != null && tja.getJob() != null)
                 .map(tja -> MyTaskOption.JobInfo.builder()
                         .jobId(tja.getJob().getId())
                         .jobIdCode(tja.getJob().getJobIdCode())
@@ -296,7 +294,8 @@ public class WorkwiseService {
                     "This task is already completed by you.");
         }
 
-        // Priority order: first incomplete task must be worked on first
+        // Priority order check removed to let user choose work
+        /*
         List<Task> activeTasks = taskRepository.findByAssignedUserId(userId);
         if (!activeTasks.isEmpty()) {
             Task firstTask = activeTasks.get(0);
@@ -306,6 +305,7 @@ public class WorkwiseService {
                                 + firstTask.getTaskTitle() + "'.");
             }
         }
+        */
 
         // Auto-derive project and process from the task (read-only for employee)
         Project project = task.getProject();

@@ -229,15 +229,13 @@ public class JobService {
                 .titleName(request.getTitleName().trim())
                 .pageCount(request.getPageCount())
                 .numberOfChapters(request.getNumberOfChapters())
-                .pdfInputType(request.getPdfInputType())
-                .complexity(request.getComplexity())
-                .referenceType(request.getReferenceType())
-                .status(request.getStatus() != null
-                        ? request.getStatus() : "PENDING")
-                .fileStatus(request.getFileStatus())
+                .pdfInputType(emptyToNull(request.getPdfInputType()))
+                .complexity(emptyToNull(request.getComplexity()))
+                .referenceType(emptyToNull(request.getReferenceType()))
+                .status(emptyToNull(request.getStatus()) != null ? emptyToNull(request.getStatus()) : "PENDING")
+                .fileStatus(emptyToNull(request.getFileStatus()))
                 .uploadDate(request.getUploadDate())
-                .billingStatus(request.getBillingStatus() != null
-                        ? request.getBillingStatus() : "PENDING")
+                .billingStatus(emptyToNull(request.getBillingStatus()) != null ? emptyToNull(request.getBillingStatus()) : "PENDING")
                 .receiveDate(request.getReceiveDate())
                 .startMonth(request.getStartMonth())
                 .endMonth(request.getEndMonth())
@@ -278,25 +276,32 @@ public class JobService {
             job.setProject(project);
         }
 
-        if (request.getJobIdCode()       != null) {
+        if (request.getJobIdCode() != null) {
             job.setJobIdCode(request.getJobIdCode().trim().isBlank() ? null : request.getJobIdCode().trim());
         }
-        if (request.getXmlIsbn()         != null) job.setXmlIsbn(request.getXmlIsbn());
-        if (request.getBatch()           != null) job.setBatch(request.getBatch());
-        if (request.getTitleName()       != null) job.setTitleName(request.getTitleName().trim());
-        if (request.getPageCount()       != null) job.setPageCount(request.getPageCount());
-        if (request.getNumberOfChapters()!= null) job.setNumberOfChapters(request.getNumberOfChapters());
-        if (request.getPdfInputType()    != null) job.setPdfInputType(request.getPdfInputType());
-        if (request.getComplexity()      != null) job.setComplexity(request.getComplexity());
-        if (request.getReferenceType()   != null) job.setReferenceType(request.getReferenceType());
-        if (request.getStatus()          != null) job.setStatus(request.getStatus());
-        if (request.getFileStatus()      != null) job.setFileStatus(request.getFileStatus());
-        if (request.getUploadDate()      != null) job.setUploadDate(request.getUploadDate());
-        if (request.getBillingStatus()   != null) job.setBillingStatus(request.getBillingStatus());
-        if (request.getReceiveDate()     != null) job.setReceiveDate(request.getReceiveDate());
-        if (request.getStartMonth()      != null) job.setStartMonth(request.getStartMonth());
-        if (request.getEndMonth()        != null) job.setEndMonth(request.getEndMonth());
-        if (request.getLanguage()        != null) job.setLanguage(request.getLanguage().trim());
+
+        if (request.getTitleName() == null || request.getTitleName().trim().isBlank()) {
+            throw new BadRequestException("Title name is required.");
+        }
+        job.setTitleName(request.getTitleName().trim());
+
+        job.setXmlIsbn(emptyToNull(request.getXmlIsbn()));
+        job.setBatch(emptyToNull(request.getBatch()));
+        job.setPageCount(request.getPageCount());
+        job.setNumberOfChapters(request.getNumberOfChapters());
+        job.setPdfInputType(emptyToNull(request.getPdfInputType()));
+        job.setComplexity(emptyToNull(request.getComplexity()));
+        job.setReferenceType(emptyToNull(request.getReferenceType()));
+        String status = emptyToNull(request.getStatus());
+        job.setStatus(status != null ? status : "PENDING");
+        job.setFileStatus(emptyToNull(request.getFileStatus()));
+        job.setUploadDate(request.getUploadDate());
+        String billing = emptyToNull(request.getBillingStatus());
+        job.setBillingStatus(billing != null ? billing : "PENDING");
+        job.setReceiveDate(request.getReceiveDate());
+        job.setStartMonth(request.getStartMonth());
+        job.setEndMonth(request.getEndMonth());
+        job.setLanguage(emptyToNull(request.getLanguage()));
 
         if (request.getWorkflowId() != null) {
             Workflow workflow = workflowRepository.findById(request.getWorkflowId())
@@ -353,13 +358,19 @@ public class JobService {
         OffsetDateTime now = OffsetDateTime.now();
 
         for (Job job : jobs) {
-            if (upd.containsKey("pdfInputType"))   job.setPdfInputType(upd.get("pdfInputType"));
-            if (upd.containsKey("complexity"))      job.setComplexity(upd.get("complexity"));
-            if (upd.containsKey("referenceType"))   job.setReferenceType(upd.get("referenceType"));
-            if (upd.containsKey("status"))          job.setStatus(upd.get("status"));
-            if (upd.containsKey("fileStatus"))      job.setFileStatus(upd.get("fileStatus"));
+            if (upd.containsKey("pdfInputType"))   job.setPdfInputType(emptyToNull(upd.get("pdfInputType")));
+            if (upd.containsKey("complexity"))      job.setComplexity(emptyToNull(upd.get("complexity")));
+            if (upd.containsKey("referenceType"))   job.setReferenceType(emptyToNull(upd.get("referenceType")));
+            if (upd.containsKey("status")) {
+                String status = emptyToNull(upd.get("status"));
+                job.setStatus(status != null ? status : "PENDING");
+            }
+            if (upd.containsKey("fileStatus"))      job.setFileStatus(emptyToNull(upd.get("fileStatus")));
             if (upd.containsKey("uploadDate"))      job.setUploadDate(parseDateOrNull(upd.get("uploadDate")));
-            if (upd.containsKey("billingStatus"))   job.setBillingStatus(upd.get("billingStatus"));
+            if (upd.containsKey("billingStatus")) {
+                String billing = emptyToNull(upd.get("billingStatus"));
+                job.setBillingStatus(billing != null ? billing : "PENDING");
+            }
             job.setUpdatedAt(now);
         }
 
@@ -692,18 +703,16 @@ public class JobService {
         }
         // Always copy, since endDate can be set to null or cleared
         job.setEndDate(request.getEndDate());
+        // Always copy, since startMonth can be set to null or cleared
         job.setStartMonth(request.getStartMonth());
+
         if (request.getEmployees() != null) {
             String joined = request.getEmployees().stream()
                     .map(String::trim)
                     .filter(s -> !s.isEmpty())
+                    .distinct()
                     .collect(Collectors.joining(","));
             job.setEmployeeNames(joined.isEmpty() ? null : joined);
-        }
-
-        if (request.getRefType() != null) {
-            job.setReferenceType(request.getRefType().equals("-") || request.getRefType().isBlank()
-                    ? null : request.getRefType());
         }
 
         job.setUpdatedAt(OffsetDateTime.now());
@@ -841,7 +850,7 @@ public class JobService {
     }
 
     private String emptyToNull(String value) {
-        return (value == null || value.isBlank()) ? null : value;
+        return (value == null || value.isBlank() || "-".equals(value.trim())) ? null : value.trim();
     }
 
     private void logAction(String action, Job job) {
@@ -878,7 +887,7 @@ public class JobService {
             allEmps.addAll(taskEmployees);
         }
         if (job.getEmployeeNames() != null && !job.getEmployeeNames().isBlank()) {
-            Arrays.stream(job.getEmployeeNames().split(","))
+            Arrays.stream(job.getEmployeeNames().split("[,|]"))
                   .map(String::trim)
                   .filter(s -> !s.isEmpty())
                   .forEach(allEmps::add);
@@ -948,7 +957,3 @@ public class JobService {
         return processesByProjectId;
     }
 }
-
-
-
-

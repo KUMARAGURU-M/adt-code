@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import "./Tools.css";
-
-import { apiCall } from "../../utils/api";
+import { apiCall, getCurrentUser } from "../../utils/api";
 
 // ── Helpers ───────────────────────────────────────────────────────
 const roleClass = (role) => ({
@@ -222,6 +221,11 @@ export default function Tools() {
   const [showDelModal, setShowDelModal] = useState(false);
   const [delEntry, setDelEntry] = useState(null);
 
+  // ── Permissions ──────────────────────────────────────────────────
+  const _u = getCurrentUser();
+  const _isAdmin = (_u?.roles || []).includes('Admin');
+  const canManage = _isAdmin || (_u?.permissions || []).includes('tools.manage');
+
   // ── Load tools + users ────────────────────────────────────────
   const loadTools = useCallback(async () => {
     try {
@@ -366,14 +370,11 @@ export default function Tools() {
           entries={currentEntries}
           toolName={currentTool.name}
           allUsers={allUsers}
-          onEditAccess={openAccessModal}
-          onRemoveUser={entry => {
-            setDelEntry(entry);
-            setShowDelModal(true);
-          }}
-          showDropdown={showDropdown}
-          setShowDropdown={setShowDropdown}
-          onAddUser={handleAddUser}
+          onEditAccess={canManage ? openAccessModal : () => { }}
+          onRemoveUser={canManage ? (entry => { setDelEntry(entry); setShowDelModal(true); }) : () => { }}
+          showDropdown={canManage && showDropdown}
+          setShowDropdown={canManage ? setShowDropdown : () => { }}
+          onAddUser={canManage ? handleAddUser : () => { }}
         />
       )}
 
@@ -437,7 +438,6 @@ export default function Tools() {
     </div>
   );
 }
-
 
 
 

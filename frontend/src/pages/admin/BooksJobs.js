@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import './BooksJobs.css';
-import { apiCall } from '../../utils/api';
+import { apiCall, getCurrentUser } from '../../utils/api';
 
 
 // ── Constants ─────────────────────────────────────────────────────
 const PDF_TYPES = [
-  'PRINT-PDF', 'SCANNED-PDF', 'WORD', 'XML', 'HTML', 'EPUB', 'INDISGN',
+  '-', 'PRINT-PDF', 'SCANNED-PDF', 'WORD', 'XML', 'HTML', 'EPUB', 'INDISGN',
 ];
 
 const COMPLEXITY_OPTIONS = [
@@ -18,7 +18,7 @@ const COMPLEXITY_OPTIONS = [
 const STATUS_OPTIONS = [
   'FINISH', 'WIP', 'YTS', 'RTU', 'UPLOADED', 'PENDING', 'HOLD', 'QUERY',
 ];
-const FILE_STATUS_OPTIONS = ['UPLOADED', 'RTU', 'QUERY', 'HOLD'];
+const FILE_STATUS_OPTIONS = ['-', 'UPLOADED', 'RTU', 'QUERY', 'HOLD'];
 const BILLING_STATUS_OPTIONS = ['CREDITED', 'PENDING', 'INVOICED'];
 const REF_TYPES = ['-', 'BK-REF', 'CH-REF', 'BK/CH-REF', 'FN-REF', 'BK/FN-REF', 'CH/FN-REF', 'PG/FN-REF'];
 
@@ -265,7 +265,7 @@ const JobForm = ({ form, onChange, projects = [], clients = [], workflows = [] }
       <div className="bj-form-row">
         <div className="bj-form-group">
           <label>PDF / Input Type</label>
-          <select value={form.pdfType}
+          <select value={form.pdfType || ''}
             onChange={e => onChange('pdfType', e.target.value)}>
             <option value="">Select...</option>
             {PDF_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
@@ -275,7 +275,7 @@ const JobForm = ({ form, onChange, projects = [], clients = [], workflows = [] }
           <label>Complexity</label>
           <select
             className={getComplexityClass(form.complexity)}
-            value={form.complexity}
+            value={form.complexity || ''}
             onChange={e => onChange('complexity', e.target.value)}
           >
             <option value="">Select...</option>
@@ -292,7 +292,7 @@ const JobForm = ({ form, onChange, projects = [], clients = [], workflows = [] }
       <div className="bj-form-row">
         <div className="bj-form-group">
           <label>Reference Type</label>
-          <select value={form.refType}
+          <select value={form.refType || ''}
             onChange={e => onChange('refType', e.target.value)}>
             <option value="">Select...</option>
             {REF_TYPES.map(r => <option key={r} value={r}>{r}</option>)}
@@ -300,7 +300,7 @@ const JobForm = ({ form, onChange, projects = [], clients = [], workflows = [] }
         </div>
         <div className="bj-form-group">
           <label>Status</label>
-          <select value={form.status}
+          <select value={form.status || ''}
             onChange={e => onChange('status', e.target.value)}>
             <option value="">Select...</option>
             {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
@@ -311,7 +311,7 @@ const JobForm = ({ form, onChange, projects = [], clients = [], workflows = [] }
       <div className="bj-form-row">
         <div className="bj-form-group">
           <label>File Status</label>
-          <select value={form.fileStatus}
+          <select value={form.fileStatus || ''}
             onChange={e => onChange('fileStatus', e.target.value)}>
             <option value="">Select...</option>
             {FILE_STATUS_OPTIONS.map(f => (
@@ -329,7 +329,7 @@ const JobForm = ({ form, onChange, projects = [], clients = [], workflows = [] }
       <div className="bj-form-row">
         <div className="bj-form-group">
           <label>Billing Status</label>
-          <select value={form.billing}
+          <select value={form.billing || ''}
             onChange={e => onChange('billing', e.target.value)}>
             <option value="">Select...</option>
             {BILLING_STATUS_OPTIONS.map(b => (
@@ -1144,6 +1144,17 @@ const BooksJobs = () => {
   const [modal, setModal] = useState(null);
   const [showExportDropdown, setShowExportDropdown] = useState(false);
 
+  // ── Permissions ──────────────────────────────────────────────────
+  const _user = getCurrentUser();
+  const _roles = _user?.roles || [];
+  const _perms = _user?.permissions || [];
+  const isAdmin = _roles.includes('Admin');
+  const canCreate = isAdmin || _perms.includes('jobs.create');
+  const canUpdate = isAdmin || _perms.includes('jobs.update');
+  const canDelete = isAdmin || _perms.includes('jobs.delete');
+  const canBulkImport = isAdmin || _perms.includes('jobs.bulk_import');
+  const canExport = isAdmin || _perms.includes('jobs.export');
+
   // ── Bulk selection state ────────────────────────────────────────
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [showBulkEdit, setShowBulkEdit] = useState(false);
@@ -1375,17 +1386,19 @@ const BooksJobs = () => {
   };
 
   const handleClear = () => {
-    setFilters(prev => ({
-      ...prev,
+    setFilters({
       clientId: '',
       project: '', projectId: '',
       workflowId: '',
       isbn: '',
+      startMonth: '',
+      endMonth: '',
       status: '',
       billing: '',
+      jobId: '',
       complexity: '',
       fileStatus: '',
-    }));
+    });
   };
 
   // ── Export ──────────────────────────────────────────────────
@@ -1478,30 +1491,36 @@ const BooksJobs = () => {
           <h2>Job Management</h2>
         </div>
         <div className="bj-header-btns">
-          <button className="bj-bulk-btn" onClick={() => open('bulk')}>
-            📥 Bulk Import
-          </button>
-          <button className="bj-add-btn" onClick={() => open('add')}>
-            ＋ Add Job
-          </button>
-          <div className="bj-export-dropdown-container">
-            <button className="bj-export-btn"
-              onClick={() => setShowExportDropdown(v => !v)}>
-              📤 Export Report
+          {canBulkImport && (
+            <button className="bj-bulk-btn" onClick={() => open('bulk')}>
+              📥 Bulk Import
             </button>
-            {showExportDropdown && (
-              <div className="bj-export-dropdown-menu">
-                <button className="bj-export-item"
-                  onClick={() => { exportPDF(); setShowExportDropdown(false); }}>
-                  📄 Export PDF
-                </button>
-                <button className="bj-export-item"
-                  onClick={() => { exportExcel(); setShowExportDropdown(false); }}>
-                  📊 Export Excel
-                </button>
-              </div>
-            )}
-          </div>
+          )}
+          {canCreate && (
+            <button className="bj-add-btn" onClick={() => open('add')}>
+              ＋ Add Job
+            </button>
+          )}
+          {canExport && (
+            <div className="bj-export-dropdown-container">
+              <button className="bj-export-btn"
+                onClick={() => setShowExportDropdown(v => !v)}>
+                📤 Export Report
+              </button>
+              {showExportDropdown && (
+                <div className="bj-export-dropdown-menu">
+                  <button className="bj-export-item"
+                    onClick={() => { exportPDF(); setShowExportDropdown(false); }}>
+                    📄 Export PDF
+                  </button>
+                  <button className="bj-export-item"
+                    onClick={() => { exportExcel(); setShowExportDropdown(false); }}>
+                    📊 Export Excel
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -1614,7 +1633,7 @@ const BooksJobs = () => {
           </div>
 
           <div className="bj-filter-group">
-            <label><span className="flt-icon">📅</span> Start Month To</label>
+            <label><span className="flt-icon">📅</span> End Month To</label>
             <input type="date" value={filters.endMonth}
               onChange={e => setF('endMonth', e.target.value)} />
           </div>
@@ -1656,7 +1675,7 @@ const BooksJobs = () => {
         <div className="bj-filter-actions">
           {hasActiveFilters && (
             <span className="bj-filter-total-pages" style={{ marginRight: 'auto', alignSelf: 'center', fontWeight: '700', color: '#4a5568', fontSize: '0.85rem', background: '#f1f5f9', padding: '6px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
-              Total Filtered Pages: {jobs.reduce((sum, j) => sum + (parseInt(j.pageCount) || 0), 0)}
+              Filtered : {jobs.reduce((sum, j) => sum + (parseInt(j.pageCount) || 0), 0)}
             </span>
           )}
           <button className="bj-search-btn" onClick={handleSearch}>
@@ -1822,10 +1841,14 @@ const BooksJobs = () => {
                     </td>
                     <td>
                       <div className="bj-action-btns">
-                        <button className="bj-act-edit" title="Edit"
-                          onClick={() => open('edit', job)}>✏️</button>
-                        <button className="bj-act-del" title="Delete"
-                          onClick={() => open('delete', job)}>🗑️</button>
+                        {canUpdate && (
+                          <button className="bj-act-edit" title="Edit"
+                            onClick={() => open('edit', job)}>✏️</button>
+                        )}
+                        {canDelete && (
+                          <button className="bj-act-del" title="Delete"
+                            onClick={() => open('delete', job)}>🗑️</button>
+                        )}
                       </div>
                     </td>
                   </tr>

@@ -47,6 +47,17 @@ public interface PermissionRepository extends JpaRepository<Permission, UUID> {
             WHERE ura.user.id = :userId
             AND p.isActive = true
             AND r.isActive = true
+            AND p.code NOT IN (
+                SELECT DISTINCT up.permission.code FROM UserPermission up
+                WHERE up.user.id = :userId
+                AND up.isDenied = true
+            )
+            UNION
+            SELECT DISTINCT p2.code FROM UserPermission up
+            JOIN up.permission p2
+            WHERE up.user.id = :userId
+            AND up.isDenied = false
+            AND p2.isActive = true
             """)
     Set<String> findPermissionCodesByUserId(@Param("userId") UUID userId);
 

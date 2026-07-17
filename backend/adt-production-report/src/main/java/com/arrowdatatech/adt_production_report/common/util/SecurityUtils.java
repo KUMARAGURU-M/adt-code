@@ -39,6 +39,17 @@ public class SecurityUtils {
                         .equals("ROLE_" + roleName));
     }
 
+    // Check if current user has a specific authority (role or permission)
+    public static boolean hasAuthority(String authorityName) {
+        Authentication auth = SecurityContextHolder
+                .getContext().getAuthentication();
+        if (auth == null) return false;
+
+        return auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority()
+                        .equals(authorityName));
+    }
+
     // Check if current user is Admin
     public static boolean isAdmin() {
         return hasRole("Admin");

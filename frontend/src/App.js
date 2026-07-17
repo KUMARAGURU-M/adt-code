@@ -40,77 +40,80 @@ import ChatWidget from './components/layouts/ChatWidget';
 import DigiConvertor from './pages/admin/DigiConvertor';
 import HourlyReminder from './components/layouts/HourlyReminder';
 
-import { getCurrentUser } from './utils/api';
+import { getCurrentUser, getRolePrefix } from './utils/api';
 
 /* ── Route Authorization ── */
-const getAllowedRoutes = (roles) => {
+const getAllowedRoutes = (roles, permissions) => {
   if (!roles) return [];
-  if (roles.includes('Admin')) {
-    return [
-      '/admin/dashboard',
-      '/admin/users',
-      '/admin/workwise',
-      '/admin/digiconvertor',
-      '/admin/attendance',
-      '/admin/projects',
-      '/admin/books',
-      '/admin/production',
-      '/admin/tasks',
-      '/admin/processes',
-      '/admin/shifts',
-      '/admin/tool',
-      '/admin/leaves',
-      '/admin/roles',
-      '/admin/reports',
-      '/admin/hourly-graph',
-      '/admin/activity-logs',
-      '/admin/timelog',
-      '/admin/invoices',
-      '/admin/chat-monitor',
-      '/admin/settings'
-    ];
+  const allowed = [];
+  const prefix = getRolePrefix(roles);
+
+  // Dashboard is allowed for everyone authenticated
+  allowed.push(`/${prefix}/dashboard`);
+
+  if (roles.includes('Admin') || permissions?.includes('employees.view')) {
+    allowed.push(`/${prefix}/users`);
+  }
+  if (roles.includes('Admin') || permissions?.includes('timelogs.view') || permissions?.includes('tasks.view')) {
+    allowed.push(`/${prefix}/workwise`);
+  }
+  if (roles.includes('Admin') || permissions?.includes('tools.view')) {
+    allowed.push(`/${prefix}/tool`);
+  }
+  if (roles.includes('Admin') || permissions?.includes('digiconvertor.view')) {
+    allowed.push(`/${prefix}/digiconvertor`);
+  }
+  if (roles.includes('Admin') || permissions?.includes('attendance.view')) {
+    allowed.push(`/${prefix}/attendance`);
+  }
+  if (roles.includes('Admin') || permissions?.includes('projects.view')) {
+    allowed.push(`/${prefix}/projects`);
+  }
+  if (roles.includes('Admin') || permissions?.includes('jobs.view')) {
+    allowed.push(`/${prefix}/books`);
+  }
+  if (roles.includes('Admin') || permissions?.includes('production.view')) {
+    allowed.push(`/${prefix}/production`);
+  }
+  if (roles.includes('Admin') || permissions?.includes('tasks.view')) {
+    allowed.push(`/${prefix}/tasks`);
+  }
+  if (roles.includes('Admin') || permissions?.includes('processes.view')) {
+    allowed.push(`/${prefix}/processes`);
+  }
+  if (roles.includes('Admin') || permissions?.includes('shifts.view')) {
+    allowed.push(`/${prefix}/shifts`);
+  }
+  if (roles.includes('Admin') || permissions?.includes('leaves.view') || permissions?.includes('leaves.view_all')) {
+    allowed.push(`/${prefix}/leaves`);
+  }
+  if (roles.includes('Admin') || permissions?.includes('roles.view')) {
+    allowed.push(`/${prefix}/roles`);
+  }
+  if (roles.includes('Admin') || permissions?.includes('reports.view')) {
+    allowed.push(`/${prefix}/reports`);
+  }
+  if (roles.includes('Admin') || permissions?.includes('hourly_graph.view')) {
+    allowed.push(`/${prefix}/hourly-graph`);
+  }
+  if (roles.includes('Admin') || permissions?.includes('activity_logs.view')) {
+    allowed.push(`/${prefix}/activity-logs`);
+  }
+  if (roles.includes('Admin') || permissions?.includes('timelogs.view_all')) {
+    allowed.push(`/${prefix}/timelog`);
+  }
+  if (roles.includes('Admin') || permissions?.includes('invoices.view')) {
+    allowed.push(`/${prefix}/invoices`);
   }
 
-  if (roles.includes('Manager')) {
-    return [
-      '/manager/dashboard',
-      '/manager/workwise',
-      '/manager/digiconvertor',
-      '/manager/books',
-      '/manager/production',
-      '/manager/tasks',
-      '/manager/processes',
-      '/manager/shifts',
-      '/manager/leaves',
-      '/manager/reports',
-      '/manager/hourly-graph',
-      '/manager/timelog'
-    ];
+  if (roles.includes('Admin') || permissions?.includes('chat_monitor.view')) {
+    allowed.push(`/${prefix}/chat-monitor`);
   }
 
-  if (roles.includes('Team Leader')) {
-    return [
-      '/team-leader/dashboard',
-      '/team-leader/workwise',
-      '/team-leader/digiconvertor',
-      '/team-leader/books',
-      '/team-leader/production',
-      '/team-leader/tasks',
-      '/team-leader/reports',
-      '/team-leader/hourly-graph',
-      '/team-leader/timelog'
-    ];
+  if (roles.includes('Admin') || permissions?.includes('settings.view')) {
+    allowed.push(`/${prefix}/settings`);
   }
-
-  if (roles.includes('Executive')) {
-    return [
-      '/executive/workwise',
-      '/executive/production',
-      '/executive/hourly-graph'
-    ];
-  }
-
-  return [];
+  return allowed;
 };
 
 /* ── Admin Layout ── */
@@ -124,7 +127,7 @@ const AdminLayout = ({ children }) => {
   }
 
   const roles = user.roles || [];
-  const allowedRoutes = getAllowedRoutes(roles);
+  const allowedRoutes = getAllowedRoutes(roles, user.permissions || []);
   const path = location.pathname;
 
   if (!allowedRoutes.includes(path)) {

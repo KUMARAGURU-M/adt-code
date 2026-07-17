@@ -83,6 +83,7 @@ export default function EmpWorkwise() {
   const [timeLogId, setTimeLogId] = useState(null);
   const [breakEl, setBreakEl] = useState(0);
   const breakRef = useRef(null);
+  const sessionStartRef = useRef(null);
   const [toast, setToast] = useState(null);
   const lastBeepTimeRef = useRef(0);
   const contextRef = useRef(null);
@@ -144,7 +145,6 @@ export default function EmpWorkwise() {
 
   // ── Task data ─────────────────────────────────────────────────
   const [myTasks, setMyTasks] = useState([]);
-  const [nextTask, setNextTask] = useState(null);
 
   // ── Task selection state ──────────────────────────────────────
   // selTask = taskId string
@@ -230,6 +230,7 @@ export default function EmpWorkwise() {
         setContext(data);
         setTimeLogId(data.timeLogId);
         setElapsed(data.elapsedSeconds || 0);
+        sessionStartRef.current = Date.now() - ((data.elapsedSeconds || 0) * 1000);
         if (data.status === 'On Break') {
           setStatus('break');
           if (data.breakStartedAt) {
@@ -284,7 +285,8 @@ export default function EmpWorkwise() {
 
       // Prepend today's check-in if present and no task log exists for today yet
       if (pg === 0 && attendanceToday && attendanceToday.checkInTime) {
-        const todayStr = new Date().toISOString().slice(0, 10);
+        // Use IST-aware local date (not UTC ISO) to avoid wrong date after 6:30 PM IST
+        const todayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
         const hasTodayLog = contentList.some(l => l.logDate === todayStr);
         if (!hasTodayLog) {
           contentList = [
@@ -317,19 +319,10 @@ export default function EmpWorkwise() {
     }
   }, [logF, logSize]);
 
-  const loadNext = useCallback(async () => {
-    try {
-      setNextTask(await apiCall('/workwise/next-task'));
-    } catch {
-      setNextTask(null);
-    }
-  }, []);
-
   useEffect(() => {
     loadTasks();
     loadDropdowns();
     loadCurrent();
-    loadNext();
     // eslint-disable-next-line
   }, []);
 
@@ -376,7 +369,13 @@ export default function EmpWorkwise() {
   useEffect(() => {
     let iv = null;
     if (status === 'running' || status === 'break') {
-      iv = setInterval(() => setElapsed(e => e + 1), 1000);
+      iv = setInterval(() => {
+        setElapsed(() => {
+          const now = Date.now();
+          const start = sessionStartRef.current || now;
+          return Math.floor((now - start) / 1000);
+        });
+      }, 1000);
     }
     return () => clearInterval(iv);
   }, [status]);
@@ -386,12 +385,13 @@ export default function EmpWorkwise() {
     if (status === 'break') {
       lastBeepTimeRef.current = 0;
       iv = setInterval(() => {
-        setBreakEl(b => {
-          const newEl = b + 1;
+        setBreakEl(() => {
+          const now = Date.now();
+          const start = breakRef.current ? breakRef.current.getTime() : now;
+          const newEl = Math.floor((now - start) / 1000);
           const reason = contextRef.current?.breakReason;
           const limit = getBreakLimitSeconds(reason);
           if (limit && newEl > limit) {
-            const now = Date.now();
             if (lastBeepTimeRef.current === 0 || now - lastBeepTimeRef.current >= 30000) {
               lastBeepTimeRef.current = now;
               playBeep();
@@ -452,11 +452,7 @@ export default function EmpWorkwise() {
 
   // ── Handlers ─────────────────────────────────────────────────
 
-  const fillFromNextTask = (task) => {
-    if (!task) return;
-    setSelTask(task.taskId);
-    // useEffect on selTask auto-populates the rest
-  };
+
 
   const handleStart = async () => {
     if (!isFormValid()) {
@@ -480,6 +476,7 @@ export default function EmpWorkwise() {
       setContext(data);
       setTimeLogId(data.timeLogId);
       setElapsed(0);
+      sessionStartRef.current = Date.now();
       setStatus('running');
     } catch (e) {
       alert('Error starting task: ' + e.message);
@@ -540,16 +537,9 @@ export default function EmpWorkwise() {
       setAutoProjectId(null); setAutoProcessId(null); setAutoJobId(null);
 
       // Refresh data — both employee log and task list update
-      await Promise.all([loadLogs(0), loadTasks(), loadNext()]);
+      await Promise.all([loadLogs(0), loadTasks()]);
 
-      if (result.nextTask) {
-        setNextTask(result.nextTask);
-        alert(
-          `✅ ${result.message}\n\n` +
-          `📋 Next: ${result.nextTask.taskTitle}\n` +
-          `Project: ${result.nextTask.projectName}`
-        );
-      } else if (result.taskCompleted) {
+      if (result.message) {
         alert(`✅ ${result.message}`);
       }
 
@@ -584,6 +574,8 @@ export default function EmpWorkwise() {
       setContext(data);
       if (data) {
         setTimeLogId(data.timeLogId);
+        setElapsed(data.elapsedSeconds || 0);
+        sessionStartRef.current = Date.now() - ((data.elapsedSeconds || 0) * 1000);
       }
       setStatus('break');
       breakRef.current = new Date();
@@ -621,16 +613,19 @@ export default function EmpWorkwise() {
         setContext(data);
         setTimeLogId(data.timeLogId);
         setStatus('running');
+        setElapsed(data.elapsedSeconds || 0);
+        sessionStartRef.current = Date.now() - ((data.elapsedSeconds || 0) * 1000);
       } else {
         setContext(null);
         setTimeLogId(null);
         setStatus('stopped');
         setElapsed(0);
+        sessionStartRef.current = null;
         setSelTask('');
         setSelectedTask(null);
         setAutoProject(''); setAutoProcess(''); setAutoJob('');
         setAutoProjectId(null); setAutoProcessId(null); setAutoJobId(null);
-        await Promise.all([loadLogs(0), loadTasks(), loadNext()]);
+        await Promise.all([loadLogs(0), loadTasks()]);
       }
       setBreakEl(0);
       breakRef.current = null;
@@ -946,34 +941,7 @@ export default function EmpWorkwise() {
           </div>
         </div>
 
-        {/* Next task banner */}
-        {status === 'stopped' && nextTask && (
-          <div className="ww-next-task-banner">
-            <span className="ww-next-task-icon">📋</span>
-            <div className="ww-next-task-info">
-              <span className="ww-next-task-label">
-                Next Assigned Task:
-              </span>
-              <strong>{nextTask.taskTitle}</strong>
-              <span className="ww-next-task-meta">
-                {nextTask.clientName ? `${nextTask.clientName} · ` : ''}
-                {nextTask.projectName}
-                {nextTask.workflowName ? ` · ${nextTask.workflowName}` : ''}
-                {nextTask.processName ? ` · ${nextTask.processName}` : ''}
-                {nextTask.assignedPages != null
-                  ? ` · ${nextTask.pagesCompleted ?? 0}/${nextTask.assignedPages} pg`
-                  : ''}
-                {nextTask.dueDate
-                  ? ` · Due: ${fmtDate(nextTask.dueDate)}`
-                  : ''}
-              </span>
-            </div>
-            <button className="ww-next-task-use-btn"
-              onClick={() => fillFromNextTask(nextTask)}>
-              Use This Task
-            </button>
-          </div>
-        )}
+
 
         <div className="ww-form">
 
@@ -1427,8 +1395,8 @@ export default function EmpWorkwise() {
               ) : logs.map(log => (
                 <tr key={log.id}>
                   <td>{fmtDate(log.logDate)}</td>
-                  <td className="ww-td-mono">{formatTime(log.startTime)}</td>
-                  <td className="ww-td-mono">{formatTime(log.manualCheckOut || log.endTime)}</td>
+                  <td className="ww-td-mono">{formatTime(log.startTime || log.manualCheckIn)}</td>
+                  <td className="ww-td-mono">{formatTime(log.endTime || log.manualCheckOut)}</td>
                   <td>{log.clientName || '-'}</td>
                   <td>{log.projectName || '-'}</td>
                   <td>{log.workflowName || '-'}</td>
@@ -1526,3 +1494,6 @@ export default function EmpWorkwise() {
     </div>
   );
 }
+
+
+

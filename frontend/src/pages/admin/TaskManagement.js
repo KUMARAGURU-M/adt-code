@@ -3,7 +3,7 @@ import React, {
 } from "react";
 import { useLocation } from "react-router-dom";
 import "./TaskManagement.css";
-import { apiCall } from "../../utils/api";
+import { apiCall, getCurrentUser } from "../../utils/api";
 
 // ── Constants ─────────────────────────────────────────────────────
 const ALL_STATUSES = [
@@ -74,6 +74,7 @@ const mapTask = (t) => ({
   totalPages: t.totalPages || "",
   serverPath: t.serverPath || "",
   assignedBy: t.assignedByName || "",
+  assignedById: t.assignedById || null,
 });
 
 // ── CheckboxList ──────────────────────────────────────────────────
@@ -204,7 +205,7 @@ function TaskModal({ mode, task, onClose, onSave,
         ? task.chapter.split(" - ")[0] : task.chapter || "",
       chapterEnd: task.chapter?.includes(" - ")
         ? task.chapter.split(" - ")[1] : "",
-      assignedBy: null, // will be set by user
+      assignedBy: task.assignedById || null,
       totalPages: task.totalPages?.toString() || "",
       complexity: task.complexity || "",
       serverPath: task.serverPath || "",
@@ -749,6 +750,9 @@ export default function TaskManagement() {
   const [modal, setModal] = useState(null);
   const [showExportDropdown, setShowExportDropdown] = useState(false);
 
+  const currentUser = getCurrentUser();
+  const hasPermission = (perm) => currentUser?.roles?.includes('Admin') || currentUser?.permissions?.includes(perm);
+
   // Filters
   const [search, setSearch] = useState("");
   const [filterProject, setFilterProject] = useState("");
@@ -1020,10 +1024,12 @@ export default function TaskManagement() {
           <h1>Task Management</h1>
         </div>
         <div className="tm-header-actions">
-          <button className="btn-remove-dup"
-            onClick={handleRemoveDuplicates}>
-            🔁 Remove Duplicates
-          </button>
+          {hasPermission('tasks.delete') && (
+            <button className="btn-remove-dup"
+              onClick={handleRemoveDuplicates}>
+              🔁 Remove Duplicates
+            </button>
+          )}
           <div className="tm-export-dropdown-container">
             <button className="btn-export-csv"
               onClick={() => setShowExportDropdown(v => !v)}>
@@ -1042,10 +1048,12 @@ export default function TaskManagement() {
               </div>
             )}
           </div>
-          <button className="btn-add-task"
-            onClick={() => setModal({ type: "add" })}>
-            + Add Task
-          </button>
+          {hasPermission('tasks.create') && (
+            <button className="btn-add-task"
+              onClick={() => setModal({ type: "add" })}>
+              + Add Task
+            </button>
+          )}
         </div>
       </div>
 
@@ -1254,14 +1262,18 @@ export default function TaskManagement() {
                     </td>
                     <td className="col-actions">
                       <div className="tm-actions">
-                        <button className="tm-action-btn" title="Edit"
-                          onClick={() => setModal({ type: "edit", task })}>
-                          ✏️
-                        </button>
-                        <button className="tm-action-btn" title="Delete"
-                          onClick={() => setModal({ type: "delete", task })}>
-                          🗑️
-                        </button>
+                        {hasPermission('tasks.update') && (
+                          <button className="tm-action-btn" title="Edit"
+                            onClick={() => setModal({ type: "edit", task })}>
+                            ✏️
+                          </button>
+                        )}
+                        {hasPermission('tasks.delete') && (
+                          <button className="tm-action-btn" title="Delete"
+                            onClick={() => setModal({ type: "delete", task })}>
+                            🗑️
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -1352,3 +1364,8 @@ export default function TaskManagement() {
     </div>
   );
 }
+
+
+
+
+

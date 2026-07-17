@@ -206,7 +206,12 @@ export function getRolePrefix(roles) {
   if (roles.includes('Admin')) return 'admin';
   if (roles.includes('Manager')) return 'manager';
   if (roles.includes('Team Leader')) return 'team-leader';
-  if (roles.includes('Executive')) return 'executive';
+  if (roles.includes('Executive') || roles.includes('Employee')) return 'executive';
+  // For any other dynamic/custom role, generate a clean prefix
+  const firstRole = roles[0];
+  if (firstRole) {
+    return firstRole.toLowerCase().trim().replace(/\s+/g, '-');
+  }
   return 'executive';
 }
 

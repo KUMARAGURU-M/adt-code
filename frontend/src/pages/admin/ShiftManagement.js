@@ -2,7 +2,7 @@ import React, {
   useState, useEffect, useMemo, useCallback
 } from 'react';
 import './ShiftManagement.css';
-import { apiCall } from '../../utils/api';
+import { apiCall, getCurrentUser } from '../../utils/api';
 
 // ── Constants ─────────────────────────────────────────────────────
 const ITEMS_PER_PAGE_OPTIONS = [10, 25, 50, 100];
@@ -304,7 +304,7 @@ const ShiftManagement = () => {
   const [modal, setModal] = useState(null);
 
   // Add form state
-  const [showAddForm, setShowAddForm] = useState(true);
+  const [showAddForm, setShowAddForm] = useState(false);
   const [newName, setNewName] = useState('');
   const [newStartTime, setNewStartTime] = useState('');
   const [newEndTime, setNewEndTime] = useState('');
@@ -312,6 +312,9 @@ const ShiftManagement = () => {
   const [newActive, setNewActive] = useState(true);
   const [addErr, setAddErr] = useState('');
   const [creating, setCreating] = useState(false);
+
+  const currentUser = getCurrentUser();
+  const hasPermission = (perm) => currentUser?.roles?.includes('Admin') || currentUser?.permissions?.includes(perm);
 
   // Allotment board state
   // { [shiftId]: { id, name, email }[] }
@@ -533,12 +536,14 @@ const ShiftManagement = () => {
           <span className="sm-page-icon">🕒</span>
           <h2>Shift Management</h2>
         </div>
-        <button
-          className="sm-add-header-btn"
-          onClick={() => setShowAddForm(v => !v)}
-        >
-          {showAddForm ? '✕ Close Form' : '+ Add Shift'}
-        </button>
+        {hasPermission('shifts.manage') && (
+          <button
+            className="sm-add-header-btn"
+            onClick={() => setShowAddForm(v => !v)}
+          >
+            {showAddForm ? '✕ Close Form' : '+ Add Shift'}
+          </button>
+        )}
       </div>
 
       {/* ── Add New Shift Form ── */}
@@ -602,7 +607,7 @@ const ShiftManagement = () => {
       )}
 
       {/* ── Allotment Board ── */}
-      {shifts.length > 0 && (
+      {hasPermission('shifts.manage') && shifts.length > 0 && (
         <div className="sm-allot-card">
           <div className="sm-allot-card-header">
             <h3 className="sm-allot-card-title">
@@ -716,18 +721,20 @@ const ShiftManagement = () => {
                       {fmtDate(shift.created)}
                     </td>
                     <td>
-                      <div className="sm-action-btns">
-                        <button className="sm-act-edit"
-                          title="Edit Shift"
-                          onClick={() => open('edit', shift)}>
-                          ✏️
-                        </button>
-                        <button className="sm-act-del"
-                          title="Delete Shift"
-                          onClick={() => open('delete', shift)}>
-                          🗑️
-                        </button>
-                      </div>
+                      {hasPermission('shifts.manage') && (
+                        <div className="sm-action-btns">
+                          <button className="sm-act-edit"
+                            title="Edit Shift"
+                            onClick={() => open('edit', shift)}>
+                            ✏️
+                          </button>
+                          <button className="sm-act-del"
+                            title="Delete Shift"
+                            onClick={() => open('delete', shift)}>
+                            🗑️
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -793,6 +800,7 @@ const ShiftManagement = () => {
 };
 
 export default ShiftManagement;
+
 
 
 

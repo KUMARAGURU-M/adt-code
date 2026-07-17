@@ -676,7 +676,7 @@ const Production = () => {
                       : (!job.startMonth && !!job.productionStartDate);
                     const currentEmployees = rowEdits.hasOwnProperty('employees')
                       ? rowEdits.employees
-                      : (job.employees ? job.employees.join(', ') : '');
+                      : (job.employees ? job.employees.join(' | ') : '');
 
                     return (
                       <tr key={job.id} className={`${isModified ? 'modified-row' : ''} ${selectedIds.has(job.id) ? 'prod-row-selected' : ''}`}>

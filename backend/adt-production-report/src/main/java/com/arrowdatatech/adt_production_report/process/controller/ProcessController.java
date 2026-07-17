@@ -34,7 +34,7 @@ public class ProcessController {
     // GET /processes/all - Including inactive
     // Used by: Process Management admin page table
     @GetMapping("/all")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('processes.view')")
     public ResponseEntity<ApiResponse<List<ProcessResponse>>> getAll() {
         List<ProcessResponse> processes = processService.getAllProcesses();
         return ResponseEntity.ok(
@@ -74,7 +74,7 @@ public class ProcessController {
 
     // POST /processes - Create new process
     @PostMapping
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('processes.manage')")
     public ResponseEntity<ApiResponse<ProcessResponse>> createProcess(
             @Valid @RequestBody CreateProcessRequest request) {
         ProcessResponse created = processService.createProcess(request);
@@ -86,7 +86,7 @@ public class ProcessController {
 
     // PUT /processes/{id} - Update process
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('Admin','Manager')")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('processes.manage')")
     public ResponseEntity<ApiResponse<ProcessResponse>> updateProcess(
             @PathVariable UUID id,
             @Valid @RequestBody CreateProcessRequest request) {
@@ -97,7 +97,7 @@ public class ProcessController {
 
     // DELETE /processes/{id}
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('Admin')")
+    @PreAuthorize("hasRole('Admin') or hasAuthority('processes.manage')")
     public ResponseEntity<ApiResponse<Void>> deleteProcess(
             @PathVariable UUID id) {
         processService.deleteProcess(id);
