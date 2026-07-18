@@ -73,6 +73,13 @@ public class JwtTokenProvider {
         return (List<String>) claims.get("roles");
     }
 
+    // Extract permissions from token
+    @SuppressWarnings("unchecked")
+    public List<String> getPermissionsFromToken(String token) {
+        Claims claims = parseClaims(token);
+        return (List<String>) claims.get("permissions");
+    }
+
     // Validate token - returns false if expired or invalid
     public boolean validateToken(String token) {
         try {

@@ -1,6 +1,5 @@
 package com.arrowdatatech.adt_production_report.config;
 
-import com.arrowdatatech.adt_production_report.auth.service.CustomUserDetailsService;
 import com.arrowdatatech.adt_production_report.auth.service.JwtTokenProvider;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -9,6 +8,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -17,6 +17,8 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -25,7 +27,6 @@ import java.util.UUID;
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
-    private final CustomUserDetailsService userDetailsService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -38,21 +39,42 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         if (StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)) {
             try {
                 UUID userId = jwtTokenProvider.getUserIdFromToken(token);
-                UserDetails userDetails = userDetailsService.loadUserById(userId);
-
-                if (userDetails.isEnabled() && userDetails.isAccountNonLocked()) {
-                    UsernamePasswordAuthenticationToken authentication =
-                            new UsernamePasswordAuthenticationToken(
-                                    userDetails, null,
-                                    userDetails.getAuthorities());
-
-                    authentication.setDetails(
-                            new WebAuthenticationDetailsSource()
-                                    .buildDetails(request));
-
-                    SecurityContextHolder.getContext()
-                            .setAuthentication(authentication);
+                
+                // Reconstruct UserDetails directly from token claims to avoid database query
+                List<String> roles = jwtTokenProvider.getRolesFromToken(token);
+                List<String> permissions = jwtTokenProvider.getPermissionsFromToken(token);
+                
+                List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+                if (roles != null) {
+                    for (String role : roles) {
+                        authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
+                    }
                 }
+                if (permissions != null) {
+                    for (String permission : permissions) {
+                        authorities.add(new SimpleGrantedAuthority(permission));
+                    }
+                }
+
+                UserDetails userDetails = org.springframework.security.core.userdetails.User.builder()
+                        .username(userId.toString())
+                        .password("") // Password is not needed for token-based authentication context
+                        .authorities(authorities)
+                        .accountLocked(false)
+                        .disabled(false)
+                        .build();
+
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(
+                                userDetails, null,
+                                userDetails.getAuthorities());
+
+                authentication.setDetails(
+                        new WebAuthenticationDetailsSource()
+                                .buildDetails(request));
+
+                SecurityContextHolder.getContext()
+                        .setAuthentication(authentication);
             } catch (Exception e) {
                 log.error("Cannot set user authentication: {}", e.getMessage());
             }
