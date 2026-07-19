@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import './Setting.css';
-import { apiCall } from '../../utils/api';
+import { apiCall, API_BASE, getAccessToken } from '../../utils/api';
 
 /* ─── Default state ─────────────────────── */
 const DEFAULT = {
@@ -39,6 +39,10 @@ const DEFAULT = {
   sessionTimeout: 479,
   maxFileSize: 10,
   allowedTypes: 'jpg,jpeg,png,pdf,doc,docx',
+  announcement: '',
+  isCelebration: false,
+  celebrationText: '',
+  celebrationPhotoUrl: '',
 };
 
 /* ─── Modal ──────────────────────────────── */
@@ -186,6 +190,10 @@ const Setting = () => {
             sessionTimeout: data.sessionTimeout ?? 480,
             maxFileSize: data.maxFileSize ?? 10,
             allowedTypes: data.allowedTypes || 'jpg,jpeg,png,pdf,doc,docx',
+            announcement: data.announcement || '',
+            isCelebration: data.isCelebration ?? false,
+            celebrationText: data.celebrationText || '',
+            celebrationPhotoUrl: data.celebrationPhotoUrl || '',
           });
         }
       } catch (err) {
@@ -242,6 +250,10 @@ const Setting = () => {
         sessionTimeout: parseInt(form.sessionTimeout, 10) || 480,
         maxFileSize: parseInt(form.maxFileSize, 10) || 10,
         allowedTypes: form.allowedTypes,
+        announcement: form.announcement || '',
+        isCelebration: form.isCelebration ?? false,
+        celebrationText: form.celebrationText || '',
+        celebrationPhotoUrl: form.celebrationPhotoUrl || '',
       };
 
       await apiCall('/settings', 'PUT', payload);
@@ -388,6 +400,110 @@ const Setting = () => {
                 value={form.welcomeMessage}
                 onChange={e => set('welcomeMessage', e.target.value)}
               />
+            </div>
+
+            {/* Announcement */}
+            <div className="st-form-group">
+              <label className="st-label">Dashboard Announcement</label>
+              <textarea
+                className="st-input"
+                value={form.announcement || ''}
+                onChange={e => set('announcement', e.target.value)}
+                rows={3}
+                placeholder="Type global announcement here..."
+                style={{ resize: 'vertical', fontFamily: 'inherit' }}
+              />
+            </div>
+
+            {/* Celebration Option */}
+            <div className="st-form-group" style={{ marginTop: '16px', background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+              <label className="st-label" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 600 }}>
+                <input
+                  type="checkbox"
+                  checked={form.isCelebration || false}
+                  onChange={e => set('isCelebration', e.target.checked)}
+                  style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                />
+                🎉 Enable Celebration Banner
+              </label>
+              <p style={{ fontSize: '0.78rem', color: '#64748b', margin: '4px 0 12px 24px' }}>
+                Show a special celebration banner with a photo and dedication above the announcement text.
+              </p>
+
+              {form.isCelebration && (
+                <div style={{ paddingLeft: '24px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  {/* Upload Photo */}
+                  <div className="st-sub-group">
+                    <label className="st-label" style={{ fontSize: '0.82rem', marginBottom: '6px' }}>Celebration Photo</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={async e => {
+                          const file = e.target.files[0];
+                          if (!file) return;
+                          
+                          const formData = new FormData();
+                          formData.append('file', file);
+                          formData.append('entityType', 'Celebration');
+                          
+                          try {
+                            setLoading(true);
+                            const token = getAccessToken();
+                            const response = await fetch(`${API_BASE}/media/upload`, {
+                              method: 'POST',
+                              headers: {
+                                'Authorization': token ? `Bearer ${token}` : ''
+                              },
+                              body: formData
+                            });
+                            const result = await response.json();
+                            if (result.success && result.data && result.data.url) {
+                              set('celebrationPhotoUrl', result.data.url);
+                            } else {
+                              alert('Upload failed: ' + (result.message || 'Unknown error'));
+                            }
+                          } catch (err) {
+                            alert('Upload failed: ' + err.message);
+                          } finally {
+                            setLoading(false);
+                          }
+                        }}
+                        style={{ fontSize: '0.8rem' }}
+                      />
+                      {form.celebrationPhotoUrl && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <img
+                            src={`${API_BASE}${form.celebrationPhotoUrl}`}
+                            alt="Celebration Preview"
+                            style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #ddd' }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => set('celebrationPhotoUrl', '')}
+                            style={{ background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '4px', padding: '4px 8px', fontSize: '0.75rem', cursor: 'pointer' }}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Celebration Text */}
+                  <div className="st-sub-group">
+                    <label className="st-label" style={{ fontSize: '0.82rem', marginBottom: '6px' }}>Celebration Dedication / Message</label>
+                    <textarea
+                      className="st-input"
+                      value={form.celebrationText || ''}
+                      onChange={e => set('celebrationText', e.target.value)}
+                      rows={2}
+                      placeholder="e.g. Wishing Jane Doe a very Happy Birthday! 🎂✨"
+                      style={{ fontSize: '0.85rem', resize: 'vertical', fontFamily: 'inherit' }}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -564,13 +680,6 @@ const Setting = () => {
 
       </div>{/* end grid */}
 
-      {/* ── Bottom Save Button ── */}
-      {/* <div className="st-footer">
-        <button className="st-save-btn large" onClick={handleSave}>
-          {saved ? '✓ Settings Saved!' : '💾 Save Settings'}
-        </button>
-      </div> */}
-
       {/* ── Quotes Modal ── */}
       {showQuotes && (
         <QuoteModal
@@ -583,5 +692,4 @@ const Setting = () => {
     </div>
   );
 };
-
 export default Setting;

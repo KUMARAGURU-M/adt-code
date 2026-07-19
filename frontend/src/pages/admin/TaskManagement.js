@@ -1,5 +1,5 @@
 import React, {
-  useState, useEffect, useCallback
+  useState, useEffect, useCallback, useRef
 } from "react";
 import { useLocation } from "react-router-dom";
 import "./TaskManagement.css";
@@ -79,7 +79,7 @@ const mapTask = (t) => ({
 
 // ── CheckboxList ──────────────────────────────────────────────────
 function CheckboxList({ title, icon, items, selected, onChange,
-  allowDeselect, labelKey = null, valueKey = null }) {
+  allowDeselect, labelKey = null, valueKey = null, required = false }) {
   const getValue = (item) => valueKey ? item[valueKey] : item;
   const getLabel = (item) => labelKey ? item[labelKey] : item;
   const allSel = items.length > 0 &&
@@ -97,7 +97,9 @@ function CheckboxList({ title, icon, items, selected, onChange,
       <div className="tm-checkbox-section-header">
         <div className="tm-checkbox-section-meta">
           <span style={{ fontSize: "0.82rem" }}>{icon}</span>
-          <span className="tm-checkbox-section-title">{title}</span>
+          <span className="tm-checkbox-section-title">
+            {title} {required && <span className="req" style={{ color: "#e53e3e" }}>*</span>}
+          </span>
           {selected.length > 0 && (
             <span className="tm-selected-count">
               ({selected.length} selected)
@@ -139,8 +141,18 @@ function CheckboxList({ title, icon, items, selected, onChange,
           );
         })}
         {items.length === 0 && (
-          <div style={{ color: "#a0aec0", padding: "8px", fontSize: "0.8rem" }}>
-            No items available
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flex: 1,
+            minHeight: "180px",
+            color: "#a0aec0",
+            padding: "16px",
+            fontSize: "0.82rem",
+            textAlign: "center"
+          }}>
+            📌 No jobs available. Select a Client or Project first.
           </div>
         )}
       </div>
@@ -150,10 +162,141 @@ function CheckboxList({ title, icon, items, selected, onChange,
 
 // ── Overlay ───────────────────────────────────────────────────────
 const Overlay = ({ onClose, children }) => (
-  <div className="modal-overlay" onClick={onClose}>
-    <div onClick={e => e.stopPropagation()}>{children}</div>
+  <div className="modal-overlay">
+    <div>{children}</div>
   </div>
 );
+
+// ── SearchableDropdown ────────────────────────────────────────────
+function SearchableDropdown({ title, icon, items, selected, onChange,
+  valueKey = null, labelKey = null, placeholder = "Select...", isMulti = false, required = false }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchVal, setSearchVal] = useState("");
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const getValue = (item) => valueKey ? item[valueKey] : item;
+  const getLabel = (item) => labelKey ? item[labelKey] : item;
+
+  const filteredItems = items.filter(item => {
+    const label = getLabel(item);
+    return typeof label === "string" && label.toLowerCase().includes(searchVal.toLowerCase());
+  });
+
+  const handleSelect = (item) => {
+    const val = getValue(item);
+    if (isMulti) {
+      const nextSelected = selected.includes(val)
+        ? selected.filter(s => s !== val)
+        : [...selected, val];
+      onChange(nextSelected);
+    } else {
+      onChange(val);
+      setIsOpen(false);
+    }
+  };
+
+  const getDisplayText = () => {
+    if (isMulti) {
+      if (!selected || selected.length === 0) return placeholder;
+      const selectedLabels = selected
+        .map(sVal => {
+          const item = items.find(i => getValue(i) === sVal);
+          return item ? getLabel(item) : null;
+        })
+        .filter(Boolean);
+      if (selectedLabels.length === 0) return placeholder;
+      if (selectedLabels.length <= 2) return selectedLabels.join(", ");
+      return `${selectedLabels.length} selected`;
+    } else {
+      if (selected === "" || selected === null || selected === undefined) return placeholder;
+      const item = items.find(i => getValue(i) === selected);
+      return item ? getLabel(item) : placeholder;
+    }
+  };
+
+  return (
+    <div className="tm-searchable-dropdown" ref={dropdownRef}>
+      <div className="tm-field-label">
+        <span>{icon}</span> {title} {required && <span className="req">*</span>}
+      </div>
+      <div className={`tm-dropdown-trigger ${isOpen ? "open" : ""}`} onClick={() => setIsOpen(!isOpen)}>
+        <span className="tm-dropdown-trigger-text">{getDisplayText()}</span>
+        <span className="tm-dropdown-arrow">▼</span>
+      </div>
+
+      {isOpen && (
+        <div className="tm-dropdown-content" onClick={e => e.stopPropagation()}>
+          <input
+            type="text"
+            className="tm-dropdown-search-input"
+            placeholder="Search..."
+            value={searchVal}
+            onChange={e => setSearchVal(e.target.value)}
+            autoFocus
+          />
+          <div className="tm-dropdown-options-list">
+            {isMulti && items.length > 0 && (
+              <div className="tm-dropdown-bulk-actions">
+                <button
+                  type="button"
+                  className="tm-select-all-btn"
+                  onClick={() => onChange(items.map(getValue))}
+                >
+                  Select All
+                </button>
+                {selected.length > 0 && (
+                  <button
+                    type="button"
+                    className="tm-deselect-btn"
+                    onClick={() => onChange([])}
+                  >
+                    Deselect All
+                  </button>
+                )}
+              </div>
+            )}
+            {filteredItems.map(item => {
+              const val = getValue(item);
+              const lbl = getLabel(item);
+              const isChecked = isMulti ? selected.includes(val) : selected === val;
+
+              return (
+                <div
+                  key={val}
+                  className={`tm-dropdown-option-item ${isChecked ? "checked" : ""}`}
+                  onClick={() => handleSelect(item)}
+                >
+                  {isMulti && (
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      readOnly
+                      style={{ marginRight: "8px", pointerEvents: "none" }}
+                    />
+                  )}
+                  <span>{lbl}</span>
+                </div>
+              );
+            })}
+            {filteredItems.length === 0 && (
+              <div className="tm-dropdown-no-results">No results found</div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ── TaskModal ─────────────────────────────────────────────────────
 function TaskModal({ mode, task, onClose, onSave,
@@ -173,7 +316,12 @@ function TaskModal({ mode, task, onClose, onSave,
   };
 
   const [form, setForm] = useState(() => {
-    if (!task) return { ...emptyForm };
+    if (!task) {
+      return {
+        ...emptyForm,
+        date: new Date().toISOString().split("T")[0]
+      };
+    }
     const proj = projects.find(p => p.id === task.projectId);
     return {
       title: task.title,
@@ -223,12 +371,28 @@ function TaskModal({ mode, task, onClose, onSave,
   // Jobs available for selected project
   const [projectJobs, setProjectJobs] = useState([]);
 
+  // Filters for book/job inside modal
+  const [jobStatusFilter, setJobStatusFilter] = useState("PENDING");
+  const [jobReceiveDateFilter, setJobReceiveDateFilter] = useState("");
+
   useEffect(() => {
-    if (!form.projectId) { setProjectJobs([]); return; }
-    apiCall(`/jobs/by-project/${form.projectId}`)
+    if (!form.projectId && !form.clientId && initialJobIds.length === 0) {
+      setProjectJobs([]);
+      return;
+    }
+
+    let url = "/jobs/search?size=500";
+    if (form.projectId) {
+      url = `/jobs/by-project/${form.projectId}`;
+    } else if (form.clientId) {
+      url = `/jobs/search?clientId=${form.clientId}&size=500`;
+    }
+
+    apiCall(url)
       .then(data => {
+        const rawJobs = Array.isArray(data) ? data : (data?.content || []);
         // Filter jobs based on status: exclude Completed / FINISH, unless already selected
-        const filtered = data.filter(j => {
+        const filtered = rawJobs.filter(j => {
           const isSelected = initialJobIds.includes(j.id);
           const isAvailable = j.status !== "FINISH" && j.status !== "Completed" && j.status !== "Completed / Finish";
           return isSelected || isAvailable;
@@ -239,11 +403,14 @@ function TaskModal({ mode, task, onClose, onSave,
           pages: j.pageCount,
           workflowId: j.workflowId,
           clientId: j.clientId,
+          projectId: j.projectId,
+          complexity: j.complexity,
           status: j.status,
+          receiveDate: j.receiveDate,
         })));
       })
       .catch(() => setProjectJobs([]));
-  }, [form.projectId, initialJobIds]);
+  }, [form.projectId, form.clientId, initialJobIds]);
 
   const setF = (k, v) => {
     setForm(p => {
@@ -270,14 +437,37 @@ function TaskModal({ mode, task, onClose, onSave,
         next.pagesEnd = "";
       }
       if (k === "jobIds" && v.length > 0) {
-        // Auto-fill totalPages from first selected job
+        // Auto-fill Client, Project, Task Name (Workflow), Pages, Complexity from chosen job
         const firstJob = projectJobs.find(j => j.id === v[0]);
-        if (firstJob?.pages) {
-          next.totalPages = firstJob.pages.toString();
-          // Auto-select "All Pages" when a book is chosen
-          next.pagesType = "All Pages";
-          next.pagesStart = "";
-          next.pagesEnd = "";
+        if (firstJob) {
+          if (firstJob.projectId) {
+            next.projectId = firstJob.projectId;
+            const proj = projects.find(p => p.id === firstJob.projectId);
+            if (proj) {
+              next.clientId = proj.clientId || firstJob.clientId || next.clientId;
+              next.workflowId = firstJob.workflowId || proj.workflowId || next.workflowId;
+            } else if (firstJob.clientId) {
+              next.clientId = firstJob.clientId;
+            }
+          } else if (firstJob.clientId) {
+            next.clientId = firstJob.clientId;
+          }
+
+          if (firstJob.workflowId) {
+            next.workflowId = firstJob.workflowId;
+          }
+
+          if (firstJob.pages) {
+            next.totalPages = firstJob.pages.toString();
+            next.pagesType = "All Pages";
+            next.pagesStart = "";
+            next.pagesEnd = "";
+          }
+
+          if (firstJob.complexity) {
+            next.complexity = firstJob.complexity;
+            setShowComplexity(true);
+          }
         }
       }
       if (k === "jobIds" && v.length === 0) {
@@ -327,6 +517,12 @@ function TaskModal({ mode, task, onClose, onSave,
         .filter(Boolean).join(" - ");
     }
 
+    const parsedHours = parseFloat(form.estimateHours);
+    const finalHours = isNaN(parsedHours) ? null : parsedHours;
+
+    const parsedPages = parseInt(form.totalPages);
+    const finalPagesVal = isNaN(parsedPages) ? null : parsedPages;
+
     setSaving(true);
     try {
       await onSave({
@@ -336,14 +532,15 @@ function TaskModal({ mode, task, onClose, onSave,
         description: form.description || null,
         status: form.status,
         dueDate: form.dueDate || null,
+        assignedDate: form.date || null,
         assignedPagesStr: finalPages || null,
         assignedPages: numericAssignedPages,
         complexity: showComplexity ? form.complexity : null,
         chapterArticleBatch: finalChapter || null,
-        estimateHours: parseFloat(form.estimateHours) || null,
+        estimateHours: finalHours,
         serverPath: form.serverPath || null,
         assignedBy: form.assignedBy || null,
-        totalPages: parseInt(form.totalPages) || null,
+        totalPages: finalPagesVal,
         jobAssignments: form.jobIds.map(id => ({
           jobId: id, assignedPages: numericAssignedPages
         })),
@@ -361,17 +558,15 @@ function TaskModal({ mode, task, onClose, onSave,
 
   const filteredJobs = projectJobs.filter(j => {
     if (form.workflowId && j.workflowId !== form.workflowId) return false;
-    if (form.status) {
-      const taskStatusLower = form.status.toLowerCase();
-      const jobStatusLower = (j.status || "").toLowerCase();
-      const isTaskCompleted = ["finish", "completed", "completed / finish"].includes(taskStatusLower);
-      const isJobCompleted = ["finish", "completed", "completed / finish"].includes(jobStatusLower);
-      if (isTaskCompleted) {
-        if (!isJobCompleted) return false;
-      } else {
-        if (jobStatusLower !== taskStatusLower) return false;
-      }
+
+    if (jobStatusFilter) {
+      if ((j.status || "").toLowerCase() !== jobStatusFilter.toLowerCase()) return false;
     }
+
+    if (jobReceiveDateFilter) {
+      if (j.receiveDate !== jobReceiveDateFilter) return false;
+    }
+
     return true;
   });
 
@@ -392,87 +587,93 @@ function TaskModal({ mode, task, onClose, onSave,
 
         <div className="tm-modal-body">
 
-          {/* Client Select */}
-          <div>
-            <div className="tm-field-label">💼 Client</div>
-            <select
-              className="tm-form-select"
-              value={form.clientId || ""}
-              onChange={e => setF("clientId", e.target.value || "")}
-            >
-              <option value="">Select Client</option>
-              {clients.map(c => (
-                <option key={c.id} value={c.id}>{c.companyName}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Project Select */}
-          <div>
-            <div className="tm-field-label">
-              📁 Project <span className="req">*</span>
+          {/* Row 1: Client, Project, Task Name */}
+          <div className="tm-three-col">
+            {/* Client Select */}
+            <div>
+              <div className="tm-field-label">💼 Client</div>
+              <select
+                className="tm-form-select"
+                value={form.clientId || ""}
+                onChange={e => setF("clientId", e.target.value || "")}
+              >
+                <option value="">Select Client</option>
+                {clients.map(c => (
+                  <option key={c.id} value={c.id}>{c.companyName}</option>
+                ))}
+              </select>
             </div>
-            <select
-              className={`tm-form-select ${errors.projectId ? "tm-form-input--error" : ""}`}
-              value={form.projectId || ""}
-              onChange={e => setF("projectId", e.target.value || null)}
-              disabled={!form.clientId}
-            >
-              <option value="">Select Publisher / Project</option>
-              {(form.clientId
-                ? projects.filter(p => p.clientId === form.clientId)
-                : projects
-              ).map(p => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
-            {errors.projectId && (
-              <span className="tm-form-error">{errors.projectId}</span>
-            )}
+
+            {/* Project Select */}
+            <div>
+              <div className="tm-field-label">
+                📁 Project <span className="req">*</span>
+              </div>
+              <select
+                className={`tm-form-select ${errors.projectId ? "tm-form-input--error" : ""}`}
+                value={form.projectId || ""}
+                onChange={e => setF("projectId", e.target.value || null)}
+                disabled={!form.clientId}
+              >
+                <option value="">Select Publisher / Project</option>
+                {(form.clientId
+                  ? projects.filter(p => p.clientId === form.clientId)
+                  : projects
+                ).map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+              {errors.projectId && (
+                <span className="tm-form-error">{errors.projectId}</span>
+              )}
+            </div>
+
+            {/* Workflow Select */}
+            <div>
+              <div className="tm-field-label">⚙️ Task Name</div>
+              <select
+                className="tm-form-select"
+                value={form.workflowId || ""}
+                onChange={e => setF("workflowId", e.target.value || "")}
+              >
+                <option value="">Select Task Name</option>
+                {workflows.map(w => (
+                  <option key={w.id} value={w.id}>{w.name}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
-          {/* Workflow Select */}
-          <div>
-            <div className="tm-field-label">⚙️ Task Name</div>
-            <select
-              className="tm-form-select"
-              value={form.workflowId || ""}
-              onChange={e => setF("workflowId", e.target.value || "")}
-            >
-              <option value="">Select Task Name</option>
-              {workflows.map(w => (
-                <option key={w.id} value={w.id}>{w.name}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Status & Date */}
+          {/* Row 2: Status filter for filter bookjob, Date filter receive date */}
           <div className="tm-two-col">
             <div>
-              <div className="tm-field-label">🏷️ Status</div>
-              <select className="tm-form-select" value={form.status}
-                onChange={e => setF("status", e.target.value)}>
+              <div className="tm-field-label">🔍 Filter Book/Job Status</div>
+              <select
+                className="tm-form-select"
+                value={jobStatusFilter}
+                onChange={e => setJobStatusFilter(e.target.value)}
+              >
+                <option value="">All Statuses</option>
                 {ALL_STATUSES.map(s => (
                   <option key={s} value={s}>{s}</option>
                 ))}
               </select>
             </div>
             <div>
-              <div className="tm-field-label">📅 Date</div>
-              <input type="date" className="tm-form-input"
-                value={form.date}
-                onChange={e => setF("date", e.target.value)} />
+              <div className="tm-field-label">📅 Filter Book by Receive Date</div>
+              <input
+                type="date"
+                className="tm-form-input"
+                value={jobReceiveDateFilter}
+                onChange={e => setJobReceiveDateFilter(e.target.value)}
+              />
             </div>
           </div>
 
-          {/* Book/Job */}
-          <div>
-            <div className="tm-field-label">📖 Book/Job</div>
-            {!form.projectId ? (
-              <div className="tm-job-placeholder">
-                📌 Please select a Project first
-              </div>
-            ) : (
+          {/* Row 3: Book/Job, Process (Stage) */}
+          <div className="tm-bookjob-row">
+            <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+              <div className="tm-field-label">📖 Book/Job</div>
               <CheckboxList
                 title="Available Jobs"
                 icon="📖"
@@ -483,18 +684,111 @@ function TaskModal({ mode, task, onClose, onSave,
                 valueKey="id"
                 labelKey="label"
               />
-            )}
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+              <div className="tm-field-label">⚙️ Process (Stage) <span className="req">*</span></div>
+              <CheckboxList
+                title="Available Processes"
+                icon="⚙️"
+                items={processes}
+                selected={form.processIds}
+                onChange={v => setF("processIds", v)}
+                allowDeselect
+                valueKey="id"
+                labelKey="name"
+                required={true}
+              />
+              {errors.processIds && (
+                <span className="tm-form-error">{errors.processIds}</span>
+              )}
+            </div>
           </div>
 
-          {/* Pages & Complexity */}
-          <div className="tm-two-col">
+          {/* Row 4: Pages, Assigned Pages, Chapter/Article/Book, Complexity */}
+          <div className="tm-four-col" style={{ alignItems: "start" }}>
             <div>
               <div className="tm-field-label">📄 Pages</div>
               <input type="number" className="tm-form-input"
                 placeholder="Job pages"
                 value={form.totalPages}
                 onChange={e => setF("totalPages", e.target.value)} />
+              {form.pagesType === "All Pages" && form.totalPages && (
+                <div style={{
+                  marginTop: '6px',
+                  fontSize: '0.78rem',
+                  color: '#2d6a4f',
+                  background: '#d8f3dc',
+                  borderRadius: '6px',
+                  padding: '4px 10px',
+                  fontWeight: 600,
+                }}>
+                  ✅ All {form.totalPages} pages assigned
+                </div>
+              )}
             </div>
+
+            <div>
+              <div className="tm-field-label">📄 Assigned Pages</div>
+              <select className="tm-form-select" value={form.pagesType}
+                onChange={e => setF("pagesType", e.target.value)}>
+                <option value="">-- Select --</option>
+                <option value="All Pages">All Pages</option>
+                <option value="Start Page - End Page">Start-End Page</option>
+              </select>
+              {form.pagesType === "Start Page - End Page" && (
+                <div className="tm-two-col" style={{ marginTop: "8px" }}>
+                  <input className="tm-form-input" placeholder="Start"
+                    type="number" min="1"
+                    value={form.pagesStart}
+                    onChange={e => setF("pagesStart", e.target.value)} />
+                  <input className="tm-form-input" placeholder="End"
+                    type="number" min="1"
+                    value={form.pagesEnd}
+                    onChange={e => setF("pagesEnd", e.target.value)} />
+                </div>
+              )}
+              {form.pagesType === "Start Page - End Page"
+                && form.pagesStart && form.pagesEnd
+                && parseInt(form.pagesEnd) >= parseInt(form.pagesStart) && (
+                  <div style={{
+                    marginTop: '6px',
+                    fontSize: '0.78rem',
+                    color: '#1e40af',
+                    background: '#dbeafe',
+                    borderRadius: '6px',
+                    padding: '4px 10px',
+                    fontWeight: 600,
+                  }}>
+                    📄 {parseInt(form.pagesEnd) - parseInt(form.pagesStart) + 1} pages assigned
+                  </div>
+                )}
+            </div>
+
+            <div>
+              <div className="tm-field-label">📑 Chapter / Article / Book</div>
+              <select className="tm-form-select" value={form.chapterType}
+                onChange={e => setF("chapterType", e.target.value)}>
+                <option value="">-- Select --</option>
+                <option value="Full Book">Full Book</option>
+                <option value="All Article">All Article</option>
+                <option value="All Batch">All Batch</option>
+                <option value="All Chapter">All Chapter</option>
+                <option value="Start Page - End Page">
+                  Start A/B/C - End A/B/C
+                </option>
+              </select>
+              {form.chapterType === "Start Page - End Page" && (
+                <div className="tm-two-col" style={{ marginTop: "8px" }}>
+                  <input className="tm-form-input" placeholder="Start"
+                    value={form.chapterStart}
+                    onChange={e => setF("chapterStart", e.target.value)} />
+                  <input className="tm-form-input" placeholder="End"
+                    value={form.chapterEnd}
+                    onChange={e => setF("chapterEnd", e.target.value)} />
+                </div>
+              )}
+            </div>
+
             <div>
               <div style={{ display: "flex", alignItems: "center", height: "24px" }}>
                 <label className="tm-checkbox-item"
@@ -510,7 +804,8 @@ function TaskModal({ mode, task, onClose, onSave,
                   />
                   <span style={{
                     fontWeight: 600, color: "#4a5568",
-                    fontSize: "0.82rem"
+                    fontSize: "0.82rem",
+                    marginLeft: "6px"
                   }}>
                     Add Complexity
                   </span>
@@ -535,85 +830,63 @@ function TaskModal({ mode, task, onClose, onSave,
             </div>
           </div>
 
-          {/* Process */}
-          <div>
-            <div className="tm-field-label">
-              ⚙️ Process (Stage) <span className="req">*</span>
+          {/* Row 5: Assigned Employee(s), Assigned By */}
+          <div className="tm-two-col" style={{ alignItems: "start" }}>
+            <div>
+              <SearchableDropdown
+                title="Assigned Employee(s)"
+                icon="👥"
+                items={employees}
+                selected={form.employeeIds}
+                onChange={v => setF("employeeIds", v)}
+                valueKey="id"
+                labelKey="fullName"
+                isMulti={true}
+                placeholder="Select Employees"
+                required={true}
+              />
+              {errors.employeeIds && (
+                <span className="tm-form-error">{errors.employeeIds}</span>
+              )}
             </div>
-            <CheckboxList
-              title="Processes"
-              icon="⚙️"
-              items={processes}
-              selected={form.processIds}
-              onChange={v => setF("processIds", v)}
-              allowDeselect={false}
-              valueKey="id"
-              labelKey="name"
-            />
-            {errors.processIds && (
-              <span className="tm-form-error">{errors.processIds}</span>
-            )}
-          </div>
-
-          {/* Task Title */}
-          <div>
-            <div className="tm-field-label">
-              🏷️ Task Title
-              <span className="tm-field-hint">
-                (Optional · Auto-generated if empty)
-              </span>
+            <div>
+              <SearchableDropdown
+                title="Assigned By"
+                icon="👤"
+                items={employees}
+                selected={form.assignedBy}
+                onChange={v => setF("assignedBy", v)}
+                valueKey="id"
+                labelKey="fullName"
+                isMulti={false}
+                placeholder="Select Employee"
+              />
             </div>
-            <input className="tm-form-input"
-              placeholder="Enter task title or leave blank for auto-generation"
-              value={form.title}
-              onChange={e => setF("title", e.target.value)} />
           </div>
 
-          {/* Employees */}
-          <div>
-            <div className="tm-field-label">
-              👥 Assigned Employee(s) <span className="req">*</span>
+          {/* Row 6: Title, Status, Estimate Hours */}
+          <div className="tm-three-col" style={{ alignItems: "start" }}>
+            <div>
+              <div className="tm-field-label">
+                🏷️ Task Title
+                <span className="tm-field-hint">
+                  (Optional  Auto-generated if empty)
+                </span>
+              </div>
+              <input className="tm-form-input"
+                placeholder="Enter task title or leave blank for auto-generation"
+                value={form.title}
+                onChange={e => setF("title", e.target.value)} />
             </div>
-            <CheckboxList
-              title="Employees"
-              icon="👤"
-              items={employees}
-              selected={form.employeeIds}
-              onChange={v => setF("employeeIds", v)}
-              allowDeselect={false}
-              valueKey="id"
-              labelKey="fullName"
-            />
-            {errors.employeeIds && (
-              <span className="tm-form-error">{errors.employeeIds}</span>
-            )}
-          </div>
-
-          {/* Assigned By */}
-          <div>
-            <div className="tm-field-label">👤 Assigned By</div>
-            <select className="tm-form-select"
-              value={form.assignedBy || ""}
-              onChange={e => setF("assignedBy", e.target.value || null)}>
-              <option value="">Select Employee</option>
-              {employees.map(emp => (
-                <option key={emp.id} value={emp.id}>{emp.fullName}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Description */}
-          <div>
-            <div className="tm-field-label">📝 Description</div>
-            <textarea className="tm-form-textarea"
-              placeholder="Enter task description (optional)"
-              value={form.description}
-              onChange={e => setF("description", e.target.value)}
-              rows={3} />
-          </div>
-
-          {/* Estimate Hours + Due Date */}
-          <div className="tm-two-col">
+            <div>
+              <div className="tm-field-label">🏷️ Status</div>
+              <select className="tm-form-select" value={form.status}
+                onChange={e => setF("status", e.target.value)}>
+                {ALL_STATUSES.map(s => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
             <div>
               <div className="tm-field-label">⏱️ Estimate Hours</div>
               <input className="tm-form-input" type="number"
@@ -621,101 +894,38 @@ function TaskModal({ mode, task, onClose, onSave,
                 value={form.estimateHours}
                 onChange={e => setF("estimateHours", e.target.value)} />
             </div>
+          </div>
+
+          {/* Row 7: Description, Assigned Date, Path, Due Date */}
+          <div className="tm-four-col" style={{ alignItems: "start" }}>
+            <div>
+              <div className="tm-field-label">📝 Description</div>
+              <textarea className="tm-form-textarea"
+                placeholder="Enter task description (optional)"
+                value={form.description}
+                onChange={e => setF("description", e.target.value)}
+                style={{ minHeight: '38px', height: '38px', resize: 'none' }}
+              />
+            </div>
+            <div>
+              <div className="tm-field-label">📅 Assigned Date</div>
+              <input type="date" className="tm-form-input"
+                value={form.date}
+                onChange={e => setF("date", e.target.value)} />
+            </div>
             <div>
               <div className="tm-field-label">📅 Due Date</div>
               <input type="date" className="tm-form-input"
                 value={form.dueDate}
                 onChange={e => setF("dueDate", e.target.value)} />
             </div>
-          </div>
-
-          {/* Assigned Pages & Chapter */}
-          <div className="tm-two-col">
             <div>
-              <div className="tm-field-label">📄 Assigned Pages</div>
-              <select className="tm-form-select" value={form.pagesType}
-                onChange={e => setF("pagesType", e.target.value)}>
-                <option value="">-- Select --</option>
-                <option value="All Pages">All Pages</option>
-                <option value="Start Page - End Page">Start-End Page</option>
-              </select>
-              {/* Read-only hint when auto-filled from book */}
-              {form.pagesType === "All Pages" && form.totalPages && (
-                <div style={{
-                  marginTop: '6px',
-                  fontSize: '0.78rem',
-                  color: '#2d6a4f',
-                  background: '#d8f3dc',
-                  borderRadius: '6px',
-                  padding: '4px 10px',
-                  fontWeight: 600,
-                }}>
-                  ✅ All {form.totalPages} pages assigned
-                </div>
-              )}
-              {form.pagesType === "Start Page - End Page" && (
-                <div className="tm-two-col" style={{ marginTop: "8px" }}>
-                  <input className="tm-form-input" placeholder="Start"
-                    type="number" min="1"
-                    value={form.pagesStart}
-                    onChange={e => setF("pagesStart", e.target.value)} />
-                  <input className="tm-form-input" placeholder="End"
-                    type="number" min="1"
-                    value={form.pagesEnd}
-                    onChange={e => setF("pagesEnd", e.target.value)} />
-                </div>
-              )}
-              {/* Show computed count for Start-End */}
-              {form.pagesType === "Start Page - End Page"
-                && form.pagesStart && form.pagesEnd
-                && parseInt(form.pagesEnd) >= parseInt(form.pagesStart) && (
-                  <div style={{
-                    marginTop: '6px',
-                    fontSize: '0.78rem',
-                    color: '#1e40af',
-                    background: '#dbeafe',
-                    borderRadius: '6px',
-                    padding: '4px 10px',
-                    fontWeight: 600,
-                  }}>
-                    📄 {parseInt(form.pagesEnd) - parseInt(form.pagesStart) + 1} pages assigned
-                  </div>
-                )}
+              <div className="tm-field-label">🔗 Path</div>
+              <input className="tm-form-input"
+                placeholder="Enter file/folder path"
+                value={form.serverPath}
+                onChange={e => setF("serverPath", e.target.value)} />
             </div>
-
-            <div>
-              <div className="tm-field-label">📑 Chapter / Article / Batch</div>
-              <select className="tm-form-select" value={form.chapterType}
-                onChange={e => setF("chapterType", e.target.value)}>
-                <option value="">-- Select --</option>
-                <option value="Full Book">Full Book</option>
-                <option value="All Article">All Article</option>
-                <option value="All Batch">All Batch</option>
-                <option value="All Chapter">All Chapter</option>
-                <option value="Start Page - End Page">
-                  Start A/B/C - End A/B/C
-                </option>
-              </select>
-              {form.chapterType === "Start Page - End Page" && (
-                <div className="tm-two-col" style={{ marginTop: "8px" }}>
-                  <input className="tm-form-input" placeholder="Start"
-                    value={form.chapterStart}
-                    onChange={e => setF("chapterStart", e.target.value)} />
-                  <input className="tm-form-input" placeholder="End"
-                    value={form.chapterEnd}
-                    onChange={e => setF("chapterEnd", e.target.value)} />
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Path */}
-          <div>
-            <div className="tm-field-label">🔗 Path</div>
-            <input className="tm-form-input"
-              placeholder="Enter file/folder path"
-              value={form.serverPath}
-              onChange={e => setF("serverPath", e.target.value)} />
           </div>
 
         </div>
@@ -761,6 +971,7 @@ export default function TaskManagement() {
   const [filterProcess, setFilterProcess] = useState("");
   const [filterEmployee, setFilterEmployee] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
+  const [filterFromDate, setFilterFromDate] = useState("");
 
   // Pagination
   const [itemsPerPage, setItemsPerPage] = useState(25);
@@ -812,6 +1023,7 @@ export default function TaskManagement() {
         ...(params.employeeId && { userId: params.employeeId }),
         ...(params.status && { status: params.status }),
         ...(params.search && { search: params.search }),
+        ...(params.fromDate && { fromDate: params.fromDate }),
       });
       const data = await apiCall(`/tasks/search?${query}`);
       setTasks(data.content.map(mapTask));
@@ -836,6 +1048,7 @@ export default function TaskManagement() {
         employeeId: filterEmployee,
         status: filterStatus,
         search,
+        fromDate: filterFromDate,
       });
     }, 300);
     return () => clearTimeout(handler);
@@ -847,6 +1060,7 @@ export default function TaskManagement() {
     filterEmployee,
     filterStatus,
     search,
+    filterFromDate,
     loadTasks
   ]);
 
@@ -898,6 +1112,7 @@ export default function TaskManagement() {
       employeeId: filterEmployee,
       status: filterStatus,
       search,
+      fromDate: filterFromDate,
     });
   };
 
@@ -909,6 +1124,7 @@ export default function TaskManagement() {
     setFilterProcess("");
     setFilterEmployee("");
     setFilterStatus("");
+    setFilterFromDate("");
     loadTasks(0);
   };
 
@@ -1147,6 +1363,13 @@ export default function TaskManagement() {
             </select>
           </div>
 
+          <div className="tm-filter-group">
+            <span className="tm-filter-label">📅 From Date</span>
+            <input type="date" className="tm-filter-input"
+              value={filterFromDate}
+              onChange={e => setFilterFromDate(e.target.value)} />
+          </div>
+
           <div className="tm-filter-group"
             style={{ justifyContent: "flex-end" }}>
             <span className="tm-filter-label">&nbsp;</span>
@@ -1176,14 +1399,14 @@ export default function TaskManagement() {
             <table className="tm-table">
               <thead>
                 <tr>
-                  <th className="col-date">Assigned Date</th>
+                  <th className="col-date">Ass Date</th>
                   <th className="col-client">Client</th>
                   <th className="col-project">Project</th>
                   <th className="col-workflow">Task Name</th>
                   <th className="col-process">Process</th>
                   <th className="col-job">Title / ISBN</th>
                   <th className="col-totalpages">Pages</th>
-                  <th className="col-pages">A.Page</th>
+                  <th className="col-pages">Ass.Page</th>
                   <th className="col-employee">Employee Name</th>
                   <th className="col-chapter">Chap / Art / Bat</th>
                   <th className="col-duedate">Due Date</th>
@@ -1364,8 +1587,3 @@ export default function TaskManagement() {
     </div>
   );
 }
-
-
-
-
-

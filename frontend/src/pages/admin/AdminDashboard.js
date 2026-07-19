@@ -1,12 +1,10 @@
 // src/pages/admin/AdminDashboard.js
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { apiCall, getCurrentUser, getRolePrefix } from '../../utils/api';
+import { apiCall, getCurrentUser, API_BASE } from '../../utils/api';
 import './AdminDashboard.css';
 
 const AdminDashboard = () => {
-  const navigate = useNavigate();
   const user = getCurrentUser();
   const roles = user?.roles || [];
   const isAdmin = roles.includes('Admin');
@@ -18,6 +16,8 @@ const AdminDashboard = () => {
 
   const [dashboardData, setDashboardData] = useState(null);
   const [loadingStats, setLoadingStats] = useState(true);
+  const [announcement, setAnnouncement] = useState('');
+  const [celebration, setCelebration] = useState({ isCelebration: false, text: '', photoUrl: '' });
 
   const fetchDashboardStats = async () => {
     try {
@@ -82,6 +82,23 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleAdminRecheckIn = async (employeeUserId, employeeName) => {
+    if (!employeeUserId) return;
+    const confirmAction = window.confirm(`Are you sure you want to Re-Check In ${employeeName}? This will reset their check-out time so they can check out again later.`);
+    if (!confirmAction) return;
+
+    try {
+      await apiCall(`/attendance/admin/recheck-in/${employeeUserId}`, 'POST');
+      refreshCheckIns();
+      if (employeeUserId === user?.userId) {
+        fetchTodayAttendance();
+      }
+      alert(`Success: ${employeeName} has been re-checked in.`);
+    } catch (err) {
+      alert(`Failed to re-check in employee: ${err.message}`);
+    }
+  };
+
   const formatIsoTime = (isoString) => {
     if (!isoString) return '—';
     try {
@@ -97,24 +114,31 @@ const AdminDashboard = () => {
     }
   };
 
+  const fetchAnnouncement = async () => {
+    try {
+      const data = await apiCall('/settings/public');
+      if (data) {
+        if (data.announcement) {
+          setAnnouncement(data.announcement);
+        }
+        setCelebration({
+          isCelebration: data.isCelebration || false,
+          text: data.celebrationText || '',
+          photoUrl: data.celebrationPhotoUrl || '',
+        });
+      }
+    } catch (err) {
+      console.warn('Failed to fetch public settings/announcement:', err.message);
+    }
+  };
+
   useEffect(() => {
     refreshCheckIns();
     fetchTodayAttendance();
     fetchDashboardStats();
+    fetchAnnouncement();
   }, []);
 
-  const handleQuickAction = (action) => {
-    const prefix = getRolePrefix(roles);
-    if (action === 'addUser') {
-      navigate(`/${prefix}/users`, { state: { openAddUser: true } });
-    } else if (action === 'addProject') {
-      navigate(`/${prefix}/projects`, { state: { openAddProject: true } });
-    } else if (action === 'addTask') {
-      navigate(`/${prefix}/tasks`, { state: { openAddTask: true } });
-    } else if (action === 'viewReports') {
-      navigate(`/${prefix}/reports`);
-    }
-  };
 
   const statsList = [
     isAdmin && {
@@ -216,84 +240,160 @@ const AdminDashboard = () => {
       </div>
 
       <div className="dashboard-flex-row">
-        <div className="action-card">
-          <h4 className="card-label">Quick Actions</h4>
-          <div className="action-buttons">
-            {isAdmin && (
-              <>
-                <button className="btn btn-primary" onClick={() => handleQuickAction('addUser')}>+ Add User</button>
-                <button className="btn btn-primary" onClick={() => handleQuickAction('addProject')}>+ Add Project</button>
-              </>
-            )}
-            <button className="btn btn-primary" onClick={() => handleQuickAction('addTask')}>+ Add Task</button>
-            {isAdmin && (
-              <button className="btn btn-outline" onClick={() => handleQuickAction('viewReports')}>View Reports</button>
-            )}
+        {celebration.isCelebration && (
+          <div className="celebration-card">
+            <h4 className="card-label">🎉 Celebration</h4>
+            <div className="celebration-content-wrapper" style={{ flex: 1, overflowY: 'auto' }}>
+              <div className="celebration-content" style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minHeight: '100%',
+                padding: '10px 0',
+                background: 'linear-gradient(135deg, #fff5f5 0%, #fff0f6 50%, #f3f0ff 100%)',
+                borderRadius: '8px',
+                boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.02)',
+                borderLeft: '5px solid #d946ef'
+              }}>
+                {celebration.photoUrl && (
+                  <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+                    <img
+                      src={`${API_BASE}${celebration.photoUrl}`}
+                      alt="Celebration"
+                      style={{
+                        maxWidth: '90%',
+                        maxHeight: '180px',
+                        objectFit: 'contain',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+                      }}
+                    />
+                  </div>
+                )}
+                {celebration.text && (
+                  <div style={{
+                    fontSize: '0.92rem',
+                    fontWeight: '700',
+                    color: '#4a044e',
+                    textAlign: 'center',
+                    lineHeight: '1.5',
+                    padding: '8px 12px',
+                    background: 'rgba(255,255,255,0.7)',
+                    borderRadius: '8px',
+                    border: '1px dashed #f5d0fe',
+                    width: '90%',
+                    boxSizing: 'border-box'
+                  }}>
+                    {celebration.text}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="announcement-card">
+          <h4 className="card-label">📢 Announcement</h4>
+          <div className="announcement-content-wrapper">
+            <div className="announcement-content" style={{
+              fontSize: '0.9rem',
+              color: '#2d3748',
+              lineHeight: '1.6',
+              background: 'linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 100%)',
+              padding: '16px 20px',
+              borderRadius: '10px',
+              borderLeft: '4px solid #00a3ff',
+              whiteSpace: 'pre-wrap',
+              minHeight: '100px',
+              boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.02)'
+            }}>
+              <div style={{ whiteSpace: 'pre-wrap' }}>
+                {announcement || "Welcome to the production portal! No new announcements today. Have a productive shift! 😊"}
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="checkins-card">
-          <h4 className="card-label">Today's Employee Check-ins</h4>
-          {loadingCheckIns ? (
-            <p className="loading-text">Loading check-in status...</p>
-          ) : checkIns.length === 0 ? (
-            <p className="no-data-text">No check-in records for today.</p>
-          ) : (
-            <div className="checkins-table-wrapper">
-              <table className="checkins-table">
-                <thead>
-                  <tr>
-                    <th>Employee</th>
-                    <th>Check-In</th>
-                    <th>Check-Out</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {checkIns.map((ci) => {
-                    const formatTime = (isoStr) => {
-                      if (!isoStr) return '—';
-                      try {
-                        return new Date(isoStr).toLocaleTimeString('en-US', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        });
-                      } catch {
-                        return '—';
-                      }
-                    };
+        {isAdmin && (
+          <div className="checkins-card">
+            <h4 className="card-label">Today's Employee Check-ins</h4>
+            {loadingCheckIns ? (
+              <p className="loading-text">Loading check-in status...</p>
+            ) : checkIns.length === 0 ? (
+              <p className="no-data-text">No check-in records for today.</p>
+            ) : (
+              <div className="checkins-table-wrapper">
+                <table className="checkins-table">
+                  <thead>
+                    <tr>
+                      <th>Employee</th>
+                      <th>Check-In</th>
+                      <th>Check-Out</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {checkIns.map((ci) => {
+                      const formatTime = (isoStr) => {
+                        if (!isoStr) return '—';
+                        try {
+                          return new Date(isoStr).toLocaleTimeString('en-US', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          });
+                        } catch {
+                          return '—';
+                        }
+                      };
 
-                    let statusLabel = 'Not Present';
-                    let statusCls = 'status-absent';
-                    if (ci.checkInTime) {
-                      if (ci.checkOutTime) {
-                        statusLabel = 'Completed';
-                        statusCls = 'status-completed';
-                      } else {
-                        statusLabel = 'Checked In';
-                        statusCls = 'status-checkedin';
+                      let statusLabel = 'Not Present';
+                      let statusCls = 'status-absent';
+                      if (ci.checkInTime) {
+                        if (ci.checkOutTime) {
+                          statusLabel = 'Completed';
+                          statusCls = 'status-completed';
+                        } else {
+                          statusLabel = 'Checked In';
+                          statusCls = 'status-checkedin';
+                        }
+                      } else if (ci.status === 'P') {
+                        statusLabel = 'Present';
+                        statusCls = 'status-present';
                       }
-                    } else if (ci.status === 'P') {
-                      statusLabel = 'Present';
-                      statusCls = 'status-present';
-                    }
 
-                    return (
-                      <tr key={ci.employeeId}>
-                        <td className="emp-name">{ci.employeeName}</td>
-                        <td className="time-col">{formatTime(ci.checkInTime)}</td>
-                        <td className="time-col">{formatTime(ci.checkOutTime)}</td>
-                        <td>
-                          <span className={`status-badge ${statusCls}`}>{statusLabel}</span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+                      return (
+                        <tr key={ci.employeeId}>
+                          <td className="emp-name">{ci.employeeName}</td>
+                          <td className="time-col">{formatTime(ci.checkInTime)}</td>
+                          <td className="time-col">{formatTime(ci.checkOutTime)}</td>
+                          <td>
+                            <span className={`status-badge ${statusCls}`}>{statusLabel}</span>
+                          </td>
+                          <td className="actions-col">
+                            {ci.checkInTime && ci.checkOutTime ? (
+                              <button
+                                className="recheckin-btn"
+                                onClick={() => handleAdminRecheckIn(ci.userId, ci.employeeName)}
+                                title="Re-Check In (Reset Check-out)"
+                              >
+                                🔄 Re-Check In
+                              </button>
+                            ) : (
+                              <span className="no-actions">—</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="welcome-card">
@@ -310,3 +410,6 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
+
+
+

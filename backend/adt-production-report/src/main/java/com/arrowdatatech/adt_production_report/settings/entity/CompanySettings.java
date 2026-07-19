@@ -110,6 +110,19 @@ public class CompanySettings {
     @Builder.Default
     private String thirukkuralTranslation = "all";
 
+    @Column(name = "announcement", columnDefinition = "TEXT")
+    private String announcement;
+
+    @Column(name = "is_celebration", nullable = false)
+    @Builder.Default
+    private Boolean isCelebration = false;
+
+    @Column(name = "celebration_text", columnDefinition = "TEXT")
+    private String celebrationText;
+
+    @Column(name = "celebration_photo_url", columnDefinition = "TEXT")
+    private String celebrationPhotoUrl;
+
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
 }

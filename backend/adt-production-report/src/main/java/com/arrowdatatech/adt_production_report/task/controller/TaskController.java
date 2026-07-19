@@ -8,11 +8,13 @@ import com.arrowdatatech.adt_production_report.task.dto.*;
 import com.arrowdatatech.adt_production_report.task.service.TaskService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -36,11 +38,12 @@ public class TaskController {
             @RequestParam(required = false) UUID userId,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String search,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "25") int size) {
 
         Page<TaskResponse> result = taskService.searchTasks(
-                projectId, clientId, workflowId, processId, userId, status, search, page, size);
+                projectId, clientId, workflowId, processId, userId, status, search, fromDate, page, size);
 
         PagedResponse<TaskResponse> response = PagedResponse
                 .<TaskResponse>builder()

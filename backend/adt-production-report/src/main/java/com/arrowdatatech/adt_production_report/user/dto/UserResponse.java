@@ -19,6 +19,7 @@ public class UserResponse {
     private String phone;
     private String timezone;
     private Boolean isActive;
+    private String employeeStatus;
     private Boolean isTopPerformer;
     private Boolean showCalendarStats;
     private LocalDate joiningDate;

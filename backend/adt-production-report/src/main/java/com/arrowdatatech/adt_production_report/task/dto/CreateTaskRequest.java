@@ -34,6 +34,9 @@ public class CreateTaskRequest {
     @JsonProperty("dueDate")
     private LocalDate dueDate;
 
+    @JsonProperty("assignedDate")
+    private LocalDate assignedDate;
+
     // Pages string: "All Pages" | "1 - 50" | "50"
     @JsonProperty("assignedPages")
     private Integer assignedPages;

@@ -144,6 +144,7 @@ export default function HourlyGraph() {
     const [isCheckedIn, setIsCheckedIn] = useState(true); // Default to true to prevent screen flash
     const [notification, setNotification] = useState(null); // Floating pop-up notification
     const lastNotifiedHourRef = useRef(null);
+    const lastNotifiedDateRef = useRef(null);
 
     // Keep a live ref to rows so the auto-save closure never goes stale
     const rowsRef = useRef(rows);
@@ -244,6 +245,13 @@ export default function HourlyGraph() {
                     setRows(data?.rows || []);
                 }
                 setActiveDay(data?.activeDay || "");
+
+                // Keep check-in status updated dynamically
+                if (!isAdmin && data?.rows) {
+                    const myRow = data.rows.find(r => r.userId === currentUserId);
+                    setIsCheckedIn(!!(myRow?.inTime));
+                }
+
                 setError("");
             } catch (err) {
                 console.error("Failed to load logs:", err);
@@ -261,7 +269,7 @@ export default function HourlyGraph() {
         }, 60000);
 
         return () => clearInterval(pollInterval);
-    }, [periodDate]);
+    }, [periodDate, isAdmin, currentUserId]);
 
     // Keep hourCount in sync with maximum hours array length in rows
     useEffect(() => {
@@ -276,6 +284,12 @@ export default function HourlyGraph() {
         if (isAdmin || rows.length === 0) return;
         const myRow = rows.find(r => r.userId === currentUserId);
         if (!myRow) return;
+
+        const dateKey = `${periodDate}::${myRow.inTime || ''}`;
+        if (lastNotifiedDateRef.current !== dateKey) {
+            lastNotifiedDateRef.current = dateKey;
+            lastNotifiedHourRef.current = null;
+        }
 
         const sendDesktopNotification = (hourIdx) => {
             if ('Notification' in window && Notification.permission === 'granted') {
@@ -323,7 +337,7 @@ export default function HourlyGraph() {
         const timer = setInterval(checkReminder, 30000); // Check every 30 seconds
         return () => clearInterval(timer);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [rows, hourCount, shifts]);
+    }, [rows, hourCount, shifts, periodDate, currentUserId]);
 
     const getInitials = (name) => {
         if (!name) return "?";
@@ -1114,6 +1128,9 @@ export default function HourlyGraph() {
                                                     disabled={!isAdmin}
                                                 >
                                                     <option value="Absent">Absent</option>
+                                                    {!shifts.some((s) => s.name?.toLowerCase() === 'trainee') && (
+                                                        <option value="Trainee">Trainee</option>
+                                                    )}
                                                     {shifts.map((s) => (
                                                         <option key={s.id} value={s.name}>{s.name}</option>
                                                     ))}
@@ -1147,7 +1164,7 @@ export default function HourlyGraph() {
                                                     (() => {
                                                         const isDropdownOpen = openProjectDropdownRowId === row.id;
                                                         const selectedProjects = row.project ? row.project.split(",").map(p => p.trim()).filter(Boolean) : [];
-                                                        
+
                                                         return (
                                                             <div className={`hg-project-multiselect-container ${isDropdownOpen ? "active" : ""}`}>
                                                                 <button
@@ -1286,4 +1303,3 @@ export default function HourlyGraph() {
         </div>
     );
 }
-

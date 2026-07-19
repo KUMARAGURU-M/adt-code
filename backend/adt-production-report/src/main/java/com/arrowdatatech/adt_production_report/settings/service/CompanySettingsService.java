@@ -58,6 +58,10 @@ public class CompanySettingsService {
         if (request.getAllowedTypes() != null) settings.setAllowedTypes(request.getAllowedTypes().trim());
         if (request.getEnableThirukkural() != null) settings.setEnableThirukkural(request.getEnableThirukkural());
         if (request.getThirukkuralTranslation() != null) settings.setThirukkuralTranslation(request.getThirukkuralTranslation().trim());
+        if (request.getAnnouncement() != null) settings.setAnnouncement(request.getAnnouncement().trim());
+        if (request.getIsCelebration() != null) settings.setIsCelebration(request.getIsCelebration());
+        if (request.getCelebrationText() != null) settings.setCelebrationText(request.getCelebrationText().trim());
+        if (request.getCelebrationPhotoUrl() != null) settings.setCelebrationPhotoUrl(request.getCelebrationPhotoUrl().trim());
 
         if (request.getLetterPadImageId() != null) {
             MediaFile letterPad = mediaFileRepository.findById(request.getLetterPadImageId())
@@ -130,21 +134,11 @@ public class CompanySettingsService {
                 .collect(Collectors.toList());
 
         if (quotes.isEmpty()) {
-            java.util.List<String> defaultQuotes = java.util.List.of(
+            quotes = java.util.List.of(
                 "Success is not final, failure is not fatal: It is the courage to continue that counts.",
                 "The only way to do great work is to love what you do.",
                 "Believe you can and you're halfway there."
             );
-            int order = 0;
-            for (String qText : defaultQuotes) {
-                MotivationalQuote quote = MotivationalQuote.builder()
-                        .quoteText(qText)
-                        .isActive(true)
-                        .sortOrder(order++)
-                        .build();
-                motivationalQuoteRepository.save(quote);
-            }
-            quotes = defaultQuotes;
         }
 
         return CompanySettingsResponse.builder()
@@ -171,6 +165,10 @@ public class CompanySettingsService {
                 .allowedTypes(s.getAllowedTypes())
                 .enableThirukkural(s.getEnableThirukkural())
                 .thirukkuralTranslation(s.getThirukkuralTranslation())
+                .announcement(s.getAnnouncement())
+                .isCelebration(s.getIsCelebration())
+                .celebrationText(s.getCelebrationText())
+                .celebrationPhotoUrl(s.getCelebrationPhotoUrl())
                 .loginQuotes(quotes)
                 .build();
     }

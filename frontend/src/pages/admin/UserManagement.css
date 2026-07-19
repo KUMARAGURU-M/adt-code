@@ -35,9 +35,9 @@
   background-color: #00a3ff;
   color: white;
   border: none;
-  padding: 9px 18px;
+  padding: 10px 22px;
   border-radius: 6px;
-  font-size: 0.82rem;
+  font-size: 0.85rem;
   font-weight: 700;
   cursor: pointer;
   transition: opacity 0.2s;
@@ -54,9 +54,8 @@
   overflow-x: auto;
   overflow-y: auto;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  max-height: calc(100vh - 240px);
-  min-height: 520px;
-
+  max-height: calc(100vh - 180px);
+  min-height: 700px;
 }
 
 .user-table {
@@ -72,7 +71,7 @@
   top: 0;
   z-index: 10;
   background-color: #f8fafc;
-  padding: 15px 15px;
+  padding: 18px 15px;
   color: #475569;
   font-weight: 800;
   font-size: 14px;
@@ -83,7 +82,7 @@
 }
 
 .user-table td {
-  padding: 15px 15px;
+  padding: 18px 15px;
   border-bottom: 1px solid #f1f5f9;
   color: #4a5568;
   vertical-align: middle;
@@ -166,15 +165,34 @@
 .status-badge {
   font-weight: 600;
   text-transform: capitalize;
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 11px;
 }
 
 .status-badge.active {
-  color: #38a169;
-  text-transform: uppercase;
+  color: #15803d;
+  background: #dcfce7;
 }
 
 .status-badge.inactive {
-  color: #e53e3e;
+  color: #b91c1c;
+  background: #fee2e2;
+}
+
+.status-badge.relieved {
+  color: #1e40af;
+  background: #dbeafe;
+}
+
+.status-badge.long-leave {
+  color: #92400e;
+  background: #fef3c7;
+}
+
+.status-badge.abscond {
+  color: #fff;
+  background: #991b1b;
 }
 
 .top-performer {
@@ -193,7 +211,7 @@
   font-size: 13px;
   color: #4a5568;
   cursor: pointer;
-  padding: 5px 8px;
+  padding: 8px 12px;
   border-radius: 6px;
   outline: none;
   min-width: 160px;

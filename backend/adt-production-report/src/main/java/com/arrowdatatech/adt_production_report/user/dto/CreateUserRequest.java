@@ -49,5 +49,7 @@ public class CreateUserRequest {
 
     private Boolean isActive;
 
+    private String employeeStatus;
+
     private LocalDate joiningDate;
 }

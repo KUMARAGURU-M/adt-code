@@ -48,7 +48,8 @@
 }
 
 .et-table-card {
-  padding: 20px 0; /* Padding inside the card but outside the table */
+  padding: 20px 0;
+  /* Padding inside the card but outside the table */
 }
 
 /* FILTERS */
@@ -84,7 +85,8 @@
   transition: all 0.2s ease;
 }
 
-.et-select:focus, .et-input-date:focus {
+.et-select:focus,
+.et-input-date:focus {
   outline: none;
   border-color: #5b75f0;
   box-shadow: 0 0 0 3px rgba(91, 117, 240, 0.15);
@@ -122,10 +124,12 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 0.75rem;
-  min-width: 1200px; /* Ensure horizontal scroll on small screens */
+  min-width: 1200px;
+  /* Ensure horizontal scroll on small screens */
 }
 
-.et-table th, .et-table td {
+.et-table th,
+.et-table td {
   padding: 12px 8px;
   text-align: center;
   border-bottom: 1px solid #f1f5f9;
@@ -166,7 +170,8 @@
 .et-td-job {
   min-width: 180px;
   max-width: 220px;
-  white-space: pre-wrap; /* allow newline for job/isbn */
+  white-space: pre-wrap;
+  /* allow newline for job/isbn */
   color: #475569;
 }
 
@@ -174,6 +179,11 @@
   min-width: 150px;
   max-width: 200px;
   color: #475569;
+}
+
+.et-td-duedate {
+  min-width: 150px;
+  white-space: nowrap;
 }
 
 .et-td-chapter {

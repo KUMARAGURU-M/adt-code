@@ -71,7 +71,7 @@ public class UserService {
     // ─────────────────────────────────────────────
     @Transactional(readOnly = true)
     public List<UserListResponse> getAllUsers() {
-        List<User> users = userRepository.findByIsActiveTrueAndDeletedAtIsNull();
+        List<User> users = userRepository.findAllNonDeleted();
         List<UserListResponse> responses = users.stream()
                 .map(this::toUserListResponse)
                 .collect(Collectors.toList());
@@ -180,12 +180,17 @@ public class UserService {
         }
 
         // 1. Create user auth record
+        // Derive isActive from employeeStatus
+        String empStatus = request.getEmployeeStatus() != null
+                ? request.getEmployeeStatus() : "Active";
+        boolean derivedActive = "Active".equalsIgnoreCase(empStatus);
+
         User user = User.builder()
                 .userCode(request.getUserCode())
                 .email(request.getEmail())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .isActive(request.getIsActive() != null
-                        ? request.getIsActive() : true)
+                        ? request.getIsActive() : derivedActive)
                 .updatedAt(OffsetDateTime.now())
                 .build();
         user = userRepository.saveAndFlush(user);
@@ -202,6 +207,7 @@ public class UserService {
                         ? request.getIsTopPerformer() : false)
                 .showCalendarStats(request.getShowCalendarStats() != null
                         ? request.getShowCalendarStats() : true)
+                .employeeStatus(empStatus)
                 .updatedAt(OffsetDateTime.now())
                 .build();
         profileRepository.saveAndFlush(profile);
@@ -263,10 +269,17 @@ public class UserService {
             user.setEmail(request.getEmail());
         }
 
-        // Update active status
-        if (request.getIsActive() != null) {
+        // Update active status - derive from employeeStatus if provided
+        if (request.getEmployeeStatus() != null) {
+            boolean derivedActive = "Active".equalsIgnoreCase(request.getEmployeeStatus());
+            user.setIsActive(derivedActive);
+            if (!derivedActive) {
+                sessionRepository.revokeAllByUserId(userId);
+                log.info("Revoked all sessions for non-active user (status={}): {}",
+                        request.getEmployeeStatus(), userId);
+            }
+        } else if (request.getIsActive() != null) {
             user.setIsActive(request.getIsActive());
-            // Revoke all sessions if deactivating
             if (!request.getIsActive()) {
                 sessionRepository.revokeAllByUserId(userId);
                 log.info("Revoked all sessions for deactivated user: {}",
@@ -292,6 +305,9 @@ public class UserService {
         }
         if (request.getShowCalendarStats() != null) {
             profile.setShowCalendarStats(request.getShowCalendarStats());
+        }
+        if (request.getEmployeeStatus() != null) {
+            profile.setEmployeeStatus(request.getEmployeeStatus());
         }
         if (request.getJoiningDate() != null) {
             profile.setJoiningDate(request.getJoiningDate());
@@ -774,6 +790,8 @@ public class UserService {
                 .role(primaryRole)
                 .shift(currentShift)
                 .isActive(user.getIsActive())
+                .employeeStatus(profile != null
+                        ? profile.getEmployeeStatus() : "Active")
                 .isTopPerformer(profile != null
                         ? profile.getIsTopPerformer() : false)
                 .profilePhotoUrl(null)
@@ -805,6 +823,8 @@ public class UserService {
                 .timezone(profile != null
                         ? profile.getTimezone() : "Asia/Kolkata")
                 .isActive(user.getIsActive())
+                .employeeStatus(profile != null
+                        ? profile.getEmployeeStatus() : "Active")
                 .isTopPerformer(profile != null
                         ? profile.getIsTopPerformer() : false)
                 .showCalendarStats(profile != null

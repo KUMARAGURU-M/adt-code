@@ -513,6 +513,24 @@ public class AttendanceService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
+    public AttendanceRecordResponse adminRecheckIn(UUID userId) {
+        AttendanceEmployee emp = employeeRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("AttendanceEmployee", "userId", userId));
+
+        LocalDate today = LocalDate.now();
+        AttendanceRecord record = recordRepository
+                .findByEmployeeIdAndAttendanceDate(emp.getId(), today)
+                .orElseThrow(() -> new BadRequestException("No attendance record found for today."));
+
+        record.setCheckOutTime(null);
+        record.setStatus("P");
+        record.setUpdatedAt(OffsetDateTime.now());
+        record = recordRepository.save(record);
+
+        return toRecordResponse(emp, record);
+    }
+
     private AttendanceRecordResponse toRecordResponse(AttendanceEmployee emp, AttendanceRecord record) {
         if (record == null) {
             return AttendanceRecordResponse.builder()

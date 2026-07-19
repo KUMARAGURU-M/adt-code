@@ -61,6 +61,10 @@ public class EmployeeProfile {
     @Column(name = "show_calendar_stats", nullable = false)
     @Builder.Default
     private Boolean showCalendarStats = true;
+
+    @Column(name = "employee_status", nullable = false, length = 20)
+    @Builder.Default
+    private String employeeStatus = "Active";
     
     @Column(name = "exclude_from_hourly_graph", nullable = false)
     @Builder.Default

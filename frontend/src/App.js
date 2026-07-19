@@ -14,6 +14,10 @@ import Login from './pages/auth/Login/Login';
 /* ── Employee Portal ── */
 import EmpDashboard from './pages/user/EmpDashboard';
 import WorkPortal from './pages/user/WorkPortal';
+import EmpWorkwise from './pages/user/EmpWorkwise';
+import EmpCalendar from './pages/user/EmpCalendar';
+import EmpTask from './pages/user/EmpTask';
+import EmpLeave from './pages/user/EmpLeave';
 
 /* ── Admin Pages ── */
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -40,7 +44,31 @@ import ChatWidget from './components/layouts/ChatWidget';
 import DigiConvertor from './pages/admin/DigiConvertor';
 import HourlyReminder from './components/layouts/HourlyReminder';
 
+import EmpCheckInGuard from './components/layouts/EmpCheckInGuard';
+
 import { getCurrentUser, getRolePrefix } from './utils/api';
+
+/* ── Role Component Wrappers ── */
+const RoleWorkwiseWrapper = () => {
+  const user = getCurrentUser();
+  const roles = user?.roles || [];
+  const isEmp = getRolePrefix(roles) === 'executive' || ((roles.includes('Employee') || roles.includes('Executive')) && !roles.includes('Admin') && !roles.includes('Manager') && !roles.includes('Team Leader'));
+  return isEmp ? <EmpWorkwise /> : <RoleWorkwiseDashboard />;
+};
+
+const RoleTasksWrapper = () => {
+  const user = getCurrentUser();
+  const roles = user?.roles || [];
+  const isEmp = getRolePrefix(roles) === 'executive' || ((roles.includes('Employee') || roles.includes('Executive')) && !roles.includes('Admin') && !roles.includes('Manager') && !roles.includes('Team Leader'));
+  return isEmp ? <EmpTask /> : <TaskManagement />;
+};
+
+const RoleLeavesWrapper = () => {
+  const user = getCurrentUser();
+  const roles = user?.roles || [];
+  const isEmp = getRolePrefix(roles) === 'executive' || ((roles.includes('Employee') || roles.includes('Executive')) && !roles.includes('Admin') && !roles.includes('Manager') && !roles.includes('Team Leader'));
+  return isEmp ? <EmpLeave /> : <Leaves />;
+};
 
 /* ── Route Authorization ── */
 const getAllowedRoutes = (roles, permissions) => {
@@ -50,6 +78,17 @@ const getAllowedRoutes = (roles, permissions) => {
 
   // Dashboard is allowed for everyone authenticated
   allowed.push(`/${prefix}/dashboard`);
+
+  const isEmp = prefix === 'executive' || ((roles.includes('Employee') || roles.includes('Executive')) && !roles.includes('Admin') && !roles.includes('Manager') && !roles.includes('Team Leader'));
+  if (isEmp) {
+    allowed.push(`/${prefix}/workwise`);
+    allowed.push(`/${prefix}/digiconvertor`);
+    allowed.push(`/${prefix}/hourly-graph`);
+    allowed.push(`/${prefix}/calendar`);
+    allowed.push(`/${prefix}/tasks`);
+    allowed.push(`/${prefix}/leaves`);
+    return allowed;
+  }
 
   if (roles.includes('Admin') || permissions?.includes('employees.view')) {
     allowed.push(`/${prefix}/users`);
@@ -113,6 +152,8 @@ const getAllowedRoutes = (roles, permissions) => {
   if (roles.includes('Admin') || permissions?.includes('settings.view')) {
     allowed.push(`/${prefix}/settings`);
   }
+
+  allowed.push(`/${prefix}/calendar`);
   return allowed;
 };
 
@@ -173,7 +214,9 @@ function App() {
         <Route path="/login" element={<Login />} />
 
         {/* Employee */}
-        <Route path="/executive/dashboard" element={<EmpDashboard />} />
+        <Route path="/executive/dashboard" element={
+          <AdminLayout><AdminDashboard /></AdminLayout>
+        } />
         <Route path="/workportal" element={<WorkPortal />} />
 
         {/* Role-Prefixed Routes */}
@@ -186,7 +229,11 @@ function App() {
         } />
 
         <Route path="/:role/workwise" element={
-          <AdminLayout><RoleWorkwiseDashboard /></AdminLayout>
+          <AdminLayout>
+            <EmpCheckInGuard pageName="WorkWise">
+              <RoleWorkwiseWrapper />
+            </EmpCheckInGuard>
+          </AdminLayout>
         } />
 
         <Route path="/:role/attendance" element={
@@ -206,7 +253,11 @@ function App() {
         } />
 
         <Route path="/:role/tasks" element={
-          <AdminLayout><TaskManagement /></AdminLayout>
+          <AdminLayout>
+            <EmpCheckInGuard pageName="Tasks">
+              <RoleTasksWrapper />
+            </EmpCheckInGuard>
+          </AdminLayout>
         } />
 
         <Route path="/:role/processes" element={
@@ -222,7 +273,19 @@ function App() {
         } />
 
         <Route path="/:role/leaves" element={
-          <AdminLayout><Leaves /></AdminLayout>
+          <AdminLayout>
+            <EmpCheckInGuard pageName="Leaves">
+              <RoleLeavesWrapper />
+            </EmpCheckInGuard>
+          </AdminLayout>
+        } />
+
+        <Route path="/:role/calendar" element={
+          <AdminLayout>
+            <EmpCheckInGuard pageName="Calendar">
+              <EmpCalendar />
+            </EmpCheckInGuard>
+          </AdminLayout>
         } />
 
         <Route path="/:role/roles" element={
@@ -234,7 +297,11 @@ function App() {
         } />
 
         <Route path="/:role/hourly-graph" element={
-          <AdminLayout><HourlyGraph /></AdminLayout>
+          <AdminLayout>
+            <EmpCheckInGuard pageName="Hourly Graph">
+              <HourlyGraph />
+            </EmpCheckInGuard>
+          </AdminLayout>
         } />
 
         <Route path="/:role/activity-logs" element={
@@ -258,7 +325,11 @@ function App() {
         } />
 
         <Route path="/:role/digiconvertor" element={
-          <AdminLayout><DigiConvertor /></AdminLayout>
+          <AdminLayout>
+            <EmpCheckInGuard pageName="DigiConvertor">
+              <DigiConvertor />
+            </EmpCheckInGuard>
+          </AdminLayout>
         } />
 
         {/* Catch-all */}
@@ -272,3 +343,4 @@ function App() {
 }
 
 export default App;
+

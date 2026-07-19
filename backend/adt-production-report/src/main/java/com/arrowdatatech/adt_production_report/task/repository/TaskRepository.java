@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -28,6 +29,7 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
             AND   (:workflowId IS NULL OR w.id = :workflowId)
             AND   (:processId IS NULL OR proc.id = :processId)
             AND   (:status    IS NULL OR t.status = :status)
+            AND   (CAST(:fromDate AS date) IS NULL OR t.assignedDate >= :fromDate)
             AND   (:search IS NULL OR :search = ''
                    OR LOWER(t.taskTitle) LIKE LOWER(CONCAT('%',:search,'%')))
             AND   (:userId IS NULL OR EXISTS (
@@ -43,6 +45,7 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
             @Param("userId")     UUID userId,
             @Param("status")     String status,
             @Param("search")     String search,
+            @Param("fromDate")   LocalDate fromDate,
             Pageable pageable
     );
 

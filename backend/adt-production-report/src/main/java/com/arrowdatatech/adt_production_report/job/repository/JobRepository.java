@@ -32,8 +32,8 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
                 LIKE LOWER(CONCAT('%', CAST(:jobIdCode AS string), '%')))
             AND (:xmlIsbn IS NULL OR LOWER(j.xmlIsbn)
                 LIKE LOWER(CONCAT('%', CAST(:xmlIsbn AS string), '%')))
-            AND (CAST(:startMonthFrom AS date) IS NULL OR j.startMonth >= :startMonthFrom)
-            AND (CAST(:startMonthTo AS date) IS NULL OR j.endMonth <= :startMonthTo)
+            AND (CAST(:startMonthFrom AS date) IS NULL OR j.receiveDate >= :startMonthFrom)
+            AND (CAST(:startMonthTo AS date) IS NULL OR j.receiveDate <= :startMonthTo)
             AND (:status IS NULL OR j.status = :status)
             AND (:billingStatus IS NULL OR j.billingStatus = :billingStatus)
             AND (:complexity IS NULL OR j.complexity = :complexity)
@@ -71,18 +71,8 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
             AND (:workflowId IS NULL OR j.workflow.id = :workflowId)
             AND (:jobIdCode IS NULL OR LOWER(j.jobIdCode) LIKE LOWER(CONCAT('%', CAST(:jobIdCode AS string), '%')))
             AND (:complexity IS NULL OR j.complexity = :complexity)
-            AND (CAST(:startDate AS date) IS NULL OR (
-                SELECT MIN(t2.assignedDate)
-                FROM TaskJobAssignment tja2
-                JOIN tja2.task t2
-                WHERE tja2.job = j
-            ) >= :startDate)
-            AND (CAST(:endDate AS date) IS NULL OR (
-                SELECT MIN(t2.assignedDate)
-                FROM TaskJobAssignment tja2
-                JOIN tja2.task t2
-                WHERE tja2.job = j
-            ) <= :endDate)
+            AND (CAST(:startDate AS date) IS NULL OR j.receiveDate >= :startDate)
+            AND (CAST(:endDate AS date) IS NULL OR j.receiveDate <= :endDate)
             ORDER BY j.jobIdCode ASC
             """)
     Page<Job> searchProductionJobs(

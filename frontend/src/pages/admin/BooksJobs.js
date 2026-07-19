@@ -121,11 +121,35 @@ const StatusPill = ({ value, type }) => {
 };
 
 const Modal = ({ onClose, children, wide, xl }) => (
-  <div className="bj-modal-overlay" onClick={onClose}>
+  <div className="bj-modal-overlay">
     <div
       className={`bj-modal-box${wide ? ' bj-modal-wide' : ''}${xl ? ' bj-modal-xl' : ''}`}
-      onClick={e => e.stopPropagation()}
+      style={{ position: 'relative' }}
     >
+      <button 
+        type="button" 
+        className="bj-modal-close-x" 
+        onClick={onClose}
+        style={{
+          position: 'absolute',
+          top: '16px',
+          right: '20px',
+          background: 'none',
+          border: 'none',
+          fontSize: '1.25rem',
+          cursor: 'pointer',
+          color: '#a0aec0',
+          transition: 'color 0.2s',
+          fontWeight: 'bold',
+          lineHeight: '1',
+          padding: '4px',
+          zIndex: 10
+        }}
+        onMouseEnter={e => e.target.style.color = '#4a5568'}
+        onMouseLeave={e => e.target.style.color = '#a0aec0'}
+      >
+        ✕
+      </button>
       {children}
     </div>
   </div>
@@ -144,88 +168,85 @@ const JobForm = ({ form, onChange, projects = [], clients = [], workflows = [] }
 
   return (
     <div className="bj-form">
-      {/* Client Dropdown */}
-      <div className="bj-form-group full">
-        <label>Client <span className="req">*</span></label>
-        <select
-          value={form.clientId || ''}
-          onChange={e => {
-            const selectedClientId = e.target.value || null;
-            const selectedClient = clients.find(c => c.id === selectedClientId);
-            onChange('clientId', selectedClientId);
-            onChange('clientName', selectedClient ? selectedClient.companyName : '');
-            // reset project and workflow if client changes
-            onChange('projectId', null);
-            onChange('project', '');
-            onChange('workflowId', null);
-            onChange('workflowName', '');
-          }}
-        >
-          <option value="">-- Select Client --</option>
-          {clients.map(c => (
-            <option key={c.id} value={c.id}>{c.companyName}</option>
-          ))}
-        </select>
-      </div>
-
-      {/* Project */}
-      <div className="bj-form-group full">
-        <label>Project <span className="req">*</span></label>
-        <select
-          value={form.projectId || ''}
-          onChange={e => {
-            const proj = projects.find(p => p.id === e.target.value);
-            onChange('projectId', e.target.value || null);
-            onChange('project', proj?.name || '');
-            // auto populate client if not selected
-            if (proj && proj.clientId && !form.clientId) {
-              onChange('clientId', proj.clientId);
-              onChange('clientName', proj.clientName || '');
-            }
-            // auto select workflow if project has one
-            if (proj && proj.workflowId) {
-              onChange('workflowId', proj.workflowId);
-              onChange('workflowName', proj.workflowName || '');
-            } else {
+      {/* Row 1: Client, Project, Task Name */}
+      <div className="bj-form-row">
+        <div className="bj-form-group">
+          <label>Client <span className="req">*</span></label>
+          <select
+            value={form.clientId || ''}
+            onChange={e => {
+              const selectedClientId = e.target.value || null;
+              const selectedClient = clients.find(c => c.id === selectedClientId);
+              onChange('clientId', selectedClientId);
+              onChange('clientName', selectedClient ? selectedClient.companyName : '');
+              onChange('projectId', null);
+              onChange('project', '');
               onChange('workflowId', null);
               onChange('workflowName', '');
-            }
-          }}
-          disabled={!form.clientId}
-        >
-          <option value="">-- Select Publisher --</option>
-          {filteredProjects.map(p => (
-            <option key={p.id} value={p.id}>{p.name}</option>
-          ))}
-        </select>
+            }}
+          >
+            <option value="">-- Select Client --</option>
+            {clients.map(c => (
+              <option key={c.id} value={c.id}>{c.companyName}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="bj-form-group" style={{ gridColumn: 'span 2' }}>
+          <label>Project <span className="req">*</span></label>
+          <select
+            value={form.projectId || ''}
+            onChange={e => {
+              const proj = projects.find(p => p.id === e.target.value);
+              onChange('projectId', e.target.value || null);
+              onChange('project', proj?.name || '');
+              if (proj && proj.clientId && !form.clientId) {
+                onChange('clientId', proj.clientId);
+                onChange('clientName', proj.clientName || '');
+              }
+              if (proj && proj.workflowId) {
+                onChange('workflowId', proj.workflowId);
+                onChange('workflowName', proj.workflowName || '');
+              } else {
+                onChange('workflowId', null);
+                onChange('workflowName', '');
+              }
+            }}
+            disabled={!form.clientId}
+          >
+            <option value="">-- Select Publisher --</option>
+            {filteredProjects.map(p => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="bj-form-group">
+          <label>Task Name</label>
+          <select
+            value={form.workflowId || ''}
+            onChange={e => {
+              const selectedWorkflowId = e.target.value || null;
+              const wf = workflows.find(w => w.id === selectedWorkflowId);
+              onChange('workflowId', selectedWorkflowId);
+              onChange('workflowName', wf?.name || '');
+            }}
+          >
+            <option value="">-- Select Task Name --</option>
+            {workflows.map(w => (
+              <option key={w.id} value={w.id}>{w.name}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
-      {/* Workflow Dropdown */}
-      <div className="bj-form-group full">
-        <label>Task Name</label>
-        <select
-          value={form.workflowId || ''}
-          onChange={e => {
-            const selectedWorkflowId = e.target.value || null;
-            const wf = workflows.find(w => w.id === selectedWorkflowId);
-            onChange('workflowId', selectedWorkflowId);
-            onChange('workflowName', wf?.name || '');
-          }}
-        >
-          <option value="">-- Select Task Name --</option>
-          {workflows.map(w => (
-            <option key={w.id} value={w.id}>{w.name}</option>
-          ))}
-        </select>
-      </div>
-
-      <div className="bj-form-group full">
-        <label>Receive Date <span className="req">*</span></label>
-        <input type="date" value={form.receiveDate}
-          onChange={e => onChange('receiveDate', e.target.value)} />
-      </div>
-
-      <div className="bj-form-row" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
+      {/* Row 2: Receive Date, Job ID, XML ISBN, Batch */}
+      <div className="bj-form-row">
+        <div className="bj-form-group">
+          <label>Receive Date <span className="req">*</span></label>
+          <input type="date" value={form.receiveDate}
+            onChange={e => onChange('receiveDate', e.target.value)} />
+        </div>
         <div className="bj-form-group">
           <label>Job ID <span className="req">*</span></label>
           <input placeholder="e.g., BM0748" value={form.jobId}
@@ -243,13 +264,13 @@ const JobForm = ({ form, onChange, projects = [], clients = [], workflows = [] }
         </div>
       </div>
 
-      <div className="bj-form-group full">
-        <label>Title Name <span className="req">*</span></label>
-        <input placeholder="Book/Project Title" value={form.title}
-          onChange={e => onChange('title', e.target.value)} />
-      </div>
-
+      {/* Row 3: Title, Page Count, Number of Chapters */}
       <div className="bj-form-row">
+        <div className="bj-form-group" style={{ gridColumn: 'span 2' }}>
+          <label>Title Name <span className="req">*</span></label>
+          <input placeholder="Book/Project Title" value={form.title}
+            onChange={e => onChange('title', e.target.value)} />
+        </div>
         <div className="bj-form-group">
           <label>Page Count</label>
           <input placeholder="e.g., 540" value={form.pageCount}
@@ -262,6 +283,7 @@ const JobForm = ({ form, onChange, projects = [], clients = [], workflows = [] }
         </div>
       </div>
 
+      {/* Row 4: PDF/Input Type, Complexity, Reference Type, Status */}
       <div className="bj-form-row">
         <div className="bj-form-group">
           <label>PDF / Input Type</label>
@@ -287,9 +309,6 @@ const JobForm = ({ form, onChange, projects = [], clients = [], workflows = [] }
             ))}
           </select>
         </div>
-      </div>
-
-      <div className="bj-form-row">
         <div className="bj-form-group">
           <label>Reference Type</label>
           <select value={form.refType || ''}
@@ -308,6 +327,7 @@ const JobForm = ({ form, onChange, projects = [], clients = [], workflows = [] }
         </div>
       </div>
 
+      {/* Row 5: File Status, Upload Date, Billing Status, Language */}
       <div className="bj-form-row">
         <div className="bj-form-group">
           <label>File Status</label>
@@ -324,9 +344,6 @@ const JobForm = ({ form, onChange, projects = [], clients = [], workflows = [] }
           <input type="date" value={form.uploadDate}
             onChange={e => onChange('uploadDate', e.target.value)} />
         </div>
-      </div>
-
-      <div className="bj-form-row">
         <div className="bj-form-group">
           <label>Billing Status</label>
           <select value={form.billing || ''}
@@ -358,11 +375,11 @@ const JobForm = ({ form, onChange, projects = [], clients = [], workflows = [] }
               {langOptions.map(l => (
                 <option key={l} value={l}>{l}</option>
               ))}
-              <option value="Custom">Other / Enter new option...</option>
+              <option value="Custom">Other...</option>
             </select>
             {customLangActive && (
               <input
-                placeholder="Type custom language"
+                placeholder="Custom lang"
                 value={form.language || ''}
                 onChange={e => onChange('language', e.target.value)}
                 style={{ flex: 1 }}
@@ -1670,20 +1687,20 @@ const BooksJobs = () => {
               ))}
             </select>
           </div>
-        </div>
 
-        <div className="bj-filter-actions">
-          {hasActiveFilters && (
-            <span className="bj-filter-total-pages" style={{ marginRight: 'auto', alignSelf: 'center', fontWeight: '700', color: '#4a5568', fontSize: '0.85rem', background: '#f1f5f9', padding: '6px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
-              Filtered : {jobs.reduce((sum, j) => sum + (parseInt(j.pageCount) || 0), 0)}
-            </span>
-          )}
-          <button className="bj-search-btn" onClick={handleSearch}>
-            🔍 Search
-          </button>
-          <button className="bj-clear-btn" onClick={handleClear}>
-            ✕ Clear
-          </button>
+          <div className="bj-filter-actions-group">
+            {hasActiveFilters && (
+              <span className="bj-filter-total-pages" style={{ marginRight: 'auto', alignSelf: 'center', fontWeight: '700', color: '#4a5568', fontSize: '0.85rem', background: '#f1f5f9', padding: '6px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+                Filtered : {jobs.reduce((sum, j) => sum + (parseInt(j.pageCount) || 0), 0)}
+              </span>
+            )}
+            <button className="bj-search-btn" onClick={handleSearch}>
+              🔍 Search
+            </button>
+            <button className="bj-clear-btn" onClick={handleClear}>
+              ✕ Clear
+            </button>
+          </div>
         </div>
       </div>
 

@@ -60,11 +60,12 @@ public class TaskService {
             UUID userId,
             String status,
             String search,
+            LocalDate fromDate,
             int page, int size) {
 
         Pageable pageable = PageRequest.of(page, size);
         return taskRepository.searchTasks(
-                projectId, clientId, workflowId, processId, userId, status, search, pageable
+                projectId, clientId, workflowId, processId, userId, status, search, fromDate, pageable
         ).map(this::toResponse);
     }
 
@@ -139,7 +140,7 @@ public class TaskService {
                 .taskTitle(title)
                 .description(request.getDescription())
                 .status(status)
-                .assignedDate(LocalDate.now())
+                .assignedDate(request.getAssignedDate() != null ? request.getAssignedDate() : LocalDate.now())
                 .dueDate(request.getDueDate())
                 .assignedPages(request.getAssignedPages())
                 .assignedPagesStr(request.getAssignedPagesStr())
@@ -236,6 +237,9 @@ public class TaskService {
         task.setDescription(emptyToNull(request.getDescription()));
         task.setStatus(request.getStatus() != null && !request.getStatus().isBlank() ? request.getStatus().trim() : "PENDING");
         task.setDueDate(request.getDueDate());
+        if (request.getAssignedDate() != null) {
+            task.setAssignedDate(request.getAssignedDate());
+        }
         task.setAssignedPages(request.getAssignedPages());
         task.setAssignedPagesStr(emptyToNull(request.getAssignedPagesStr()));
         task.setComplexity(emptyToNull(request.getComplexity()));

@@ -31,7 +31,7 @@ const AddUserModal = ({ onClose, onAdd, shifts, roles }) => {
     timezone: 'Asia/Kolkata',
     top: false,
     calendar: false,
-    active: true,
+    employeeStatus: 'Active',
   });
   const [errors, setErrors] = useState({});
 
@@ -62,7 +62,7 @@ const AddUserModal = ({ onClose, onAdd, shifts, roles }) => {
       shiftId: form.shiftId || null,
       top: form.top,
       calendar: form.calendar,
-      active: form.active,
+      employeeStatus: form.employeeStatus,
     });
   };
 
@@ -209,17 +209,21 @@ const AddUserModal = ({ onClose, onAdd, shifts, roles }) => {
         <input type="file" className="form-input file-input" multiple />
       </div>
 
-      {/* Active */}
-      <div className="form-check-group">
-        <label className="check-label">
-          <input
-            type="checkbox"
-            checked={form.active}
-            onChange={e => set('active', e.target.checked)}
-          />
-          Active
-        </label>
-        <p className="form-hint">New users are active by default. Uncheck to create an inactive user.</p>
+      {/* Status */}
+      <div className="form-group">
+        <label className="form-label">Status</label>
+        <select
+          className="form-select"
+          value={form.employeeStatus}
+          onChange={e => set('employeeStatus', e.target.value)}
+        >
+          <option value="Active">Active</option>
+          <option value="Inactive">Inactive</option>
+          <option value="Relieved">Relieved</option>
+          <option value="Long Leave">Long Leave</option>
+          <option value="Abscond">Abscond</option>
+        </select>
+        <p className="form-hint">Only "Active" users can log in. All other statuses will block login access.</p>
       </div>
 
       {/* Footer */}
@@ -492,7 +496,7 @@ const EditUserModal = ({ user, onClose, onUpdate, shifts, roles }) => {
     timezone: 'Asia/Kolkata',
     top: user.top,
     calendar: true,
-    active: user.status === 'Active',
+    employeeStatus: user.employeeStatus || (user.status === 'Active' ? 'Active' : 'Inactive'),
   });
 
   const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
@@ -506,7 +510,8 @@ const EditUserModal = ({ user, onClose, onUpdate, shifts, roles }) => {
       role: form.role,
       shiftId: form.shiftId || null,
       top: form.top,
-      status: form.active ? 'Active' : 'Inactive',
+      employeeStatus: form.employeeStatus,
+      status: form.employeeStatus,
       initial: form.name.charAt(0).toUpperCase(),
     });
   };
@@ -582,12 +587,21 @@ const EditUserModal = ({ user, onClose, onUpdate, shifts, roles }) => {
         <input type="file" className="form-input file-input" multiple />
       </div>
 
-      <div className="form-check-group">
-        <label className="check-label">
-          <input type="checkbox" checked={form.active} onChange={e => set('active', e.target.checked)} />
-          Active
-        </label>
-        <p className="form-hint">Deactivate to prevent this user from logging in.</p>
+      {/* Status */}
+      <div className="form-group">
+        <label className="form-label">Status</label>
+        <select
+          className="form-select"
+          value={form.employeeStatus}
+          onChange={e => set('employeeStatus', e.target.value)}
+        >
+          <option value="Active">Active</option>
+          <option value="Inactive">Inactive</option>
+          <option value="Relieved">Relieved</option>
+          <option value="Long Leave">Long Leave</option>
+          <option value="Abscond">Abscond</option>
+        </select>
+        <p className="form-hint">Only "Active" users can log in. All other statuses will block login access.</p>
       </div>
 
       <div className="modal-actions">
@@ -659,7 +673,8 @@ const UserManagement = () => {
         shiftId: u.shiftId || null,
         shift: u.shift || '-',
         top: u.isTopPerformer,
-        status: u.isActive ? 'Active' : 'Inactive',
+        status: u.employeeStatus || (u.isActive ? 'Active' : 'Inactive'),
+        employeeStatus: u.employeeStatus || (u.isActive ? 'Active' : 'Inactive'),
       }));
       const rolePriority = {
         'admin': 1,
@@ -732,7 +747,8 @@ const UserManagement = () => {
         shiftId: formData.shiftId || null,
         isTopPerformer: formData.top,
         showCalendarStats: formData.calendar,
-        isActive: formData.active,
+        isActive: formData.employeeStatus === 'Active',
+        employeeStatus: formData.employeeStatus,
       });
       await loadUsers();
       setShowAddUser(false);
@@ -750,7 +766,8 @@ const UserManagement = () => {
         roleName: mapRoleName(updatedUser.role),
         shiftId: updatedUser.shiftId || null,
         isTopPerformer: updatedUser.top,
-        isActive: updatedUser.status === 'Active',
+        isActive: updatedUser.employeeStatus === 'Active',
+        employeeStatus: updatedUser.employeeStatus,
       });
       await loadUsers();
       close();
@@ -954,8 +971,8 @@ const UserManagement = () => {
                   )}
                 </td>
                 <td>
-                  <span className={`status-badge ${user.status.toLowerCase()}`}>
-                    {user.status?.toUpperCase()}
+                  <span className={`status-badge ${user.status.toLowerCase().replace(/\s+/g, '-')}`}>
+                    {user.status}
                   </span>
                 </td>
 

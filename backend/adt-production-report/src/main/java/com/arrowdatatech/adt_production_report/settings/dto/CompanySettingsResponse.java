@@ -30,5 +30,9 @@ public class CompanySettingsResponse {
     private String allowedTypes;
     private Boolean enableThirukkural;
     private String thirukkuralTranslation;
+    private String announcement;
+    private Boolean isCelebration;
+    private String celebrationText;
+    private String celebrationPhotoUrl;
     private java.util.List<String> loginQuotes;
 }

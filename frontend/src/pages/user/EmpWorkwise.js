@@ -229,12 +229,16 @@ export default function EmpWorkwise() {
       if (data) {
         setContext(data);
         setTimeLogId(data.timeLogId);
-        setElapsed(data.elapsedSeconds || 0);
-        sessionStartRef.current = Date.now() - ((data.elapsedSeconds || 0) * 1000);
+        const workSec = (data.workingSeconds !== undefined && data.workingSeconds !== null)
+          ? data.workingSeconds
+          : Math.max(0, (data.elapsedSeconds || 0) - (data.breakSeconds || 0));
+        setElapsed(workSec);
+        sessionStartRef.current = Date.now() - (workSec * 1000);
         if (data.status === 'On Break') {
           setStatus('break');
-          if (data.breakStartedAt) {
-            breakRef.current = new Date(data.breakStartedAt);
+          if (data.breakStartedAt || data.breakStart) {
+            const breakStartIso = data.breakStartedAt || data.breakStart;
+            breakRef.current = new Date(breakStartIso);
             const calculatedBreakEl = Math.floor(
               (Date.now() - breakRef.current.getTime()) / 1000
             );
@@ -368,7 +372,7 @@ export default function EmpWorkwise() {
   // ── Timers ───────────────────────────────────────────────────
   useEffect(() => {
     let iv = null;
-    if (status === 'running' || status === 'break') {
+    if (status === 'running') {
       iv = setInterval(() => {
         setElapsed(() => {
           const now = Date.now();
@@ -574,8 +578,10 @@ export default function EmpWorkwise() {
       setContext(data);
       if (data) {
         setTimeLogId(data.timeLogId);
-        setElapsed(data.elapsedSeconds || 0);
-        sessionStartRef.current = Date.now() - ((data.elapsedSeconds || 0) * 1000);
+        const workSec = (data.workingSeconds !== undefined && data.workingSeconds !== null)
+          ? data.workingSeconds
+          : Math.max(0, (data.elapsedSeconds || 0) - (data.breakSeconds || 0));
+        setElapsed(workSec);
       }
       setStatus('break');
       breakRef.current = new Date();
@@ -613,8 +619,11 @@ export default function EmpWorkwise() {
         setContext(data);
         setTimeLogId(data.timeLogId);
         setStatus('running');
-        setElapsed(data.elapsedSeconds || 0);
-        sessionStartRef.current = Date.now() - ((data.elapsedSeconds || 0) * 1000);
+        const workSec = (data.workingSeconds !== undefined && data.workingSeconds !== null)
+          ? data.workingSeconds
+          : Math.max(0, (data.elapsedSeconds || 0) - (data.breakSeconds || 0));
+        setElapsed(workSec);
+        sessionStartRef.current = Date.now() - (workSec * 1000);
       } else {
         setContext(null);
         setTimeLogId(null);
@@ -870,8 +879,7 @@ export default function EmpWorkwise() {
 
             <div className="ww-break-note">
               <span>ℹ️</span>
-              The task timer keeps running during break. Break time is
-              tracked separately and subtracted from productive time.
+              Task work time will pause during break and resume when you complete the break. Break time is not added to task work time.
             </div>
 
             <div className="ww-popup-field">
@@ -1071,7 +1079,7 @@ export default function EmpWorkwise() {
                   <div className="ww-timer-banner ww-timer-running"
                     style={{ flex: 1 }}>
                     <div className="ww-timer-display">{fmt(elapsed)}</div>
-                    <div className="ww-timer-label">TOTAL ELAPSED</div>
+                    <div className="ww-timer-label">TASK WORK TIME (PAUSED)</div>
                   </div>
                 )}
                 <div className="ww-timer-banner ww-timer-break"

@@ -24,9 +24,10 @@ const menuItems = [
   { name: 'SHIFT', icon: '🕒', path: '/admin/shifts' },
   { name: 'TOOL', icon: <img src={toolIcon} alt="Tools" className="sidebar-img-icon" />, path: '/admin/tool' },
   { name: 'LEAVE', icon: '🏖️', path: '/admin/leaves' },
+  { name: 'CALENDAR', icon: '📅', path: '/admin/calendar' },
   { name: 'ROLE & PERMISSION', icon: '🔐', path: '/admin/roles' },
   { name: 'REPORT', icon: '📈', path: '/admin/reports' },
-  { name: 'HOURLY GRAPH', icon: '📝', path: '/admin/hourly-graph' },
+  { name: 'HOURLY GRAPH', icon: '📊', path: '/admin/hourly-graph' },
   { name: 'ACTIVITY LOG', icon: '💻', path: '/admin/activity-logs' },
   { name: 'TIME LOG', icon: <img src={timelogIcon} alt="Time Log" className="sidebar-img-icon" />, path: '/admin/timelog' },
   { name: 'INVOICE', icon: <img src={invoiceIcon} alt="Invoices" className="sidebar-img-icon" />, path: '/admin/invoices' },
@@ -48,13 +49,18 @@ const Sidebar = ({ isMobileOpen, onCloseMobile }) => {
       ? 'Manager'
       : roles.includes('Team Leader')
         ? 'Team Leader'
-        : roles.includes('Employee')
-          ? 'Employee'
+        : (roles.includes('Employee') || roles.includes('Executive'))
+          ? 'Executive'
           : 'User';
+
+  const isEmployeeOnly = prefix === 'executive' || ((roles.includes('Employee') || roles.includes('Executive')) && !roles.includes('Admin') && !roles.includes('Manager') && !roles.includes('Team Leader'));
 
   const hasPermission = (perm) => roles.includes('Admin') || (user?.permissions?.includes(perm));
 
   const filteredMenuItems = menuItems.filter(item => {
+    if (isEmployeeOnly) {
+      return ['DASHBOARD', 'WORKWISE', 'DIGICONVERTOR', 'HOURLY GRAPH', 'CALENDAR', 'TASK', 'LEAVE'].includes(item.name);
+    }
     if (roles.includes('Admin')) {
       return true;
     }
@@ -85,6 +91,8 @@ const Sidebar = ({ isMobileOpen, onCloseMobile }) => {
         return hasPermission('tools.view');
       case 'LEAVE':
         return hasPermission('leaves.view') || hasPermission('leaves.view_all');
+      case 'CALENDAR':
+        return true;
       case 'ROLE & PERMISSION':
         return hasPermission('roles.view');
       case 'REPORT':
@@ -155,6 +163,8 @@ const Sidebar = ({ isMobileOpen, onCloseMobile }) => {
         <nav className="sidebar-nav">
           {filteredMenuItems.map((item) => {
             const resolvedPath = item.path.replace('/admin/', `/${prefix}/`);
+            const icon = (isEmployeeOnly && item.name === 'LEAVE') ? '🍃' : item.icon;
+            const name = item.name === 'TASK' ? 'TASKS' : item.name === 'LEAVE' ? 'LEAVES' : item.name;
             return (
               <NavLink
                 key={item.path}
@@ -162,8 +172,8 @@ const Sidebar = ({ isMobileOpen, onCloseMobile }) => {
                 onClick={handleNavClick}
                 className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
               >
-                <span className="nav-icon">{item.icon}</span>
-                <span className="nav-text">{item.name}</span>
+                <span className="nav-icon">{icon}</span>
+                <span className="nav-text">{name}</span>
                 {item.name === 'LEAVE' && pendingLeavesCount > 0 && (
                   <span className="sidebar-badge blink">{pendingLeavesCount}</span>
                 )}

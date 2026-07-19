@@ -776,18 +776,19 @@
 
 .tr-subhead th:nth-child(9),
 .tr-subhead th:nth-child(10),
-.tr-subhead th:nth-child(11) {
+.tr-subhead th:nth-child(11),
+.tr-subhead th:nth-child(12) {
     background: var(--lunch-bg);
     color: var(--lunch-text);
 }
 
-.tr-subhead th:nth-child(11) {
+.tr-subhead th:nth-child(12) {
     border-right: 2px solid var(--color-border);
 }
 
-.tr-subhead th:nth-child(12),
 .tr-subhead th:nth-child(13),
-.tr-subhead th:nth-child(14) {
+.tr-subhead th:nth-child(14),
+.tr-subhead th:nth-child(15) {
     background: var(--output-bg);
     color: var(--output-text);
 }
@@ -841,7 +842,7 @@
 .tl-table tbody td:nth-child(3),
 .tl-table tbody td:nth-child(6),
 .tl-table tbody td:nth-child(8),
-.tl-table tbody td:nth-child(11) {
+.tl-table tbody td:nth-child(12) {
     border-right: 2px solid var(--color-border-light);
 }
 

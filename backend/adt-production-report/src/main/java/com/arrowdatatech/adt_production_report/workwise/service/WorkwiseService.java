@@ -1085,6 +1085,26 @@ public class WorkwiseService {
     }
 
     private TimeLogResponse toTimeLogResponse(TimeLog log) {
+        Integer elapsedSeconds = log.getElapsedSeconds();
+        Integer workingSeconds = log.getWorkingSeconds();
+        Integer breakSeconds = log.getBreakSeconds();
+
+        if ("Running".equals(log.getStatus()) || "On Break".equals(log.getStatus())) {
+            OffsetDateTime now = OffsetDateTime.now();
+            long totalElapsed = java.time.temporal.ChronoUnit.SECONDS.between(log.getStartTime(), now);
+            elapsedSeconds = (int) totalElapsed;
+            
+            int totalBreak = log.getBreakSeconds() != null ? log.getBreakSeconds() : 0;
+            java.util.Optional<BreakLog> activeBreakOpt = log.getBreakLogs() == null ? java.util.Optional.empty()
+                    : log.getBreakLogs().stream().filter(b -> b.getBreakEnd() == null).findFirst();
+            if (activeBreakOpt.isPresent()) {
+                long currentBreakDuration = java.time.temporal.ChronoUnit.SECONDS.between(activeBreakOpt.get().getBreakStart(), now);
+                totalBreak += (int) currentBreakDuration;
+            }
+            breakSeconds = totalBreak;
+            workingSeconds = (int) Math.max(totalElapsed - totalBreak, 0);
+        }
+
         String fullName = log.getUser().getEmployeeProfile() != null
                 ? log.getUser().getEmployeeProfile().getFullName()
                 : log.getUser().getEmail();
@@ -1106,7 +1126,9 @@ public class WorkwiseService {
                                 .description(b.getDescription())
                                 .breakStart(b.getBreakStart())
                                 .breakEnd(b.getBreakEnd())
-                                .durationSeconds(b.getDurationSeconds())
+                                .durationSeconds(b.getDurationSeconds() != null ? b.getDurationSeconds()
+                                        : (b.getBreakEnd() != null ? (int) java.time.temporal.ChronoUnit.SECONDS.between(b.getBreakStart(), b.getBreakEnd())
+                                                : (int) java.time.temporal.ChronoUnit.SECONDS.between(b.getBreakStart(), OffsetDateTime.now())))
                                 .build())
                         .sorted(java.util.Comparator.comparing(TimeLogResponse.BreakLogDto::getBreakStart))
                         .collect(Collectors.toList());
@@ -1159,9 +1181,9 @@ public class WorkwiseService {
                 .taskTitle(taskTitle)
                 .startTime(log.getStartTime())
                 .endTime(log.getEndTime())
-                .elapsedSeconds(log.getElapsedSeconds())
-                .workingSeconds(log.getWorkingSeconds())
-                .breakSeconds(log.getBreakSeconds())
+                .elapsedSeconds(elapsedSeconds)
+                .workingSeconds(workingSeconds)
+                .breakSeconds(breakSeconds)
                 .pagesCompleted(log.getPagesCompleted())
                 .assignedPages(log.getTask() != null ? log.getTask().getAssignedPages() : null)
                 .assignedPagesStr(log.getTask() != null ? log.getTask().getAssignedPagesStr() : null)

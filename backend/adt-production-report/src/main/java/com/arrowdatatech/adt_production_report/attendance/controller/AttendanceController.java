@@ -197,4 +197,11 @@ public class AttendanceController {
         List<AttendanceRecordResponse> result = attendanceService.getDailyCheckIns(date);
         return ResponseEntity.ok(ApiResponse.success("Daily check-ins retrieved", result));
     }
+
+    @PostMapping("/admin/recheck-in/{userId}")
+    @PreAuthorize("hasAnyRole('Admin','Manager') or hasAuthority('attendance.update')")
+    public ResponseEntity<ApiResponse<AttendanceRecordResponse>> adminRecheckIn(@PathVariable UUID userId) {
+        AttendanceRecordResponse result = attendanceService.adminRecheckIn(userId);
+        return ResponseEntity.ok(ApiResponse.success("User re-checked in successfully", result));
+    }
 }

@@ -18,6 +18,7 @@ public class UserListResponse {
     private String role;        // Primary role display
     private String shift;       // Current shift name
     private Boolean isActive;
+    private String employeeStatus;
     private Boolean isTopPerformer;
     private String profilePhotoUrl;
 }

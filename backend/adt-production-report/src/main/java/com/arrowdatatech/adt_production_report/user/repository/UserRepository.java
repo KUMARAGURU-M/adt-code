@@ -29,6 +29,13 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     @Query("""
             SELECT u FROM User u
+            LEFT JOIN FETCH u.employeeProfile ep
+            WHERE u.deletedAt IS NULL
+            """)
+    List<User> findAllNonDeleted();
+
+    @Query("""
+            SELECT u FROM User u
             JOIN u.employeeProfile ep
             WHERE u.deletedAt IS NULL
             AND (:search IS NULL

@@ -97,6 +97,7 @@ function buildDailyAggrRows(mappedLogs) {
                 workingSeconds: 0,
                 breakCount: 0,
                 breakSeconds: 0,
+                lunchCount: 0,
                 lunchSeconds: 0,
                 pages: 0,
                 timeline: [],
@@ -111,6 +112,7 @@ function buildDailyAggrRows(mappedLogs) {
         e.workingSeconds += log.workingSecondsRaw || 0;
         e.breakCount += log.breakCount || 0;
         e.breakSeconds += log.breakSecondsRaw || 0;
+        e.lunchCount += log.lunchCount || 0;
         e.lunchSeconds += log.lunchSecondsRaw || 0;
         e.pages += log.pages || 0;
         
@@ -175,6 +177,34 @@ function buildDailyAggrRows(mappedLogs) {
         const earliestLunchStart = lunchStarts.length ? new Date(Math.min(...lunchStarts)) : null;
         const latestLunchEnd = lunchEnds.length ? new Date(Math.max(...lunchEnds)) : null;
 
+        let finalWorkingSeconds = e.workingSeconds;
+        if (e.manualCheckInRaw || e.checkInRaw) {
+            const startTime = e.manualCheckInRaw || e.checkInRaw;
+            let endTime = e.manualCheckOutRaw || e.checkOutRaw;
+            if (!endTime) {
+                const todayStr = new Date().getFullYear() + "-" + 
+                                 String(new Date().getMonth() + 1).padStart(2, "0") + "-" + 
+                                 String(new Date().getDate()).padStart(2, "0");
+                const isToday = e.date === todayStr;
+                endTime = isToday ? new Date() : startTime;
+            }
+            finalWorkingSeconds = Math.max(0, Math.floor((new Date(endTime) - new Date(startTime)) / 1000));
+        }
+
+        let finalLunchSeconds = e.lunchSeconds;
+        if (earliestLunchStart) {
+            const startTime = new Date(earliestLunchStart);
+            let endTime = latestLunchEnd ? new Date(latestLunchEnd) : null;
+            if (!endTime) {
+                const todayStr = new Date().getFullYear() + "-" + 
+                                 String(new Date().getMonth() + 1).padStart(2, "0") + "-" + 
+                                 String(new Date().getDate()).padStart(2, "0");
+                const isToday = e.date === todayStr;
+                endTime = isToday ? new Date() : startTime;
+            }
+            finalLunchSeconds = Math.max(0, Math.floor((endTime - startTime) / 1000));
+        }
+
         return {
             id: e.id,
             userId: e.userId,
@@ -184,12 +214,13 @@ function buildDailyAggrRows(mappedLogs) {
             project: Array.from(e.projects).join(", ") || "No Project",
             checkIn: formatTime(e.manualCheckInRaw || e.checkInRaw),
             checkOut: e.manualCheckOutRaw ? formatTime(e.manualCheckOutRaw) : (e.hasActive ? "—" : formatTime(e.checkOutRaw)),
-            workedHrs: formatSecondsToHrsStr(e.workingSeconds),
+            workedHrs: formatSecondsToHrsStr(finalWorkingSeconds),
             breakCount: e.breakCount,
             breakHrs: formatSecondsToHrsStr(e.breakSeconds),
+            lunchCount: e.lunchCount,
             lunchIn: formatTime(earliestLunchStart),
             lunchOut: formatTime(latestLunchEnd),
-            lunchHrs: formatSecondsToHrsStr(e.lunchSeconds),
+            lunchHrs: formatSecondsToHrsStr(finalLunchSeconds),
             pages: e.pages,
             status: e.hasActive ? "Active" : "Complete",
             timeline: e.timeline
@@ -276,13 +307,27 @@ function groupLogsByDate(logs) {
 
         e.timeline.sort((a, b) => a.rawTime - b.rawTime);
 
+        let finalWorkingSeconds = e.workingSeconds;
+        if (e.manualCheckInRaw || e.checkInRaw) {
+            const startTime = e.manualCheckInRaw || e.checkInRaw;
+            let endTime = e.manualCheckOutRaw || e.checkOutRaw;
+            if (!endTime) {
+                const todayStr = new Date().getFullYear() + "-" + 
+                                 String(new Date().getMonth() + 1).padStart(2, "0") + "-" + 
+                                 String(new Date().getDate()).padStart(2, "0");
+                const isToday = e.date === todayStr;
+                endTime = isToday ? new Date() : startTime;
+            }
+            finalWorkingSeconds = Math.max(0, Math.floor((new Date(endTime) - new Date(startTime)) / 1000));
+        }
+
         return {
             id: e.id,
             date: e.date,
             project: Array.from(e.projectSet).join(", ") || "No Project",
             checkIn: formatTime(e.manualCheckInRaw || e.checkInRaw),
             checkOut: e.manualCheckOutRaw ? formatTime(e.manualCheckOutRaw) : (e.hasActive ? "—" : formatTime(e.checkOutRaw)),
-            workedHrs: formatSecondsToHrsStr(e.workingSeconds),
+            workedHrs: formatSecondsToHrsStr(finalWorkingSeconds),
             breakCount: e.breakCount,
             pages: e.pages,
             status: e.hasActive ? "Active" : "Complete",
@@ -546,28 +591,27 @@ export default function TimeLog() {
                 } catch (e) {
                     console.warn("Could not fetch daily check-ins for merging", e);
                 }
+                const formatTime = (isoStr) => {
+                    if (!isoStr) return "—";
+                    return new Date(isoStr).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+                };
+
+                const formatTimeOrNull = (isoStr) => {
+                    if (!isoStr) return null;
+                    return new Date(isoStr).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+                };
+
+                const formatSecondsToHrsStr = (totalSecs) => {
+                    if (!totalSecs) return "0h 00m";
+                    const mins = Math.floor(totalSecs / 60);
+                    const h = Math.floor(mins / 60);
+                    const m = mins % 60;
+                    return `${h}h ${String(m).padStart(2, "0")}m`;
+                };
 
                 const data = await apiCall(`/workwise/admin/logs?${params.toString()}`);
                 
                 const mappedLogs = (data || []).map(log => {
-                    const formatTime = (isoStr) => {
-                        if (!isoStr) return "—";
-                        return new Date(isoStr).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
-                    };
-
-                    const formatTimeOrNull = (isoStr) => {
-                        if (!isoStr) return null;
-                        return new Date(isoStr).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
-                    };
-
-                    const formatSecondsToHrsStr = (totalSecs) => {
-                        if (!totalSecs) return "0h 00m";
-                        const mins = Math.floor(totalSecs / 60);
-                        const h = Math.floor(mins / 60);
-                        const m = mins % 60;
-                        return `${h}h ${String(m).padStart(2, "0")}m`;
-                    };
-
                     const lunchLogs = log.breakLogs ? log.breakLogs.filter(b => b.breakReason === "Lunch Break") : [];
                     const otherBreakLogs = log.breakLogs ? log.breakLogs.filter(b => b.breakReason !== "Lunch Break") : [];
 
@@ -642,6 +686,7 @@ export default function TimeLog() {
                         workedHrs: formatSecondsToHrsStr(log.workingSeconds),
                         breakCount: otherBreakLogs.length,
                         breakHrs: formatSecondsToHrsStr(otherBreakSeconds),
+                        lunchCount: lunchLogs.length,
                         lunchIn,
                         lunchOut,
                         lunchHrs: formatSecondsToHrsStr(lunchSeconds),
@@ -664,6 +709,15 @@ export default function TimeLog() {
                 checkInsList.forEach(ci => {
                     const hasUser = ci.userId ? loggedUserIds.has(ci.userId) : false;
                     if (ci.checkInTime && !hasUser) {
+                        const startTime = new Date(ci.checkInTime);
+                        let endTime = ci.checkOutTime ? new Date(ci.checkOutTime) : null;
+                        if (!endTime) {
+                            const isToday = new Date(startStr).toDateString() === new Date().toDateString();
+                            endTime = isToday ? new Date() : startTime;
+                        }
+                        const totalElapsed = Math.max(0, Math.floor((endTime - startTime) / 1000));
+                        const workedHrsStr = formatSecondsToHrsStr(totalElapsed);
+
                         mergedLogs.push({
                             id: ci.id || ci.employeeId,
                             userId: ci.userId,
@@ -672,18 +726,19 @@ export default function TimeLog() {
                             date: startStr,
                             projectId: null,
                             project: "No Active Task",
-                            checkIn: "—",
-                            checkOut: "—",
-                            workedHrs: "0h 00m",
+                            checkIn: formatTime(ci.checkInTime),
+                            checkOut: ci.checkOutTime ? formatTime(ci.checkOutTime) : "—",
+                            workedHrs: workedHrsStr,
                             breakCount: 0,
                             breakHrs: "0h 00m",
+                            lunchCount: 0,
                             lunchIn: "—",
                             lunchOut: "—",
                             lunchHrs: "0h 00m",
                             pages: 0,
                             status: ci.checkOutTime ? "Complete" : "Active",
                             timeline: [],
-                            workingSecondsRaw: 0,
+                            workingSecondsRaw: totalElapsed,
                             breakSecondsRaw: 0,
                             lunchSecondsRaw: 0,
                             startTimeRaw: null,
@@ -943,21 +998,21 @@ function DailyTable({ filtered, total, summary, expandedId, toggleExpand }) {
                             <th className="th-identity" colSpan={3}><span className="th-group-label">Identity</span></th>
                             <th className="th-shift" colSpan={3}><span className="th-group-label">Shift</span></th>
                             <th className="th-break" colSpan={2}><span className="th-group-label">Break</span></th>
-                            <th className="th-lunch" colSpan={3}><span className="th-group-label">Lunch</span></th>
+                            <th className="th-lunch" colSpan={4}><span className="th-group-label">Lunch</span></th>
                             <th className="th-output" colSpan={3}><span className="th-group-label">Output</span></th>
                         </tr>
                         <tr className="tr-subhead">
                             <th>Employee</th><th>Date</th><th>Project</th>
                             <th>Check In</th><th>Check Out</th><th>Worked Hrs</th>
                             <th>Breaks</th><th>Break Hrs</th>
-                            <th>Lunch In</th><th>Lunch Out</th><th>Lunch Hrs</th>
+                            <th>Lunches</th><th>Lunch In</th><th>Lunch Out</th><th>Lunch Hrs</th>
                             <th>Pages</th><th>Status</th><th>Timeline</th>
                         </tr>
                     </thead>
                     <tbody>
                         {filtered.length === 0 ? (
                             <tr>
-                                <td colSpan={14} className="tl-empty">
+                                <td colSpan={15} className="tl-empty">
                                     <div className="tl-empty-inner">
                                         <span className="tl-empty-icon">📭</span>
                                         <span>No records match the current filters.</span>
@@ -984,6 +1039,7 @@ function DailyTable({ filtered, total, summary, expandedId, toggleExpand }) {
                                     <td><span className="hrs-pill hrs-pill--worked">{log.workedHrs}</span></td>
                                     <td><span className="break-count">{log.breakCount}×</span></td>
                                     <td><span className="hrs-pill hrs-pill--break">{log.breakHrs}</span></td>
+                                    <td><span className="break-count">{log.lunchCount}×</span></td>
                                     <td className="td-time">{log.lunchIn}</td>
                                     <td className="td-time">{log.lunchOut}</td>
                                     <td><span className="hrs-pill hrs-pill--lunch">{log.lunchHrs}</span></td>
