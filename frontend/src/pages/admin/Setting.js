@@ -162,6 +162,47 @@ const Setting = () => {
   const [loading, setLoading] = useState(true);
   const [thirukkuralPreview, setThirukkuralPreview] = useState(null);
 
+  // Lightbox States
+  const [lightboxImg, setLightboxImg] = useState(null);
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [rotation, setRotation] = useState(0);
+
+  // Card Preview Zoom (Settings only — initialised from saved URL hash)
+  const getZoomFromUrl = (url) => {
+    const hash = (url || '').split('#')[1] || '';
+    const parts = hash.split(':');
+    const z = parseFloat(parts[1]);
+    return (!isNaN(z) && z >= 100 && z <= 300) ? z / 100 : 1;
+  };
+  const [cardZoom, setCardZoom] = useState(() => getZoomFromUrl(form.celebrationPhotoUrl));
+
+  // Helper: build URL with current fit + zoom encoded in hash
+  const buildUrl = (baseUrl, fit, zoom) => `${baseUrl}#${fit}:${Math.round(zoom * 100)}`;
+
+  const openLightbox = (url) => {
+    setLightboxImg(url);
+    setZoomLevel(1);
+    setRotation(0);
+  };
+
+  const closeLightbox = () => {
+    setLightboxImg(null);
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        closeLightbox();
+      }
+    };
+    if (lightboxImg) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [lightboxImg]);
+
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
 
   useEffect(() => {
@@ -442,11 +483,11 @@ const Setting = () => {
                         onChange={async e => {
                           const file = e.target.files[0];
                           if (!file) return;
-                          
+
                           const formData = new FormData();
                           formData.append('file', file);
                           formData.append('entityType', 'Celebration');
-                          
+
                           try {
                             setLoading(true);
                             const token = getAccessToken();
@@ -459,7 +500,8 @@ const Setting = () => {
                             });
                             const result = await response.json();
                             if (result.success && result.data && result.data.url) {
-                              set('celebrationPhotoUrl', result.data.url);
+                              set('celebrationPhotoUrl', `${result.data.url}#contain:100`);
+                              setCardZoom(1);
                             } else {
                               alert('Upload failed: ' + (result.message || 'Unknown error'));
                             }
@@ -472,20 +514,13 @@ const Setting = () => {
                         style={{ fontSize: '0.8rem' }}
                       />
                       {form.celebrationPhotoUrl && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <img
-                            src={`${API_BASE}${form.celebrationPhotoUrl}`}
-                            alt="Celebration Preview"
-                            style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #ddd' }}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => set('celebrationPhotoUrl', '')}
-                            style={{ background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '4px', padding: '4px 8px', fontSize: '0.75rem', cursor: 'pointer' }}
-                          >
-                            Remove
-                          </button>
-                        </div>
+                        <button
+                          type="button"
+                          onClick={() => set('celebrationPhotoUrl', '')}
+                          style={{ background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '4px', padding: '6px 12px', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer' }}
+                        >
+                          ✕ Remove Photo
+                        </button>
                       )}
                     </div>
                   </div>
@@ -501,6 +536,131 @@ const Setting = () => {
                       placeholder="e.g. Wishing Jane Doe a very Happy Birthday! 🎂✨"
                       style={{ fontSize: '0.85rem', resize: 'vertical', fontFamily: 'inherit' }}
                     />
+                  </div>
+
+                  {/* Real-time Live Preview Card */}
+                  <div style={{ marginTop: '10px' }}>
+                    <label className="st-label" style={{ fontSize: '0.82rem', marginBottom: '6px' }}>Live Card Preview (Click photo to test Lightbox)</label>
+                    {(() => {
+                      const rawUrl = form.celebrationPhotoUrl || '';
+                      const hash = rawUrl.split('#')[1] || '';
+                      const hashParts = hash.split(':');
+                      const fitMode = hashParts[0] === 'cover' ? 'cover' : 'contain';
+                      const cleanUrl = rawUrl.split('#')[0];
+                      return (
+                        <div className="celebration-card" style={{ maxWidth: '520px', margin: '0 auto 10px auto' }}>
+                          <div className="celebration-content-wrapper">
+                            <div className="celebration-content">
+                              {form.celebrationPhotoUrl ? (
+                                <div
+                                  className="celebration-photo-container"
+                                  title="Click to view full screen"
+                                >
+                                  <img
+                                    src={`${API_BASE}${cleanUrl}`}
+                                    alt="Celebration Preview"
+                                    className="celebration-img"
+                                    style={{
+                                      objectFit: fitMode,
+                                      width: fitMode === 'cover' ? '100%' : 'auto',
+                                      height: '460px',
+                                      transform: `scale(${cardZoom})`,
+                                      transformOrigin: 'center center',
+                                      transition: 'transform 0.2s ease'
+                                    }}
+                                    onClick={() => openLightbox(`${API_BASE}${cleanUrl}`)}
+                                  />
+                                  <div className="celebration-photo-overlay" onClick={() => openLightbox(`${API_BASE}${cleanUrl}`)}>
+                                    <span className="celebration-zoom-icon">🔍</span>
+                                  </div>
+                                  <button
+                                    className="celebration-fit-toggle"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const nextMode = fitMode === 'contain' ? 'cover' : 'contain';
+                                      set('celebrationPhotoUrl', buildUrl(cleanUrl, nextMode, cardZoom));
+                                    }}
+                                    title={fitMode === 'contain' ? "Adjust to Fill card" : "Adjust to Fit in card"}
+                                  >
+                                    {fitMode === 'contain' ? '↔️ Fill' : '🖼️ Fit'}
+                                  </button>
+                                </div>
+                              ) : (
+                                <div style={{ padding: '20px', color: '#94a3b8', fontSize: '0.8rem', fontStyle: 'italic', textAlign: 'center', background: 'rgba(255,255,255,0.5)', border: '1px dashed #cbd5e1', borderRadius: '8px', width: '90%', boxSizing: 'border-box' }}>
+                                  No Photo Uploaded
+                                </div>
+                              )}
+
+                              {/* In-card Zoom Controls */}
+                              {form.celebrationPhotoUrl && (() => {
+                                const rawUrl2 = form.celebrationPhotoUrl || '';
+                                const hash2 = rawUrl2.split('#')[1] || '';
+                                const fitMode2 = hash2.split(':')[0] === 'cover' ? 'cover' : 'contain';
+                                const cleanUrl2 = rawUrl2.split('#')[0];
+                                return (
+                                  <div className="card-zoom-controls">
+                                    <button
+                                      className="card-zoom-btn"
+                                      onClick={() => {
+                                        const next = Math.max(1, parseFloat((cardZoom - 0.25).toFixed(2)));
+                                        setCardZoom(next);
+                                        set('celebrationPhotoUrl', buildUrl(cleanUrl2, fitMode2, next));
+                                      }}
+                                      disabled={cardZoom <= 1}
+                                      title="Zoom Out"
+                                    >➖</button>
+                                    <input
+                                      type="range"
+                                      className="card-zoom-slider"
+                                      min={1}
+                                      max={3}
+                                      step={0.1}
+                                      value={cardZoom}
+                                      onChange={e => {
+                                        const next = parseFloat(e.target.value);
+                                        setCardZoom(next);
+                                        set('celebrationPhotoUrl', buildUrl(cleanUrl2, fitMode2, next));
+                                      }}
+                                    />
+                                    <button
+                                      className="card-zoom-btn"
+                                      onClick={() => {
+                                        const next = Math.min(3, parseFloat((cardZoom + 0.25).toFixed(2)));
+                                        setCardZoom(next);
+                                        set('celebrationPhotoUrl', buildUrl(cleanUrl2, fitMode2, next));
+                                      }}
+                                      disabled={cardZoom >= 3}
+                                      title="Zoom In"
+                                    >➕</button>
+                                    <span className="card-zoom-label">{Math.round(cardZoom * 100)}%</span>
+                                    {cardZoom !== 1 && (
+                                      <button
+                                        className="card-zoom-reset"
+                                        onClick={() => {
+                                          setCardZoom(1);
+                                          set('celebrationPhotoUrl', buildUrl(cleanUrl2, fitMode2, 1));
+                                        }}
+                                        title="Reset Zoom"
+                                      >↩ Reset</button>
+                                    )}
+                                  </div>
+                                );
+                              })()}
+
+                              {form.celebrationText ? (
+                                <div className="celebration-text-box">
+                                  {form.celebrationText}
+                                </div>
+                              ) : (
+                                <div style={{ padding: '8px 12px', color: '#94a3b8', fontSize: '0.8rem', fontStyle: 'italic', textAlign: 'center', background: 'rgba(255,255,255,0.5)', border: '1px dashed #cbd5e1', borderRadius: '8px', width: '90%', boxSizing: 'border-box' }}>
+                                  No message set.
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               )}
@@ -689,7 +849,72 @@ const Setting = () => {
         />
       )}
 
+      {/* Lightbox Modal Overlay */}
+      {lightboxImg && (
+        <div className="celebration-lightbox" onClick={closeLightbox}>
+          <button className="lightbox-close-btn" onClick={closeLightbox} title="Close (Esc)">
+            ✕
+          </button>
+
+          <div className="lightbox-content-box" onClick={(e) => e.stopPropagation()}>
+            <div
+              className="lightbox-img-wrapper"
+              style={{
+                transform: `scale(${zoomLevel}) rotate(${rotation}deg)`
+              }}
+            >
+              <img
+                src={lightboxImg}
+                alt="Celebration Enlarged"
+                className="lightbox-img-element"
+              />
+            </div>
+          </div>
+
+          {/* Controls Panel */}
+          <div className="lightbox-controls-panel" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="lightbox-ctrl-btn"
+              onClick={() => setZoomLevel(prev => Math.max(1, prev - 0.25))}
+              disabled={zoomLevel <= 1}
+              title="Zoom Out"
+            >
+              ➖
+            </button>
+            <span className="lightbox-info-tag">{Math.round(zoomLevel * 100)}%</span>
+            <button
+              className="lightbox-ctrl-btn"
+              onClick={() => setZoomLevel(prev => Math.min(3, prev + 0.25))}
+              disabled={zoomLevel >= 3}
+              title="Zoom In"
+            >
+              ➕
+            </button>
+            <div className="lightbox-ctrl-divider" />
+            <button
+              className="lightbox-ctrl-btn"
+              onClick={() => setRotation(prev => (prev + 90) % 360)}
+              title="Rotate 90° Clockwise"
+            >
+              🔄
+            </button>
+            <div className="lightbox-ctrl-divider" />
+            <button
+              className="lightbox-ctrl-btn"
+              onClick={() => {
+                setZoomLevel(1);
+                setRotation(0);
+              }}
+              title="Reset Adjustments"
+            >
+              ↩️
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
 export default Setting;
+

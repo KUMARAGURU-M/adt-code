@@ -309,6 +309,11 @@
   width: 90px;
 }
 
+.col-workflow {
+  width: 250px;
+  min-width: 250px;
+}
+
 .col-job {
   min-width: 350px;
   max-width: 500px;
@@ -331,7 +336,7 @@
 
 .col-duedate {
   min-width: 150px;
-  width: 250px;
+  width: 150px;
   white-space: nowrap;
 }
 
@@ -1266,11 +1271,12 @@ input[type="date"].tm-form-input {
 }
 
 .tm-checkbox-item:hover {
-  background: #f8fafc;
+  background: #f0f8ff;
 }
 
 .tm-checkbox-item.checked {
-  background: #eff6ff;
+  background: #e4ebf7;
+
   color: #1d4ed8;
   font-weight: 500;
 }

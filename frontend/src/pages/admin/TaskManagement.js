@@ -316,9 +316,14 @@ function TaskModal({ mode, task, onClose, onSave,
   };
 
   const [form, setForm] = useState(() => {
+    const currentUser = getCurrentUser();
+    const matchedEmp = employees.find(e => String(e.id) === String(currentUser?.userId));
+    const defaultAssignedBy = matchedEmp ? matchedEmp.id : (currentUser?.userId || null);
+
     if (!task) {
       return {
         ...emptyForm,
+        assignedBy: defaultAssignedBy,
         date: new Date().toISOString().split("T")[0]
       };
     }
@@ -353,7 +358,7 @@ function TaskModal({ mode, task, onClose, onSave,
         ? task.chapter.split(" - ")[0] : task.chapter || "",
       chapterEnd: task.chapter?.includes(" - ")
         ? task.chapter.split(" - ")[1] : "",
-      assignedBy: task.assignedById || null,
+      assignedBy: task.assignedById || defaultAssignedBy,
       totalPages: task.totalPages?.toString() || "",
       complexity: task.complexity || "",
       serverPath: task.serverPath || "",
@@ -361,6 +366,19 @@ function TaskModal({ mode, task, onClose, onSave,
       workflowId: proj?.workflowId || "",
     };
   });
+
+  // Auto-select current logged-in user in 'Assigned By' once employee list is loaded
+  useEffect(() => {
+    if (!form.assignedBy && employees.length > 0) {
+      const currentUser = getCurrentUser();
+      if (currentUser?.userId) {
+        const matchedEmp = employees.find(e => String(e.id) === String(currentUser.userId));
+        if (matchedEmp) {
+          setForm(p => p.assignedBy ? p : { ...p, assignedBy: matchedEmp.id });
+        }
+      }
+    }
+  }, [employees, form.assignedBy]);
 
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
@@ -896,17 +914,8 @@ function TaskModal({ mode, task, onClose, onSave,
             </div>
           </div>
 
-          {/* Row 7: Description, Assigned Date, Path, Due Date */}
-          <div className="tm-four-col" style={{ alignItems: "start" }}>
-            <div>
-              <div className="tm-field-label">📝 Description</div>
-              <textarea className="tm-form-textarea"
-                placeholder="Enter task description (optional)"
-                value={form.description}
-                onChange={e => setF("description", e.target.value)}
-                style={{ minHeight: '38px', height: '38px', resize: 'none' }}
-              />
-            </div>
+          {/* Row 7: Assigned Date, Due Date */}
+          <div className="tm-two-col" style={{ alignItems: "start" }}>
             <div>
               <div className="tm-field-label">📅 Assigned Date</div>
               <input type="date" className="tm-form-input"
@@ -919,6 +928,23 @@ function TaskModal({ mode, task, onClose, onSave,
                 value={form.dueDate}
                 onChange={e => setF("dueDate", e.target.value)} />
             </div>
+          </div>
+
+
+          {/* Row 8 (Last Line): Description, Path */}
+          <div className="tm-one-col" style={{ alignItems: "start" }}>
+            <div>
+              <div className="tm-field-label">📝 Description</div>
+              <textarea className="tm-form-textarea"
+                placeholder="Enter task description (optional)"
+                value={form.description}
+                onChange={e => setF("description", e.target.value)}
+
+              />
+            </div>
+          </div>
+
+          <div className="tm-one-col" style={{ alignItems: "start" }}>
             <div>
               <div className="tm-field-label">🔗 Path</div>
               <input className="tm-form-input"
@@ -1587,3 +1613,112 @@ export default function TaskManagement() {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

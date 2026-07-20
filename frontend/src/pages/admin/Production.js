@@ -559,17 +559,21 @@ const Production = () => {
           </div>
 
           <div className="filter-actions-group">
-            {hasActiveFilters && (
-              <span className="filter-total-pages" style={{ marginRight: 'auto', alignSelf: 'center', fontWeight: '700', color: '#475569', fontSize: '0.85rem', background: '#f8fafc', padding: '6px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
-                Total Filtered Pages: {jobs.reduce((sum, j) => sum + (parseInt(j.pageCount) || 0), 0)}
-              </span>
-            )}
-            <button type="button" onClick={handleReset} className="btn-reset">
-              🔄 Reset
-            </button>
-            <button type="submit" className="btn-search">
-              🔍 Search
-            </button>
+            <div className="filter-results-left">
+              {hasActiveFilters && (
+                <span className="filter-total-pages" style={{ fontWeight: '700', color: '#475569', fontSize: '0.85rem', background: '#f8fafc', padding: '6px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+                  Total Filtered Pages: {jobs.reduce((sum, j) => sum + (parseInt(j.pageCount) || 0), 0)}
+                </span>
+              )}
+            </div>
+            <div className="filter-buttons-right">
+              <button type="button" onClick={handleReset} className="btn-reset">
+                🔄 Reset
+              </button>
+              <button type="submit" className="btn-search">
+                🔍 Search
+              </button>
+            </div>
           </div>
         </div>
       </form>

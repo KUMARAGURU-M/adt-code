@@ -409,8 +409,8 @@
 /* ── Project Filters ── */
 .inv-proj-filters {
   display: flex;
+  flex-direction: column;
   gap: 10px;
-  flex-wrap: wrap;
   margin-bottom: 14px;
   padding: 14px;
   background: #f8fafc;
@@ -421,6 +421,23 @@
 .inv-proj-filters .inv-field-block {
   margin-bottom: 0;
   min-width: 130px;
+}
+
+.inv-proj-filters-fields {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.inv-proj-filters-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-top: 12px;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 10px;
 }
 
 /* ── Project Table ── */

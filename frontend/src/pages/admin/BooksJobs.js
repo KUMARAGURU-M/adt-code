@@ -126,9 +126,9 @@ const Modal = ({ onClose, children, wide, xl }) => (
       className={`bj-modal-box${wide ? ' bj-modal-wide' : ''}${xl ? ' bj-modal-xl' : ''}`}
       style={{ position: 'relative' }}
     >
-      <button 
-        type="button" 
-        className="bj-modal-close-x" 
+      <button
+        type="button"
+        className="bj-modal-close-x"
         onClick={onClose}
         style={{
           position: 'absolute',
@@ -1689,17 +1689,21 @@ const BooksJobs = () => {
           </div>
 
           <div className="bj-filter-actions-group">
-            {hasActiveFilters && (
-              <span className="bj-filter-total-pages" style={{ marginRight: 'auto', alignSelf: 'center', fontWeight: '700', color: '#4a5568', fontSize: '0.85rem', background: '#f1f5f9', padding: '6px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
-                Filtered : {jobs.reduce((sum, j) => sum + (parseInt(j.pageCount) || 0), 0)}
-              </span>
-            )}
-            <button className="bj-search-btn" onClick={handleSearch}>
-              🔍 Search
-            </button>
-            <button className="bj-clear-btn" onClick={handleClear}>
-              ✕ Clear
-            </button>
+            <div className="bj-filter-results-left">
+              {hasActiveFilters && (
+                <span className="bj-filter-total-pages" style={{ fontWeight: '700', color: '#4a5568', fontSize: '0.85rem', background: '#f1f5f9', padding: '6px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+                  Filtered : {jobs.reduce((sum, j) => sum + (parseInt(j.pageCount) || 0), 0)}
+                </span>
+              )}
+            </div>
+            <div className="bj-filter-buttons-right">
+              <button className="bj-search-btn" onClick={handleSearch}>
+                🔍 Search
+              </button>
+              <button className="bj-clear-btn" onClick={handleClear}>
+                ✕ Clear
+              </button>
+            </div>
           </div>
         </div>
       </div>

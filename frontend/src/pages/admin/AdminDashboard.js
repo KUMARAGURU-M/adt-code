@@ -19,6 +19,35 @@ const AdminDashboard = () => {
   const [announcement, setAnnouncement] = useState('');
   const [celebration, setCelebration] = useState({ isCelebration: false, text: '', photoUrl: '' });
 
+  // Lightbox States
+  const [lightboxImg, setLightboxImg] = useState(null);
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [rotation, setRotation] = useState(0);
+
+  const openLightbox = (url) => {
+    setLightboxImg(url);
+    setZoomLevel(1);
+    setRotation(0);
+  };
+
+  const closeLightbox = () => {
+    setLightboxImg(null);
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        closeLightbox();
+      }
+    };
+    if (lightboxImg) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [lightboxImg]);
+
   const fetchDashboardStats = async () => {
     try {
       setLoadingStats(true);
@@ -243,49 +272,46 @@ const AdminDashboard = () => {
         {celebration.isCelebration && (
           <div className="celebration-card">
             <h4 className="card-label">🎉 Celebration</h4>
-            <div className="celebration-content-wrapper" style={{ flex: 1, overflowY: 'auto' }}>
-              <div className="celebration-content" style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '12px',
-                alignItems: 'center',
-                justifyContent: 'center',
-                minHeight: '100%',
-                padding: '10px 0',
-                background: 'linear-gradient(135deg, #fff5f5 0%, #fff0f6 50%, #f3f0ff 100%)',
-                borderRadius: '8px',
-                boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.02)',
-                borderLeft: '5px solid #d946ef'
-              }}>
-                {celebration.photoUrl && (
-                  <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-                    <img
-                      src={`${API_BASE}${celebration.photoUrl}`}
-                      alt="Celebration"
-                      style={{
-                        maxWidth: '90%',
-                        maxHeight: '180px',
-                        objectFit: 'contain',
-                        borderRadius: '8px',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
-                      }}
-                    />
-                  </div>
-                )}
+            <div className="celebration-content-wrapper">
+              <div className="celebration-content">
+                {celebration.photoUrl && (() => {
+                  const rawUrl = celebration.photoUrl || '';
+                  const hash = rawUrl.split('#')[1] || '';
+                  const hashParts = hash.split(':');
+                  const fitMode = hashParts[0] === 'cover' ? 'cover' : 'contain';
+                  const zoom = (() => {
+                    const z = parseFloat(hashParts[1]);
+                    return (!isNaN(z) && z >= 100 && z <= 300) ? z / 100 : 1;
+                  })();
+                  const cleanUrl = rawUrl.split('#')[0];
+                  return (
+                    <div
+                      className="celebration-photo-container"
+                      title="Click to view full screen"
+                      style={{ overflow: 'hidden' }}
+                    >
+                      <img
+                        src={`${API_BASE}${cleanUrl}`}
+                        alt="Celebration"
+                        className="celebration-img"
+                        style={{
+                          objectFit: fitMode,
+                          width: fitMode === 'cover' ? '100%' : 'auto',
+                          height: '180px',
+                          transform: `scale(${zoom})`,
+                          transformOrigin: 'center center',
+                          transition: 'transform 0.2s ease'
+                        }}
+                        onClick={() => openLightbox(`${API_BASE}${cleanUrl}`)}
+                      />
+                      <div className="celebration-photo-overlay" onClick={() => openLightbox(`${API_BASE}${cleanUrl}`)}>
+                        <span className="celebration-zoom-icon">🔍</span>
+                      </div>
+                    </div>
+                  );
+                })()}
                 {celebration.text && (
-                  <div style={{
-                    fontSize: '0.92rem',
-                    fontWeight: '700',
-                    color: '#4a044e',
-                    textAlign: 'center',
-                    lineHeight: '1.5',
-                    padding: '8px 12px',
-                    background: 'rgba(255,255,255,0.7)',
-                    borderRadius: '8px',
-                    border: '1px dashed #f5d0fe',
-                    width: '90%',
-                    boxSizing: 'border-box'
-                  }}>
+                  <div className="celebration-text-box">
                     {celebration.text}
                   </div>
                 )}
@@ -405,11 +431,70 @@ const AdminDashboard = () => {
         <p className="footer-credit">Powered by Arrow Data-Tech, Puducherry</p>
       </div>
 
+      {/* Lightbox Modal Overlay */}
+      {lightboxImg && (
+        <div className="celebration-lightbox" onClick={closeLightbox}>
+          <button className="lightbox-close-btn" onClick={closeLightbox} title="Close (Esc)">
+            ✕
+          </button>
+
+          <div className="lightbox-content-box" onClick={(e) => e.stopPropagation()}>
+            <div
+              className="lightbox-img-wrapper"
+              style={{
+                transform: `scale(${zoomLevel}) rotate(${rotation}deg)`
+              }}
+            >
+              <img
+                src={lightboxImg}
+                alt="Celebration Enlarged"
+                className="lightbox-img-element"
+              />
+            </div>
+          </div>
+          {/* Controls Panel */}
+          <div className="lightbox-controls-panel" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="lightbox-ctrl-btn"
+              onClick={() => setZoomLevel(prev => Math.max(1, prev - 0.25))}
+              disabled={zoomLevel <= 1}
+              title="Zoom Out"
+            >
+              ➖
+            </button>
+            <span className="lightbox-info-tag">{Math.round(zoomLevel * 100)}%</span>
+            <button
+              className="lightbox-ctrl-btn"
+              onClick={() => setZoomLevel(prev => Math.min(3, prev + 0.25))}
+              disabled={zoomLevel >= 3}
+              title="Zoom In"
+            >
+              ➕
+            </button>
+            <div className="lightbox-ctrl-divider" />
+            <button
+              className="lightbox-ctrl-btn"
+              onClick={() => setRotation(prev => (prev + 90) % 360)}
+              title="Rotate 90° Clockwise"
+            >
+              🔄
+            </button>
+            <div className="lightbox-ctrl-divider" />
+            <button
+              className="lightbox-ctrl-btn"
+              onClick={() => {
+                setZoomLevel(1);
+                setRotation(0);
+              }}
+              title="Reset Adjustments"
+            >
+              ↩️
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
-
 export default AdminDashboard;
-
-
-

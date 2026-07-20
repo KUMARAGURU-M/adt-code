@@ -122,10 +122,16 @@
 }
 
 .filter-actions-group {
-  grid-column: span 3 / -1;
+  grid-column: 1 / -1;
   display: flex;
-  justify-content: flex-end;
-  align-items: flex-end;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.filter-buttons-right {
+  display: flex;
   gap: 12px;
 }
 
@@ -1003,6 +1009,13 @@
 }
 
 .prod-bulk-apply:hover:not(:disabled) {
+
+
+
+
+
+
+
   opacity: 0.88;
 }
 

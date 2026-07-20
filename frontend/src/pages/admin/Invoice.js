@@ -702,6 +702,8 @@ export default function Invoice() {
     return true;
   });
 
+  const hasActiveFilters = filterProject !== "All Projects" || filterWorkflow !== "All Task Names" || filterComplexity !== "All" || filterFileStatus !== "All" || filterStartDate || filterEndDate;
+
   const subTotal = rows.reduce((s, r) => s + Number(r.totalAmount || 0), 0);
   const igstAmt = Math.round(subTotal * igstPct / 100);
   const grandTotal = subTotal + igstAmt;
@@ -1298,19 +1300,27 @@ export default function Invoice() {
             {showProjPanel && (
               <div className="inv-card-body">
                 <div className="inv-proj-filters">
-                  {[["Project", projectChoices, filterProject, setFilterProject], ["Task Name", ["All Task Names", ...workflows.map(w => w.name)], filterWorkflow, setFilterWorkflow], ["Complexity", COMPLEXITY_OPTIONS, filterComplexity, setFilterComplexity], ["File Status", FILE_STATUS_OPTIONS, filterFileStatus, setFilterFileStatus]].map(([lbl, opts, val, set]) => (
-                    <div key={lbl} className="inv-field-block">
-                      <label className="inv-label">{lbl}</label>
-                      <select className="inv-select" value={val} onChange={e => set(e.target.value)}>
-                        {opts.map(o => <option key={o}>{o}</option>)}
-                      </select>
+                  <div className="inv-proj-filters-fields">
+                    {[["Project", projectChoices, filterProject, setFilterProject], ["Task Name", ["All Task Names", ...workflows.map(w => w.name)], filterWorkflow, setFilterWorkflow], ["Complexity", COMPLEXITY_OPTIONS, filterComplexity, setFilterComplexity], ["File Status", FILE_STATUS_OPTIONS, filterFileStatus, setFilterFileStatus]].map(([lbl, opts, val, set]) => (
+                      <div key={lbl} className="inv-field-block">
+                        <label className="inv-label">{lbl}</label>
+                        <select className="inv-select" value={val} onChange={e => set(e.target.value)}>
+                          {opts.map(o => <option key={o}>{o}</option>)}
+                        </select>
+                      </div>
+                    ))}
+                    <div className="inv-field-block"><label className="inv-label">Start From</label><input type="date" className="inv-input" value={filterStartDate} onChange={e => setFilterStartDate(e.target.value)} /></div>
+                    <div className="inv-field-block"><label className="inv-label">End To</label><input type="date" className="inv-input" value={filterEndDate} onChange={e => setFilterEndDate(e.target.value)} /></div>
+                  </div>
+                  <div className="inv-proj-filters-actions">
+                    <div className="inv-proj-filters-results-left">
+                      {hasActiveFilters && (
+                        <span className="inv-filter-total-pages" style={{ fontWeight: '700', color: '#475569', fontSize: '0.85rem', background: '#f1f5f9', padding: '6px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+                          Filtered Pages: {filteredDPs.reduce((sum, dp) => sum + (parseInt(dp.pageCount) || 0), 0)}
+                        </span>
+                      )}
                     </div>
-                  ))}
-                  <div className="inv-field-block"><label className="inv-label">Start From</label><input type="date" className="inv-input" value={filterStartDate} onChange={e => setFilterStartDate(e.target.value)} /></div>
-                  <div className="inv-field-block"><label className="inv-label">End To</label><input type="date" className="inv-input" value={filterEndDate} onChange={e => setFilterEndDate(e.target.value)} /></div>
-                  <div className="inv-field-block inv-field-block--btn">
-                    <label className="inv-label">&nbsp;</label>
-                    <button className="inv-btn inv-btn--outline inv-btn--sm" onClick={() => { setFilterProject("All Projects"); setFilterWorkflow("All Task Names"); setFilterStartDate(""); setFilterEndDate(""); setFilterComplexity("All"); setFilterFileStatus("All"); }}>✕ Clear</button>
+                    <button className="inv-btn inv-btn--outline inv-btn--sm" onClick={() => { setFilterProject("All Projects"); setFilterWorkflow("All Task Names"); setFilterStartDate(""); setFilterEndDate(""); setFilterComplexity("All"); setFilterFileStatus("All"); }}>✕ Clear Filters</button>
                   </div>
                 </div>
                 <div className="inv-proj-table-wrap">

@@ -143,12 +143,17 @@
 }
 
 .bj-filter-actions-group {
-  grid-column: span 3 / -1;
+  grid-column: 1 / -1;
   display: flex;
   flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.bj-filter-buttons-right {
+  display: flex;
   gap: 10px;
-  align-items: flex-end;
-  justify-content: flex-end;
 }
 
 .bj-search-btn {
