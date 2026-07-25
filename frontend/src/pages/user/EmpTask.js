@@ -256,13 +256,13 @@ const EmpTask = () => {
                   <th>Client</th>
                   <th>Project</th>
                   <th>Task Name</th>
-                  <th>Job/ISBN</th>
+                  <th className="et-th-job">Job/ISBN</th>
                   <th>Process</th>
                   <th>Status</th>
                   <th>Due Date</th>
                   <th>Pages</th>
                   <th>Chapter</th>
-                  <th>Description</th>
+                  <th className="et-th-desc">Description</th>
                 </tr>
               </thead>
               <tbody>
@@ -291,7 +291,7 @@ const EmpTask = () => {
                         <td>{task.dueDate || '-'}</td>
                         <td>{task.assignedPages || '-'}</td>
                         <td className="et-td-chapter">{task.chapterArticleBatch || '-'}</td>
-                        <td>{task.description || '-'}</td>
+                        <td className="et-td-desc">{task.description || '-'}</td>
                       </tr>
                     );
                   })

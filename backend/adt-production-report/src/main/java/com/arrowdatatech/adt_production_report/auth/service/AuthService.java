@@ -297,6 +297,38 @@ public class AuthService {
                 .build();
     }
 
+    @Transactional(readOnly = true)
+    public LoginResponse getProfile(UUID userId) {
+        User user = userRepository.findByIdWithProfile(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
+
+        List<String> roles = roleAssignmentRepository
+                .findRoleNamesByUserId(user.getId());
+
+        List<String> permissions = permissionRepository
+                .findPermissionCodesByUserId(user.getId())
+                .stream().toList();
+
+        boolean isAdminDashboard = roles.contains("Admin")
+                || roles.contains("Manager")
+                || roles.contains("Team Leader");
+        String dashboardType = isAdminDashboard ? "ADMIN" : "EMPLOYEE";
+
+        String fullName = user.getEmployeeProfile() != null
+                ? user.getEmployeeProfile().getFullName()
+                : user.getEmail();
+
+        return LoginResponse.builder()
+                .userId(user.getId())
+                .userCode(user.getUserCode())
+                .email(user.getEmail())
+                .fullName(fullName)
+                .roles(roles)
+                .permissions(permissions)
+                .dashboardType(dashboardType)
+                .build();
+    }
+
     // ──────────────────────────────────────────────
     // PRIVATE HELPERS
     // ──────────────────────────────────────────────

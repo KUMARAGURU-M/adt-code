@@ -27,7 +27,7 @@ public abstract class BaseEntity {
     @Column(name = "created_at", updatable = false, nullable = false)
     private OffsetDateTime createdAt;
 
-    @CreationTimestamp  // sets on insert; DB trigger overwrites on update
+    @org.hibernate.annotations.UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
 }

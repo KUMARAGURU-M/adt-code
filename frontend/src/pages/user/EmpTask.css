@@ -168,11 +168,22 @@
 }
 
 .et-td-job {
-  min-width: 180px;
-  max-width: 220px;
+  min-width: 260px;
+  max-width: 350px;
   white-space: pre-wrap;
   /* allow newline for job/isbn */
   color: #475569;
+  text-align: left;
+}
+
+.et-table th.et-th-job {
+  text-align: left;
+}
+
+.et-table th.et-th-desc,
+.et-table td.et-td-desc {
+  text-align: left;
+  min-width: 250px;
 }
 
 .et-td-process {

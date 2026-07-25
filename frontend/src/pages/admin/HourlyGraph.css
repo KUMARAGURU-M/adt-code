@@ -835,6 +835,12 @@
 .hg-cell-select--process {
   font-weight: 600;
   color: var(--hg-text-sub);
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+.hg-cell-select--process::-ms-expand {
+  display: none;
 }
 
 .tgt-project-select {

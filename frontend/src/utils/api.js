@@ -215,5 +215,25 @@ export function getRolePrefix(roles) {
   return 'executive';
 }
 
+export async function refreshCurrentUser() {
+  try {
+    const data = await apiCall('/auth/me');
+    if (data) {
+      sessionStorage.setItem('user', JSON.stringify({
+        userId: data.userId,
+        fullName: data.fullName,
+        email: data.email,
+        roles: data.roles,
+        permissions: data.permissions,
+      }));
+      return data;
+    }
+  } catch (err) {
+    console.error('Failed to refresh current user profile:', err);
+    throw err;
+  }
+}
 export default apiCall;
+
+
 

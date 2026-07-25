@@ -1,0 +1,57 @@
+/* src/pages/developer/ProjectsPage.css */
+
+.projects-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.project-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.project-tabs {
+  display: flex;
+  gap: 10px;
+  border-bottom: 1px solid #edf2f7;
+  padding-bottom: 10px;
+  margin-bottom: 16px;
+}
+
+.project-tab-btn {
+  background: none;
+  border: none;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #718096;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.project-tab-btn.active {
+  background: #ebf8ff;
+  color: #3182ce;
+}
+
+.project-overview-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 768px) {
+  .project-overview-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dev-two-col {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}

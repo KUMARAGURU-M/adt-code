@@ -28,4 +28,7 @@ public class StopTaskRequest {
     // On-hold reason if status = on-hold
     @JsonProperty("onHoldReason")
     private String onHoldReason;
+
+    @JsonProperty("summary")
+    private String summary;
 }

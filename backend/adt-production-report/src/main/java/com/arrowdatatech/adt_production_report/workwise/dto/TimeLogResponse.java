@@ -40,6 +40,8 @@ public class TimeLogResponse {
     private List<BreakLogDto> breakLogs;
     private OffsetDateTime manualCheckIn;
     private OffsetDateTime manualCheckOut;
+    private Boolean isOvertime;
+    private String summary;
 
     @Getter
     @Builder

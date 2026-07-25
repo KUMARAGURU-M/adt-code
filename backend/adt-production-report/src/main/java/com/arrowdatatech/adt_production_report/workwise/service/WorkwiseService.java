@@ -22,6 +22,10 @@ import com.arrowdatatech.adt_production_report.task.repository.TaskJobAssignment
 import com.arrowdatatech.adt_production_report.task.repository.TaskRepository;
 import com.arrowdatatech.adt_production_report.user.entity.User;
 import com.arrowdatatech.adt_production_report.user.repository.UserRepository;
+import com.arrowdatatech.adt_production_report.project.entity.DevProject;
+import com.arrowdatatech.adt_production_report.project.repository.DevProjectRepository;
+import com.arrowdatatech.adt_production_report.task.entity.DevTask;
+import com.arrowdatatech.adt_production_report.task.repository.DevTaskRepository;
 import com.arrowdatatech.adt_production_report.workwise.dto.*;
 import com.arrowdatatech.adt_production_report.workwise.entity.BreakLog;
 import com.arrowdatatech.adt_production_report.workwise.entity.TimeLog;
@@ -60,6 +64,8 @@ public class WorkwiseService {
     private final AttendanceEmployeeRepository attendanceEmployeeRepository;
     private final AttendanceRecordRepository attendanceRecordRepository;
     private final ActivityLogService               activityLogService;
+    private final DevTaskRepository                devTaskRepository;
+    private final DevProjectRepository             devProjectRepository;
 
     // ─────────────────────────────────────────────
     // GET CURRENT RUNNING TASK
@@ -278,89 +284,121 @@ public class WorkwiseService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "User", "id", userId));
 
-        Task task = taskRepository.findById(request.getTaskId())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Task", "id", request.getTaskId()));
-
-        // Verify this task is assigned to this user
-        TaskEmployeeAssignment tea = taskEmployeeRepository
-                .findByTaskIdAndUserId(task.getId(), userId)
-                .orElseThrow(() -> new BadRequestException(
-                        "This task is not assigned to you."));
-
-        // Verify task is not already completed by this user
-        if ("Completed".equals(tea.getStatus())) {
-            throw new BadRequestException(
-                    "This task is already completed by you.");
-        }
-
-        // Priority order check removed to let user choose work
-        /*
-        List<Task> activeTasks = taskRepository.findByAssignedUserId(userId);
-        if (!activeTasks.isEmpty()) {
-            Task firstTask = activeTasks.get(0);
-            if (!firstTask.getId().equals(task.getId())) {
-                throw new BadRequestException(
-                        "You must complete your current priority task first: '"
-                                + firstTask.getTaskTitle() + "'.");
-            }
-        }
-        */
-
-        // Auto-derive project and process from the task (read-only for employee)
-        Project project = task.getProject();
-        Process process = task.getProcess();
-
-        if (project == null) {
-            throw new BadRequestException(
-                    "Task has no project assigned. Contact your admin.");
-        }
-        if (process == null) {
-            throw new BadRequestException(
-                    "Task has no process assigned. Contact your admin.");
-        }
-
-        // Auto-derive first job from task (if any)
-        // BUG FIX: Use repository, not lazy collection
-        List<TaskJobAssignment> jobLinks =
-                taskJobRepository.findByTaskId(task.getId());
-        var firstJob = jobLinks.isEmpty() ? null
-                : jobLinks.get(0).getJob();
-
         // Get shift
         Shift shift = shiftAssignmentRepository
                 .findByUserIdAndEffectiveToIsNull(userId)
                 .map(s -> s.getShift())
                 .orElse(null);
 
-        TimeLog timeLog = TimeLog.builder()
-                .user(user)
-                .project(project)
-                .process(process)
-                .job(firstJob)
-                .task(task)
-                .shift(shift)
-                .startTime(OffsetDateTime.now())
-                .status("Running")
-                .logDate(LocalDate.now())
-                .updatedAt(OffsetDateTime.now())
-                .build();
+        // Check if task ID belongs to a DevTask
+        boolean isDevTask = devTaskRepository.existsById(request.getTaskId());
+        TimeLog timeLog;
 
-        timeLog = timeLogRepository.save(timeLog);
-        ensureAttendanceEmployeeExists(user);
+        if (isDevTask) {
+            DevTask devTask = devTaskRepository.findById(request.getTaskId())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "DevTask", "id", request.getTaskId()));
 
-        // Update tea status to "In Progress"
-        tea.setStatus("In Progress");
-        tea.setUpdatedAt(OffsetDateTime.now());
-        taskEmployeeRepository.save(tea);
+            if (devTask.getAssignedTo() == null || !devTask.getAssignedTo().getId().equals(userId)) {
+                throw new BadRequestException("This task is not assigned to you.");
+            }
 
-        // Update task status to WIP
-        task.setStatus("WIP");
-        task.setUpdatedAt(OffsetDateTime.now());
-        taskRepository.save(task);
+            if ("Completed".equalsIgnoreCase(devTask.getStatus())) {
+                throw new BadRequestException("This task is already completed.");
+            }
 
-        log.info("Task '{}' started for user {}",
-                task.getTaskTitle(), userId);
+            DevProject devProject = devTask.getProject();
+            if (devProject == null) {
+                throw new BadRequestException("Task has no project assigned. Contact your admin.");
+            }
+
+            timeLog = TimeLog.builder()
+                    .user(user)
+                    .devProject(devProject)
+                    .devTask(devTask)
+                    .shift(shift)
+                    .startTime(OffsetDateTime.now())
+                    .status("Running")
+                    .logDate(LocalDate.now())
+                    .isOvertime(request.getIsOvertime() != null ? request.getIsOvertime() : false)
+                    .updatedAt(OffsetDateTime.now())
+                    .build();
+
+            timeLog = timeLogRepository.save(timeLog);
+            ensureAttendanceEmployeeExists(user);
+
+            // Update devTask status to "In Progress"
+            devTask.setStatus("In Progress");
+            devTask.setUpdatedAt(OffsetDateTime.now());
+            devTaskRepository.save(devTask);
+
+            log.info("Developer Task '{}' started for user {}", devTask.getTitle(), userId);
+        } else {
+            Task task = taskRepository.findById(request.getTaskId())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Task", "id", request.getTaskId()));
+
+            // Verify this task is assigned to this user
+            TaskEmployeeAssignment tea = taskEmployeeRepository
+                    .findByTaskIdAndUserId(task.getId(), userId)
+                    .orElseThrow(() -> new BadRequestException(
+                            "This task is not assigned to you."));
+
+            // Verify task is not already completed by this user
+            if ("Completed".equals(tea.getStatus())) {
+                throw new BadRequestException(
+                        "This task is already completed by you.");
+            }
+
+            // Auto-derive project and process from the task (read-only for employee)
+            Project project = task.getProject();
+            Process process = task.getProcess();
+
+            if (project == null) {
+                throw new BadRequestException(
+                        "Task has no project assigned. Contact your admin.");
+            }
+            if (process == null) {
+                throw new BadRequestException(
+                        "Task has no process assigned. Contact your admin.");
+            }
+
+            // Auto-derive first job from task (if any)
+            List<TaskJobAssignment> jobLinks =
+                    taskJobRepository.findByTaskId(task.getId());
+            var firstJob = jobLinks.isEmpty() ? null
+                    : jobLinks.get(0).getJob();
+
+            timeLog = TimeLog.builder()
+                    .user(user)
+                    .project(project)
+                    .process(process)
+                    .job(firstJob)
+                    .task(task)
+                    .shift(shift)
+                    .startTime(OffsetDateTime.now())
+                    .status("Running")
+                    .logDate(LocalDate.now())
+                    .isOvertime(request.getIsOvertime() != null ? request.getIsOvertime() : false)
+                    .updatedAt(OffsetDateTime.now())
+                    .build();
+
+            timeLog = timeLogRepository.save(timeLog);
+            ensureAttendanceEmployeeExists(user);
+
+            // Update tea status to "In Progress"
+            tea.setStatus("In Progress");
+            tea.setUpdatedAt(OffsetDateTime.now());
+            taskEmployeeRepository.save(tea);
+
+            // Update task status to WIP
+            task.setStatus("WIP");
+            task.setUpdatedAt(OffsetDateTime.now());
+            taskRepository.save(task);
+
+            log.info("Task '{}' started for user {}",
+                    task.getTaskTitle(), userId);
+        }
 
         return buildContext(timeLog, userId);
     }
@@ -393,54 +431,6 @@ public class WorkwiseService {
                     "This time log is not currently running.");
         }
 
-        // Resolve assignment info for page validation
-        Integer assignedPages          = null;
-        Integer previousPagesCompleted = 0;
-        TaskEmployeeAssignment tea     = null;
-
-        if (timeLog.getTask() != null) {
-            tea = taskEmployeeRepository
-                    .findByTaskIdAndUserId(
-                            timeLog.getTask().getId(), userId)
-                    .orElse(null);
-            if (tea != null) {
-                assignedPages          = tea.getAssignedPages();
-                previousPagesCompleted = tea.getPagesCompleted() != null
-                        ? tea.getPagesCompleted() : 0;
-            }
-        }
-
-        int pagesThisSession = request.getPagesCompleted() != null
-                ? request.getPagesCompleted() : 0;
-
-        // Cumulative pages = saved total + this session's input
-        int totalPagesNow = previousPagesCompleted + pagesThisSession;
-
-        // BUG FIX: >= not ==
-        boolean canComplete = assignedPages == null
-                || totalPagesNow >= assignedPages;
-
-        String requestedStatus = request.getStatus();
-
-        if ("completed".equalsIgnoreCase(requestedStatus) && !canComplete) {
-            throw new BadRequestException(
-                    "Cannot mark as Completed. You have completed "
-                            + totalPagesNow + " of " + assignedPages
-                            + " assigned pages. Complete all pages first.");
-        }
-
-        // Determine TimeLog.status — must match DB CHECK constraint on time_logs:
-        // ('Running','On Break','FINISH','WIP','YTS','RTU',
-        //  'UPLOADED','PENDING','HOLD','QUERY')
-        String timeLogStatus;
-        if ("completed".equalsIgnoreCase(requestedStatus) && canComplete) {
-            timeLogStatus = "FINISH";
-        } else if ("on-hold".equalsIgnoreCase(requestedStatus)) {
-            timeLogStatus = "HOLD";
-        } else {
-            timeLogStatus = "WIP";
-        }
-
         OffsetDateTime endTime = OffsetDateTime.now();
         long totalElapsed = ChronoUnit.SECONDS.between(
                 timeLog.getStartTime(), endTime);
@@ -466,52 +456,141 @@ public class WorkwiseService {
         timeLog.setEndTime(endTime);
         timeLog.setElapsedSeconds((int) totalElapsed);
         timeLog.setWorkingSeconds(workingSeconds);
-        timeLog.setPagesCompleted(pagesThisSession);
-        timeLog.setMarkTaskCompleted("FINISH".equals(timeLogStatus));
-        timeLog.setStatus(timeLogStatus);
-        timeLog.setUpdatedAt(OffsetDateTime.now());
-        timeLogRepository.save(timeLog);
+        timeLog.setSummary(request.getSummary());
 
-        // Update employee assignment
-        boolean taskFullyCompleted = false;
-        if (timeLog.getTask() != null && tea != null) {
-            final TaskEmployeeAssignment teaFinal = tea;
+        String requestedStatus = request.getStatus();
 
-            teaFinal.setPagesCompleted(totalPagesNow);
+        if (timeLog.getDevTask() != null) {
+            DevTask devTask = timeLog.getDevTask();
+            String devTaskStatus;
 
-            // tea.status DB constraint: ('Pending','In Progress','Completed')
-            if ("FINISH".equals(timeLogStatus)) {
-                teaFinal.setStatus("Completed");
+            if ("completed".equalsIgnoreCase(requestedStatus)) {
+                devTaskStatus = "Completed";
+                devTask.setCompletedDate(LocalDate.now());
+                timeLog.setStatus("FINISH");
+            } else if ("on-hold".equalsIgnoreCase(requestedStatus)) {
+                devTaskStatus = "Review";
+                devTask.setCompletedDate(null);
+                timeLog.setStatus("HOLD");
             } else {
-                // HOLD or WIP: keep as In Progress so they can resume
-                teaFinal.setStatus("In Progress");
+                devTaskStatus = "In Progress";
+                devTask.setCompletedDate(null);
+                timeLog.setStatus("WIP");
             }
-            teaFinal.setUpdatedAt(OffsetDateTime.now());
-            taskEmployeeRepository.save(teaFinal);
 
-            // BUG FIX: NOW actually call syncTaskStatus
-            Task t = taskRepository.findById(timeLog.getTask().getId())
-                    .orElse(null);
-            if (t != null) {
-                taskFullyCompleted = syncTaskStatusFromAssignments(t);
+            devTask.setStatus(devTaskStatus);
+            devTask.setUpdatedAt(OffsetDateTime.now());
+            devTaskRepository.save(devTask);
+
+            timeLog.setMarkTaskCompleted("FINISH".equals(timeLog.getStatus()));
+            timeLog.setUpdatedAt(OffsetDateTime.now());
+            timeLogRepository.save(timeLog);
+
+            MyTaskOption nextTask = getNextTask(userId);
+
+            log.info("Developer Task stopped for user {} — {}s worked, status: {}",
+                    userId, workingSeconds, devTaskStatus);
+
+            return StopTaskResponse.builder()
+                    .timeLog(toTimeLogResponse(timeLog))
+                    .taskCompleted("Completed".equals(devTaskStatus))
+                    .nextTask(nextTask)
+                    .message("Task " + devTaskStatus.toLowerCase() + ".")
+                    .build();
+        } else {
+            // Resolve assignment info for page validation
+            Integer assignedPages          = null;
+            Integer previousPagesCompleted = 0;
+            TaskEmployeeAssignment tea     = null;
+
+            if (timeLog.getTask() != null) {
+                tea = taskEmployeeRepository
+                        .findByTaskIdAndUserId(
+                                timeLog.getTask().getId(), userId)
+                        .orElse(null);
+                if (tea != null) {
+                    assignedPages          = tea.getAssignedPages();
+                    previousPagesCompleted = tea.getPagesCompleted() != null
+                            ? tea.getPagesCompleted() : 0;
+                }
             }
+
+            int pagesThisSession = request.getPagesCompleted() != null
+                    ? request.getPagesCompleted() : 0;
+
+            // Cumulative pages = saved total + this session's input
+            int totalPagesNow = previousPagesCompleted + pagesThisSession;
+
+            // BUG FIX: >= not ==
+            boolean canComplete = assignedPages == null
+                    || totalPagesNow >= assignedPages;
+
+            if ("completed".equalsIgnoreCase(requestedStatus) && !canComplete) {
+                throw new BadRequestException(
+                        "Cannot mark as Completed. You have completed "
+                                + totalPagesNow + " of " + assignedPages
+                                + " assigned pages. Complete all pages first.");
+            }
+
+            // Determine TimeLog.status — must match DB CHECK constraint on time_logs:
+            // ('Running','On Break','FINISH','WIP','YTS','RTU',
+            //  'UPLOADED','PENDING','HOLD','QUERY')
+            String timeLogStatus;
+            if ("completed".equalsIgnoreCase(requestedStatus) && canComplete) {
+                timeLogStatus = "FINISH";
+            } else if ("on-hold".equalsIgnoreCase(requestedStatus)) {
+                timeLogStatus = "HOLD";
+            } else {
+                timeLogStatus = "WIP";
+            }
+
+            timeLog.setPagesCompleted(pagesThisSession);
+            timeLog.setMarkTaskCompleted("FINISH".equals(timeLogStatus));
+            timeLog.setStatus(timeLogStatus);
+            timeLog.setUpdatedAt(OffsetDateTime.now());
+            timeLogRepository.save(timeLog);
+
+            // Update employee assignment
+            boolean taskFullyCompleted = false;
+            if (timeLog.getTask() != null && tea != null) {
+                final TaskEmployeeAssignment teaFinal = tea;
+
+                teaFinal.setPagesCompleted(totalPagesNow);
+
+                // tea.status DB constraint: ('Pending','In Progress','Completed')
+                if ("FINISH".equals(timeLogStatus)) {
+                    teaFinal.setStatus("Completed");
+                } else {
+                    // HOLD or WIP: keep as In Progress so they can resume
+                    teaFinal.setStatus("In Progress");
+                }
+                teaFinal.setUpdatedAt(OffsetDateTime.now());
+                taskEmployeeRepository.save(teaFinal);
+
+                // BUG FIX: NOW actually call syncTaskStatus
+                Task t = taskRepository.findById(timeLog.getTask().getId())
+                        .orElse(null);
+                if (t != null) {
+                    taskFullyCompleted = syncTaskStatusFromAssignments(t);
+                }
+            }
+
+            MyTaskOption nextTask = getNextTask(userId);
+
+            log.info("Task stopped for user {} — {}s worked, {} pages this session "
+                            + "({} total), status: {}",
+                    userId, workingSeconds, pagesThisSession,
+                    totalPagesNow, timeLogStatus);
+
+            return StopTaskResponse.builder()
+                    .timeLog(toTimeLogResponse(timeLog))
+                    .taskCompleted(taskFullyCompleted)
+                    .nextTask(nextTask)
+                    .message(buildStopMessage(timeLogStatus,
+                            pagesThisSession, totalPagesNow,
+                            assignedPages, nextTask))
+                    .build();
         }
-
-        MyTaskOption nextTask = getNextTask(userId);
-
-        log.info("Task stopped for user {} — {}s worked, {} pages this session "
-                        + "({} total), status: {}",
-                userId, workingSeconds, pagesThisSession,
-                totalPagesNow, timeLogStatus);
-
-        return StopTaskResponse.builder()
-                .timeLog(toTimeLogResponse(timeLog))
-                .taskCompleted(taskFullyCompleted)
-                .nextTask(nextTask)
-                .message(buildStopMessage(timeLogStatus,
-                        pagesThisSession, totalPagesNow,
-                        assignedPages, nextTask))
-                .build();
     }
 
     // ─────────────────────────────────────────────
@@ -575,14 +654,14 @@ public class WorkwiseService {
         OffsetDateTime now = OffsetDateTime.now();
 
         if (request.getTimeLogId() == null) {
-            // General shift break (Scenario B)
-            // 1. Block if already running or on break
+            // General shift break (no active task running)
+            // BUG FIX: If user has a running task (including devTask), reject — they must pass timeLogId.
             boolean alreadyRunning =
                     timeLogRepository.existsByUserIdAndStatus(userId, "Running")
                             || timeLogRepository.existsByUserIdAndStatus(userId, "On Break");
             if (alreadyRunning) {
                 throw new BadRequestException(
-                        "You already have an active session. Stop or resume it before starting a new break.");
+                        "You have an active task running. Use the Break button within the task to take a break.");
             }
 
             // 2. Check-in guard
@@ -696,8 +775,12 @@ public class WorkwiseService {
                                     ? timeLog.getBreakSeconds() : 0) + dur);
                 });
 
-        if (timeLog.getTask() == null) {
-            // General taskless break is now finished
+        // BUG FIX: check BOTH task and devTask — only close the log if it's a
+        // truly taskless general shift break (no regular task, no dev task).
+        boolean isTasklessBreak = (timeLog.getTask() == null && timeLog.getDevTask() == null);
+
+        if (isTasklessBreak) {
+            // General taskless break is now finished — close the log
             OffsetDateTime startTime = timeLog.getStartTime();
             long totalElapsed = ChronoUnit.SECONDS.between(startTime, now);
             int totalBreak = timeLog.getBreakSeconds() != null ? timeLog.getBreakSeconds() : 0;
@@ -710,11 +793,14 @@ public class WorkwiseService {
             timeLog.setUpdatedAt(now);
             timeLogRepository.save(timeLog);
 
+            log.info("General shift break ended for user {} — log closed as FINISH", userId);
             return null; // Return null so frontend knows no active session exists
         } else {
+            // Task/DevTask break — resume the existing time log
             timeLog.setStatus("Running");
             timeLog.setUpdatedAt(now);
             timeLogRepository.save(timeLog);
+            log.info("Task break ended for user {} — resuming time log {}", userId, timeLogId);
             return buildContext(timeLog, userId);
         }
     }
@@ -765,12 +851,21 @@ public class WorkwiseService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "TimeLog", "id", timeLogId));
 
-        if (timeLog.getTask() == null) {
+        if (timeLog.getTask() == null && timeLog.getDevTask() == null) {
             return StopValidationResponse.builder()
                     .canComplete(true)
                     .assignedPages(null)
                     .pagesCompletedSoFar(0)
                     .taskTitle(null)
+                    .build();
+        }
+
+        if (timeLog.getDevTask() != null) {
+            return StopValidationResponse.builder()
+                    .canComplete(true)
+                    .assignedPages(null)
+                    .pagesCompletedSoFar(0)
+                    .taskTitle(timeLog.getDevTask().getTitle())
                     .build();
         }
 
@@ -861,6 +956,24 @@ public class WorkwiseService {
             }
         }
 
+        // Dev-task specific fields: taskTitle, priority, assignedBy
+        String devTaskTitle  = null;
+        String devPriority   = null;
+        String devAssignedBy = null;
+
+        if (log.getDevTask() != null) {
+            DevTask devTask = log.getDevTask();
+            dueDate      = devTask.getDueDate() != null ? devTask.getDueDate().toString() : null;
+            devTaskTitle = devTask.getTitle();
+            devPriority  = devTask.getPriority();
+            if (devTask.getAssignedBy() != null) {
+                User assignedByUser = devTask.getAssignedBy();
+                devAssignedBy = assignedByUser.getEmployeeProfile() != null
+                        ? assignedByUser.getEmployeeProfile().getFullName()
+                        : assignedByUser.getEmail();
+            }
+        }
+
         String shiftName = log.getShift() != null
                 ? log.getShift().getName() : null;
 
@@ -881,8 +994,8 @@ public class WorkwiseService {
                 .elapsedSeconds(elapsed)
                 .breakSeconds(breakSeconds)
                 .workingSeconds(workingSeconds)
-                .projectName(log.getProject() != null
-                        ? log.getProject().getName() : null)
+                .projectName(log.getProject() != null ? log.getProject().getName()
+                        : (log.getDevProject() != null ? log.getDevProject().getName() : null))
                 .processName(log.getProcess() != null
                         ? log.getProcess().getName() : null)
                 .isbnBookTitle(isbnTitle)
@@ -893,8 +1006,13 @@ public class WorkwiseService {
                 .totalPages(totalPages)
                 .assignedPages(assignedPages)
                 .pagesCompletedSoFar(pagesCompletedSoFar)
-                .taskDescription(log.getTask() != null
-                        ? log.getTask().getDescription() : null)
+                .taskDescription(log.getTask() != null ? log.getTask().getDescription()
+                        : (log.getDevTask() != null ? log.getDevTask().getDescription() : null))
+                // Dev-task specific
+                .taskTitle(devTaskTitle)
+                .priority(devPriority)
+                .assignedBy(devAssignedBy)
+                .isOvertime(log.getIsOvertime() != null ? log.getIsOvertime() : false)
                 .activeBreakLogId(activeBreak != null
                         ? activeBreak.getId() : null)
                 .breakReason(displayBreakReason)
@@ -1093,16 +1211,19 @@ public class WorkwiseService {
             OffsetDateTime now = OffsetDateTime.now();
             long totalElapsed = java.time.temporal.ChronoUnit.SECONDS.between(log.getStartTime(), now);
             elapsedSeconds = (int) totalElapsed;
-            
+
             int totalBreak = log.getBreakSeconds() != null ? log.getBreakSeconds() : 0;
             java.util.Optional<BreakLog> activeBreakOpt = log.getBreakLogs() == null ? java.util.Optional.empty()
                     : log.getBreakLogs().stream().filter(b -> b.getBreakEnd() == null).findFirst();
             if (activeBreakOpt.isPresent()) {
-                long currentBreakDuration = java.time.temporal.ChronoUnit.SECONDS.between(activeBreakOpt.get().getBreakStart(), now);
+                long currentBreakDuration = java.time.temporal.ChronoUnit.SECONDS.between(
+                        activeBreakOpt.get().getBreakStart(), now);
                 totalBreak += (int) currentBreakDuration;
             }
             breakSeconds = totalBreak;
             workingSeconds = (int) Math.max(totalElapsed - totalBreak, 0);
+            // IMPORTANT: preserve the actual status ("Running" or "On Break") — do NOT override it.
+            // The status field is read directly from log.getStatus() at line 1290.
         }
 
         String fullName = log.getUser().getEmployeeProfile() != null
@@ -1145,7 +1266,8 @@ public class WorkwiseService {
             org.slf4j.LoggerFactory.getLogger(WorkwiseService.class).warn("Could not fetch manual check-in/out: {}", e.getMessage());
         }
 
-        String taskTitle = log.getTask() != null ? log.getTask().getTaskTitle() : null;
+        String taskTitle = log.getTask() != null ? log.getTask().getTaskTitle()
+                : (log.getDevTask() != null ? log.getDevTask().getTitle() : null);
 
         java.util.UUID clientId = null;
         String clientName = null;
@@ -1167,9 +1289,10 @@ public class WorkwiseService {
                 .id(log.getId())
                 .userId(log.getUser().getId())
                 .employeeName(fullName)
-                .projectId(log.getProject() != null ? log.getProject().getId() : null)
-                .projectName(log.getProject() != null
-                        ? log.getProject().getName() : null)
+                .projectId(log.getProject() != null ? log.getProject().getId()
+                        : (log.getDevProject() != null ? log.getDevProject().getId() : null))
+                .projectName(log.getProject() != null ? log.getProject().getName()
+                        : (log.getDevProject() != null ? log.getDevProject().getName() : null))
                 .clientId(clientId)
                 .clientName(clientName)
                 .workflowId(workflowId)
@@ -1198,6 +1321,9 @@ public class WorkwiseService {
                 .breakLogs(breakLogs)
                 .manualCheckIn(manualTimes[0])
                 .manualCheckOut(manualTimes[1])
+                .isOvertime(log.getIsOvertime() != null ? log.getIsOvertime() : false)
+                .summary(log.getSummary())
                 .build();
     }
 }
+

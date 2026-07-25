@@ -1,0 +1,7 @@
+/* src/pages/developer/LeadCorrectionsPage.css */
+
+.corrections-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}

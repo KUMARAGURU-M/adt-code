@@ -3,8 +3,10 @@ package com.arrowdatatech.adt_production_report.workwise.entity;
 import com.arrowdatatech.adt_production_report.job.entity.Job;
 import com.arrowdatatech.adt_production_report.process.entity.Process;
 import com.arrowdatatech.adt_production_report.project.entity.Project;
+import com.arrowdatatech.adt_production_report.project.entity.DevProject;
 import com.arrowdatatech.adt_production_report.shift.entity.Shift;
 import com.arrowdatatech.adt_production_report.task.entity.Task;
+import com.arrowdatatech.adt_production_report.task.entity.DevTask;
 import com.arrowdatatech.adt_production_report.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -59,11 +61,25 @@ public class TimeLog {
     @org.hibernate.annotations.NotFound(action = org.hibernate.annotations.NotFoundAction.IGNORE)
     private Job job;
 
-    // DB column: shift_id — FK to shifts table, NOT a varchar column
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "shift_id",
             foreignKey = @ForeignKey(name = "fk_tl_shift"))
     private Shift shift;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "dev_task_id",
+            foreignKey = @ForeignKey(name = "fk_tl_dev_task"))
+    @org.hibernate.annotations.NotFound(action = org.hibernate.annotations.NotFoundAction.IGNORE)
+    private DevTask devTask;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "dev_project_id",
+            foreignKey = @ForeignKey(name = "fk_tl_dev_project"))
+    @org.hibernate.annotations.NotFound(action = org.hibernate.annotations.NotFoundAction.IGNORE)
+    private DevProject devProject;
+
+    @Column(name = "summary", columnDefinition = "TEXT")
+    private String summary;
 
     @Column(name = "start_time", nullable = false)
     private OffsetDateTime startTime;
@@ -98,6 +114,10 @@ public class TimeLog {
     @Column(name = "log_date", nullable = false)
     @Builder.Default
     private LocalDate logDate = LocalDate.now();
+
+    @Column(name = "is_overtime", nullable = false)
+    @Builder.Default
+    private Boolean isOvertime = false;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false, nullable = false)

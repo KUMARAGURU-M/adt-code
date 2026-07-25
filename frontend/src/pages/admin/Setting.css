@@ -564,13 +564,8 @@
 }
 
 @keyframes float-celebration-preview {
-  0% {
-    transform: translateY(0) rotate(0deg);
-  }
-
-  100% {
-    transform: translateY(-4px) rotate(10deg);
-  }
+  0% { transform: translateY(0) rotate(0deg); }
+  100% { transform: translateY(-4px) rotate(10deg); }
 }
 
 .celebration-photo-container {
@@ -623,7 +618,7 @@
   align-items: center;
   justify-content: center;
   font-size: 1.1rem;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
   transform: scale(0.9);
   transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
@@ -665,13 +660,8 @@
 }
 
 @keyframes lightbox-fadein {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .lightbox-close-btn {
@@ -747,15 +737,8 @@
 }
 
 @keyframes lightbox-control-slideup {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
 .lightbox-ctrl-btn {
@@ -835,18 +818,18 @@
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(30, 41, 59, 0.9));
+  background: linear-gradient(135deg, rgba(15,23,42,0.85), rgba(30,41,59,0.9));
   border-radius: 10px;
   margin: 8px auto 0 auto;
   width: fit-content;
   max-width: 100%;
   backdrop-filter: blur(8px);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.18);
 }
 
 .card-zoom-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.15);
   color: #e2e8f0;
   border-radius: 6px;
   width: 28px;
@@ -859,12 +842,10 @@
   transition: background 0.15s ease, transform 0.1s ease;
   flex-shrink: 0;
 }
-
 .card-zoom-btn:hover:not(:disabled) {
-  background: rgba(99, 102, 241, 0.45);
+  background: rgba(99,102,241,0.45);
   transform: scale(1.1);
 }
-
 .card-zoom-btn:disabled {
   opacity: 0.3;
   cursor: not-allowed;
@@ -880,7 +861,6 @@
   outline: none;
   cursor: pointer;
 }
-
 .card-zoom-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
@@ -892,7 +872,6 @@
   cursor: pointer;
   transition: box-shadow 0.15s ease;
 }
-
 .card-zoom-slider::-webkit-slider-thumb:hover {
   box-shadow: 0 0 0 4px #a855f7;
 }
@@ -907,8 +886,8 @@
 }
 
 .card-zoom-reset {
-  background: rgba(239, 68, 68, 0.18);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: rgba(239,68,68,0.18);
+  border: 1px solid rgba(239,68,68,0.3);
   color: #fca5a5;
   border-radius: 6px;
   padding: 3px 8px;
@@ -918,8 +897,7 @@
   transition: background 0.15s ease, transform 0.1s ease;
   white-space: nowrap;
 }
-
 .card-zoom-reset:hover {
-  background: rgba(239, 68, 68, 0.35);
+  background: rgba(239,68,68,0.35);
   transform: scale(1.05);
 }

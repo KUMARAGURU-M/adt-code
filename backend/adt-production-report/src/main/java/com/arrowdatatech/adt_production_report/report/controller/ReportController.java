@@ -1,6 +1,7 @@
 package com.arrowdatatech.adt_production_report.report.controller;
 
 import com.arrowdatatech.adt_production_report.common.response.ApiResponse;
+import com.arrowdatatech.adt_production_report.report.dto.DevProductivityReportResponse;
 import com.arrowdatatech.adt_production_report.report.service.ReportService;
 import com.arrowdatatech.adt_production_report.workwise.dto.TimeLogResponse;
 import lombok.RequiredArgsConstructor;
@@ -40,5 +41,12 @@ public class ReportController {
 
         List<TimeLogResponse> logs = reportService.getReportLogs(targetUserId, targetProjectId, targetStatus, startDate, endDate);
         return ResponseEntity.ok(ApiResponse.success("Report logs retrieved", logs));
+    }
+
+    @GetMapping("/dev-productivity")
+    @PreAuthorize("hasAnyRole('Admin','Manager','Team Leader') or hasAuthority('developer_reports.view') or hasAuthority('reports.view')")
+    public ResponseEntity<ApiResponse<DevProductivityReportResponse>> getDevProductivityReport() {
+        DevProductivityReportResponse report = reportService.getDevProductivityReport();
+        return ResponseEntity.ok(ApiResponse.success("Developer productivity report retrieved", report));
     }
 }

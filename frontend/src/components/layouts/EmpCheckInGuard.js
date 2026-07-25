@@ -14,7 +14,8 @@ const EmpCheckInGuard = ({ children, pageName = 'Page' }) => {
   const user = getCurrentUser();
   const roles = user?.roles || [];
   const prefix = getRolePrefix(roles);
-  const isEmp = prefix === 'executive' || ((roles.includes('Employee') || roles.includes('Executive')) && !roles.includes('Admin') && !roles.includes('Manager') && !roles.includes('Team Leader'));
+  const hasDevRole = roles.some(r => r.startsWith('Dev-') || r.toLowerCase().startsWith('dev-'));
+  const isEmp = hasDevRole || prefix === 'executive' || ((roles.includes('Employee') || roles.includes('Executive')) && !roles.includes('Admin') && !roles.includes('Manager') && !roles.includes('Team Leader'));
 
   const fetchAttendance = async () => {
     try {

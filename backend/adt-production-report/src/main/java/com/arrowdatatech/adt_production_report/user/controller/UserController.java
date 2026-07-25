@@ -24,7 +24,7 @@ public class UserController {
 
     // GET /users - All users for User Management table
     @GetMapping
-    @PreAuthorize("hasAnyRole('Admin','Manager','Team Leader') or hasAuthority('employees.view')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<List<UserListResponse>>> getAllUsers() {
         List<UserListResponse> users = userService.getAllUsers();
         return ResponseEntity.ok(

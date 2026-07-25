@@ -24,4 +24,7 @@ public class StartTaskRequest {
 
     @JsonProperty("processId")
     private UUID processId;
+
+    @JsonProperty("isOvertime")
+    private Boolean isOvertime;
 }

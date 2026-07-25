@@ -18,7 +18,7 @@ public class WorkwiseContextResponse {
     private Integer        breakSeconds;
     private Integer        workingSeconds;
 
-    // Running task context
+    // Running task context (shared)
     private String  projectName;
     private String  processName;
     private String  isbnBookTitle;
@@ -29,9 +29,17 @@ public class WorkwiseContextResponse {
     private Integer totalPages;
     private String  taskDescription;
 
+    // Dev-task specific context
+    private String  taskTitle;
+    private String  priority;
+    private String  assignedBy;
+
     // Page completion tracking — for stop popup validation
     private Integer assignedPages;
     private Integer pagesCompletedSoFar;
+
+    // Overtime flag
+    private Boolean isOvertime;
 
     // Active break
     private UUID           activeBreakLogId;

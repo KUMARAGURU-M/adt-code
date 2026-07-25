@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './PageAccess.css';
-import apiCall from '../../utils/api';
+import apiCall, { refreshCurrentUser } from '../../utils/api';
 
 // ── Page definitions ──────────────────────────────────────────────
 // Each page maps to the permission CODE that controls its visibility.
@@ -28,6 +28,15 @@ const ALL_PAGES = [
   { name: 'CHAT MONITOR', icon: '💬', permCode: 'chat_monitor.view' },
   { name: 'SETTINGS', icon: '🛠️', permCode: 'settings.view' },
   { name: 'PAGE ACCESS', icon: '🔑', permCode: 'page_access.view' },
+  // ── Developer Role Pages ──────────────────────────────────────
+  { name: 'DEV DASHBOARD', icon: '💻', permCode: 'developer_dashboard.view', group: 'Developer' },
+  { name: 'DEV PROJECT', icon: '📁', permCode: 'developer_projects.view', group: 'Developer' },
+  { name: 'DEV TASK', icon: '✅', permCode: 'developer_tasks.view', group: 'Developer' },
+  { name: 'DEV MEETING', icon: '📅', permCode: 'developer_meetings.view', group: 'Developer' },
+  { name: 'DEV CORRECTION', icon: '⚠️', permCode: 'developer_corrections.view', group: 'Developer' },
+  { name: 'DEV WORKWISE', icon: '➤', permCode: 'developer_workwise.view', group: 'Developer' },
+  { name: 'DEV LEAVE', icon: '🏖️', permCode: 'developer_leave.view', group: 'Developer' },
+  { name: 'DEV REPORT', icon: '⚙️', permCode: 'developer_reports.view', group: 'Developer' },
 ];
 
 // ── Helpers ───────────────────────────────────────────────────────
@@ -40,47 +49,84 @@ function Toast({ message, type, onDone }) {
 }
 
 function PageGrid({ checkedCodes, deniedCodes = new Set(), roleCodes = new Set(), onToggle, disabled }) {
+  const standardPages = ALL_PAGES.filter(pg => !pg.group);
+  const devPages = ALL_PAGES.filter(pg => pg.group === 'Developer');
+
+  const renderCard = (pg) => {
+    const isRoleInherited = pg.permCode && roleCodes.has(pg.permCode);
+    const isChecked = pg.fixed || (pg.permCode && (
+      (isRoleInherited && !deniedCodes.has(pg.permCode)) ||
+      checkedCodes.has(pg.permCode)
+    ));
+    return (
+      <div
+        key={pg.name}
+        className={`pa-page-card${isChecked ? ' checked' : ''}${pg.fixed ? ' fixed' : ''}${isRoleInherited ? ' role-inherited' : ''}`}
+        onClick={() => {
+          if (pg.fixed || disabled || !pg.permCode) return;
+          onToggle(pg.permCode);
+        }}
+      >
+        <span className="pa-page-icon">{pg.icon}</span>
+        <div className="pa-page-label-container" style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+          <span className="pa-page-label">{pg.name}</span>
+          {isRoleInherited && (
+            <span className="pa-role-badge-mini" style={{
+              fontSize: '0.62rem',
+              fontWeight: 700,
+              color: '#6366f1',
+              background: '#ede9fe',
+              padding: '1px 5px',
+              borderRadius: '4px',
+              width: 'fit-content',
+              marginTop: '2px'
+            }}>
+              via Role
+            </span>
+          )}
+        </div>
+        <div className="pa-checkbox">
+          {isChecked && <span className="pa-checkbox-tick">✓</span>}
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="pa-pages-grid">
-      {ALL_PAGES.map(pg => {
-        const isRoleInherited = pg.permCode && roleCodes.has(pg.permCode);
-        const isChecked = pg.fixed || (pg.permCode && (
-          (isRoleInherited && !deniedCodes.has(pg.permCode)) ||
-          checkedCodes.has(pg.permCode)
-        ));
-        return (
-          <div
-            key={pg.name}
-            className={`pa-page-card${isChecked ? ' checked' : ''}${pg.fixed ? ' fixed' : ''}${isRoleInherited ? ' role-inherited' : ''}`}
-            onClick={() => {
-              if (pg.fixed || disabled || !pg.permCode) return;
-              onToggle(pg.permCode);
-            }}
-          >
-            <span className="pa-page-icon">{pg.icon}</span>
-            <div className="pa-page-label-container" style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-              <span className="pa-page-label">{pg.name}</span>
-              {isRoleInherited && (
-                <span className="pa-role-badge-mini" style={{
-                  fontSize: '0.62rem',
-                  fontWeight: 700,
-                  color: '#6366f1',
-                  background: '#ede9fe',
-                  padding: '1px 5px',
-                  borderRadius: '4px',
-                  width: 'fit-content',
-                  marginTop: '2px'
-                }}>
-                  via Role
-                </span>
-              )}
-            </div>
-            <div className="pa-checkbox">
-              {isChecked && <span className="pa-checkbox-tick">✓</span>}
-            </div>
-          </div>
-        );
-      })}
+    <div>
+      {/* Standard admin/system pages */}
+      <div className="pa-pages-grid">
+        {standardPages.map(renderCard)}
+      </div>
+
+      {/* Developer role pages — separated section */}
+      <div style={{ marginTop: '24px' }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '8px',
+          marginBottom: '10px',
+          padding: '6px 12px',
+          background: 'linear-gradient(90deg, #1e1b4b 0%, #312e81 100%)',
+          borderRadius: '8px',
+          color: '#a5b4fc',
+          fontWeight: 700,
+          fontSize: '0.78rem',
+          letterSpacing: '0.07em',
+          textTransform: 'uppercase'
+        }}>
+          💻 Developer Role Pages
+          <span style={{
+            marginLeft: 'auto',
+            fontSize: '0.7rem',
+            background: '#4338ca',
+            color: '#e0e7ff',
+            padding: '1px 8px',
+            borderRadius: '99px'
+          }}>Dev-Employee Only</span>
+        </div>
+        <div className="pa-pages-grid">
+          {devPages.map(renderCard)}
+        </div>
+      </div>
     </div>
   );
 }
@@ -177,6 +223,7 @@ function ByRoleTab() {
       await apiCall(`/roles/${selectedRoleId}/permissions`, 'PUT', {
         permissionIds: newPermIds,
       });
+      await refreshCurrentUser().catch(console.error);
       setToast({ message: 'Role page access saved successfully!', type: 'success' });
     } catch (e) {
       setToast({ message: 'Failed to save: ' + e.message, type: 'error' });
@@ -341,6 +388,7 @@ function ByEmployeeTab() {
         grantedIds,
         deniedIds,
       });
+      await refreshCurrentUser().catch(console.error);
       setToast({ message: `Page access for ${selectedEmp.fullName || selectedEmp.email} saved!`, type: 'success' });
     } catch (e) {
       setToast({ message: 'Failed to save: ' + e.message, type: 'error' });

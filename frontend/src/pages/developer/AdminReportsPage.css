@@ -1,0 +1,7 @@
+/* src/pages/developer/AdminReportsPage.css */
+
+.admin-reports-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}

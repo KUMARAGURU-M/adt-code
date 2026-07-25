@@ -31,7 +31,7 @@ public class UserPageAccessController {
      * Returns the sets of direct granted and direct denied permission codes for a user.
      */
     @GetMapping("/{userId}")
-    @PreAuthorize("hasRole('Admin') or hasAuthority('roles.view')")
+    @PreAuthorize("hasAnyRole('Admin','Dev-role','DEV-role','dev-role','Dev-Developer') or hasAuthority('roles.view')")
     public ResponseEntity<ApiResponse<com.arrowdatatech.adt_production_report.role.dto.UserPageAccessResponse>> getDirectPermissions(
             @PathVariable UUID userId) {
         Set<String> granted = userPermissionRepository.findDirectPermissionCodesByUserIdAndIsDenied(userId, false);
@@ -50,7 +50,7 @@ public class UserPageAccessController {
      * Returns the full union set of permission codes (role-based + direct - denied) for a user.
      */
     @GetMapping("/{userId}/all")
-    @PreAuthorize("hasRole('Admin') or hasAuthority('roles.view')")
+    @PreAuthorize("hasAnyRole('Admin','Dev-role','DEV-role','dev-role','Dev-Developer') or hasAuthority('roles.view')")
     public ResponseEntity<ApiResponse<Set<String>>> getAllPermissions(
             @PathVariable UUID userId) {
         Set<String> codes = permissionRepository.findPermissionCodesByUserId(userId);
@@ -62,7 +62,7 @@ public class UserPageAccessController {
      * Grants a specific permission directly to a user.
      */
     @PostMapping("/{userId}/{permissionId}")
-    @PreAuthorize("hasRole('Admin') or hasAuthority('roles.update')")
+    @PreAuthorize("hasAnyRole('Admin','Dev-role','DEV-role','dev-role','Dev-Developer') or hasAuthority('roles.update')")
     @Transactional
     public ResponseEntity<ApiResponse<Void>> grantPermission(
             @PathVariable UUID userId,
@@ -92,7 +92,7 @@ public class UserPageAccessController {
      * Revokes a specific permission from a user.
      */
     @DeleteMapping("/{userId}/{permissionId}")
-    @PreAuthorize("hasRole('Admin') or hasAuthority('roles.update')")
+    @PreAuthorize("hasAnyRole('Admin','Dev-role','DEV-role','dev-role','Dev-Developer') or hasAuthority('roles.update')")
     @Transactional
     public ResponseEntity<ApiResponse<Void>> revokePermission(
             @PathVariable UUID userId,
@@ -107,7 +107,7 @@ public class UserPageAccessController {
      * Full replacement — receives list of granted and denied permission IDs to assign directly.
      */
     @PutMapping("/{userId}/bulk")
-    @PreAuthorize("hasRole('Admin') or hasAuthority('roles.update')")
+    @PreAuthorize("hasAnyRole('Admin','Dev-role','DEV-role','dev-role','Dev-Developer') or hasAuthority('roles.update')")
     @Transactional
     public ResponseEntity<ApiResponse<Void>> bulkSetPermissions(
             @PathVariable UUID userId,

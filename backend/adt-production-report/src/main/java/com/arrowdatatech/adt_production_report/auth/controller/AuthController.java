@@ -73,10 +73,12 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<ApiResponse<String>> me(
+    public ResponseEntity<ApiResponse<LoginResponse>> me(
             @AuthenticationPrincipal UserDetails userDetails) {
+        UUID userId = UUID.fromString(userDetails.getUsername());
+        LoginResponse response = authService.getProfile(userId);
         return ResponseEntity.ok(
-                ApiResponse.success("Authenticated", userDetails.getUsername()));
+                ApiResponse.success("Authenticated user profile", response));
     }
 
     private String extractIp(HttpServletRequest request) {

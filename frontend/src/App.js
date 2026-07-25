@@ -19,6 +19,9 @@ import EmpCalendar from './pages/user/EmpCalendar';
 import EmpTask from './pages/user/EmpTask';
 import EmpLeave from './pages/user/EmpLeave';
 
+/* ── Developer Persona ── */
+import DeveloperDashboard from './pages/developer/DeveloperDashboard';
+
 /* ── Admin Pages ── */
 import AdminDashboard from './pages/admin/AdminDashboard';
 import UserManagement from './pages/admin/UserManagement';
@@ -46,27 +49,48 @@ import HourlyReminder from './components/layouts/HourlyReminder';
 
 import EmpCheckInGuard from './components/layouts/EmpCheckInGuard';
 
-import { getCurrentUser, getRolePrefix } from './utils/api';
+import { getCurrentUser, getRolePrefix, refreshCurrentUser } from './utils/api';
 
 /* ── Role Component Wrappers ── */
+const RoleDashboardWrapper = () => {
+  const user = getCurrentUser();
+  const roles = user?.roles || [];
+  const hasDevRole = roles.some(r => r.startsWith('Dev-') || r.toLowerCase().startsWith('dev-'));
+  const isAdmin = roles.includes('Admin');
+
+  if (hasDevRole) {
+    if (!isAdmin) {
+      return <DeveloperDashboard />;
+    }
+    const personaMode = localStorage.getItem('active_persona_mode') || 'developer';
+    if (personaMode === 'developer') {
+      return <DeveloperDashboard />;
+    }
+  }
+  return <AdminDashboard />;
+};
+
 const RoleWorkwiseWrapper = () => {
   const user = getCurrentUser();
   const roles = user?.roles || [];
-  const isEmp = getRolePrefix(roles) === 'executive' || ((roles.includes('Employee') || roles.includes('Executive')) && !roles.includes('Admin') && !roles.includes('Manager') && !roles.includes('Team Leader'));
+  const hasDevRole = roles.some(r => r.startsWith('Dev-') || r.toLowerCase().startsWith('dev-'));
+  const isEmp = hasDevRole || getRolePrefix(roles) === 'executive' || ((roles.includes('Employee') || roles.includes('Executive')) && !roles.includes('Admin') && !roles.includes('Manager') && !roles.includes('Team Leader'));
   return isEmp ? <EmpWorkwise /> : <RoleWorkwiseDashboard />;
 };
 
 const RoleTasksWrapper = () => {
   const user = getCurrentUser();
   const roles = user?.roles || [];
-  const isEmp = getRolePrefix(roles) === 'executive' || ((roles.includes('Employee') || roles.includes('Executive')) && !roles.includes('Admin') && !roles.includes('Manager') && !roles.includes('Team Leader'));
+  const hasDevRole = roles.some(r => r.startsWith('Dev-') || r.toLowerCase().startsWith('dev-'));
+  const isEmp = hasDevRole || getRolePrefix(roles) === 'executive' || ((roles.includes('Employee') || roles.includes('Executive')) && !roles.includes('Admin') && !roles.includes('Manager') && !roles.includes('Team Leader'));
   return isEmp ? <EmpTask /> : <TaskManagement />;
 };
 
 const RoleLeavesWrapper = () => {
   const user = getCurrentUser();
   const roles = user?.roles || [];
-  const isEmp = getRolePrefix(roles) === 'executive' || ((roles.includes('Employee') || roles.includes('Executive')) && !roles.includes('Admin') && !roles.includes('Manager') && !roles.includes('Team Leader'));
+  const hasDevRole = roles.some(r => r.startsWith('Dev-') || r.toLowerCase().startsWith('dev-'));
+  const isEmp = hasDevRole || getRolePrefix(roles) === 'executive' || ((roles.includes('Employee') || roles.includes('Executive')) && !roles.includes('Admin') && !roles.includes('Manager') && !roles.includes('Team Leader'));
   return isEmp ? <EmpLeave /> : <Leaves />;
 };
 
@@ -78,9 +102,16 @@ const getAllowedRoutes = (roles, permissions) => {
 
   // Dashboard is allowed for everyone authenticated
   allowed.push(`/${prefix}/dashboard`);
+  allowed.push(`/${prefix}/developer-dashboard`);
 
-  const isEmp = prefix === 'executive' || ((roles.includes('Employee') || roles.includes('Executive')) && !roles.includes('Admin') && !roles.includes('Manager') && !roles.includes('Team Leader'));
-  if (isEmp) {
+  const hasDevRole = roles.some(r => r.startsWith('Dev-') || r.toLowerCase().startsWith('dev-'));
+  const isDevRole = roles.includes('Dev-role') || roles.includes('DEV-role') || roles.includes('dev-role');
+  if (isDevRole) {
+    allowed.push(`/${prefix}/roles`);
+  }
+
+  const isEmployeeOnly = !hasDevRole && (prefix === 'executive' || ((roles.includes('Employee') || roles.includes('Executive')) && !roles.includes('Admin') && !roles.includes('Manager') && !roles.includes('Team Leader')));
+  if (isEmployeeOnly) {
     allowed.push(`/${prefix}/workwise`);
     allowed.push(`/${prefix}/digiconvertor`);
     allowed.push(`/${prefix}/hourly-graph`);
@@ -203,6 +234,59 @@ const AdminLayout = ({ children }) => {
 /* ───────────────────────────── */
 
 function App() {
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const initSession = async () => {
+      const user = getCurrentUser();
+      if (user) {
+        try {
+          await refreshCurrentUser();
+        } catch (e) {
+          console.error("Failed to initialize session on start:", e);
+        }
+      }
+      setLoading(false);
+    };
+    initSession();
+  }, []);
+
+  if (loading) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        background: '#f8fafc',
+        fontFamily: 'Inter, sans-serif'
+      }}>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '16px'
+        }}>
+          <div style={{
+            width: '40px',
+            height: '40px',
+            border: '4px solid #e2e8f0',
+            borderTop: '4px solid #6366f1',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite'
+          }} />
+          <style>{`
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          `}</style>
+          <span style={{ color: '#64748b', fontSize: '0.9rem', fontWeight: 500 }}>Initializing session...</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <Router>
       <Routes>
@@ -215,13 +299,19 @@ function App() {
 
         {/* Employee */}
         <Route path="/executive/dashboard" element={
-          <AdminLayout><AdminDashboard /></AdminLayout>
+          <AdminLayout><RoleDashboardWrapper /></AdminLayout>
         } />
         <Route path="/workportal" element={<WorkPortal />} />
 
         {/* Role-Prefixed Routes */}
         <Route path="/:role/dashboard" element={
-          <AdminLayout><AdminDashboard /></AdminLayout>
+          <AdminLayout><RoleDashboardWrapper /></AdminLayout>
+        } />
+        <Route path="/:role/developer-dashboard" element={
+          <AdminLayout><DeveloperDashboard /></AdminLayout>
+        } />
+        <Route path="/developer/dashboard" element={
+          <AdminLayout><DeveloperDashboard /></AdminLayout>
         } />
 
         <Route path="/:role/users" element={
@@ -343,4 +433,7 @@ function App() {
 }
 
 export default App;
+
+
+
 

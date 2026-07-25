@@ -26,6 +26,15 @@ const RESOURCES_LIST = [
   { id: "chat_monitor", label: "Chat Monitor", icon: "💬" },
   { id: "digiconvertor", label: "DigiConvertor", icon: "🔄" },
   { id: "settings", label: "Settings", icon: "🛠️" },
+  { id: "developer", label: "Developer Pages (Legacy)", icon: "💻" },
+  { id: "developer_dashboard", label: "Dev Dashboard", icon: "💻" },
+  { id: "developer_projects", label: "Dev Projects", icon: "📁" },
+  { id: "developer_tasks", label: "Dev Tasks", icon: "✅" },
+  { id: "developer_meetings", label: "Dev Meetings", icon: "📅" },
+  { id: "developer_corrections", label: "Dev Corrections", icon: "⚠️" },
+  { id: "developer_workwise", label: "Dev WorkWise", icon: "➤" },
+  { id: "developer_leave", label: "Dev Leave", icon: "🏖️" },
+  { id: "developer_reports", label: "Dev Reports", icon: "⚙️" },
 ];
 
 const ACTIONS_LIST = [
@@ -51,7 +60,9 @@ const RolesPermission = () => {
 
   // ── Permissions ────────────────────────────────────────────────
   const _cu = getCurrentUser();
-  const _isAdmin = (_cu?.roles || []).includes('Admin');
+  const _userRoles = _cu?.roles || [];
+  const _isDevRole = _userRoles.includes('Dev-role') || _userRoles.includes('DEV-role') || _userRoles.includes('dev-role');
+  const _isAdmin = _userRoles.includes('Admin') || _isDevRole;
   const _permsArr = _cu?.permissions || [];
   const canCreateRole = _isAdmin || _permsArr.includes('roles.create');
   const canUpdateRole = _isAdmin || _permsArr.includes('roles.update');

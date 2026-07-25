@@ -12,6 +12,14 @@ import productionIcon from '../../img/production.png';
 
 const menuItems = [
   { name: 'DASHBOARD', icon: '📊', path: '/admin/dashboard' },
+  { name: 'DEV DASHBOARD', icon: '💻', path: '/admin/developer-dashboard?tab=dashboard' },
+  { name: 'DEV PROJECT', icon: '📁', path: '/admin/developer-dashboard?tab=projects' },
+  { name: 'DEV TASK', icon: '💻', path: '/admin/developer-dashboard?tab=mywork' },
+  { name: 'DEV MEETING', icon: '📅', path: '/admin/developer-dashboard?tab=meetings' },
+  { name: 'DEV CORRECTION', icon: '⚠️', path: '/admin/developer-dashboard?tab=corrections' },
+  { name: 'DEV WORKWISE', icon: '➤', path: '/admin/developer-dashboard?tab=workwise' },
+  { name: 'DEV LEAVE', icon: '🏖️', path: '/admin/developer-dashboard?tab=leave' },
+  { name: 'DEV REPORT', icon: '⚙️', path: '/admin/developer-dashboard?tab=admin' },
   { name: 'USER', icon: '👥', path: '/admin/users' },
   { name: 'WORKWISE', icon: '➤', path: '/admin/workwise' },
   { name: 'DIGICONVERTOR', icon: '🔄', path: '/admin/digiconvertor' },
@@ -53,19 +61,93 @@ const Sidebar = ({ isMobileOpen, onCloseMobile }) => {
           ? 'Executive'
           : 'User';
 
-  const isEmployeeOnly = prefix === 'executive' || ((roles.includes('Employee') || roles.includes('Executive')) && !roles.includes('Admin') && !roles.includes('Manager') && !roles.includes('Team Leader'));
+  const hasDevRole = roles.some(r => r.startsWith('Dev-') || r.toLowerCase().startsWith('dev-'));
 
+  const isAdmin = roles.includes('Admin');
+
+  const [personaMode, setPersonaMode] = useState(() => {
+    if (isAdmin) {
+      return localStorage.getItem('active_persona_mode') || 'admin';
+    }
+    return hasDevRole ? 'developer' : 'admin';
+  });
+
+  useEffect(() => {
+    const handlePersonaChange = () => {
+      if (isAdmin) {
+        setPersonaMode(localStorage.getItem('active_persona_mode') || 'admin');
+      } else {
+        setPersonaMode(hasDevRole ? 'developer' : 'admin');
+      }
+    };
+    window.addEventListener('persona_change', handlePersonaChange);
+    return () => window.removeEventListener('persona_change', handlePersonaChange);
+  }, [isAdmin, hasDevRole]);
+
+  const isEmployeeOnly = !hasDevRole && (prefix === 'executive' || ((roles.includes('Employee') || roles.includes('Executive')) && !roles.includes('Admin') && !roles.includes('Manager') && !roles.includes('Team Leader')));
   const hasPermission = (perm) => roles.includes('Admin') || (user?.permissions?.includes(perm));
 
+  const isOnDeveloperRoute = location.pathname.includes('developer-dashboard') || location.search.includes('tab=');
+  const isDevMode = hasDevRole
+    ? (personaMode !== 'admin')
+    : (personaMode === 'developer' && (location.pathname.includes('dashboard') || isOnDeveloperRoute));
+
+  const isDevRole = roles.includes('Dev-role') || roles.includes('DEV-role') || roles.includes('dev-role');
+  const devMenuNames = [
+    'DEV DASHBOARD', 'DEV PROJECT', 'DEV TASK', 'DEV MEETING',
+    'DEV CORRECTION', 'DEV WORKWISE', 'DEV LEAVE', 'DEV REPORT',
+    ...(isDevRole ? ['ROLE & PERMISSION'] : [])
+  ];
+  const allDevItemNames = ['DEV DASHBOARD', 'DEV PROJECT', 'DEV TASK', 'DEV MEETING', 'DEV CORRECTION', 'DEV WORKWISE', 'DEV LEAVE', 'DEV REPORT'];
+
   const filteredMenuItems = menuItems.filter(item => {
+    // 1. Developer Mode: Show ONLY Developer pages in sidebar
+    if (isDevMode) {
+      if (item.name === 'ROLE & PERMISSION') {
+        return devMenuNames.includes(item.name);
+      }
+
+      // Check permission for developer sub-pages
+      const devPagePerms = {
+        'DEV DASHBOARD': 'developer_dashboard.view',
+        'DEV PROJECT': 'developer_projects.view',
+        'DEV TASK': 'developer_tasks.view',
+        'DEV MEETING': 'developer_meetings.view',
+        'DEV CORRECTION': 'developer_corrections.view',
+        'DEV WORKWISE': 'developer_workwise.view',
+        'DEV LEAVE': 'developer_leave.view',
+        'DEV REPORT': 'developer_reports.view',
+      };
+      const permCode = devPagePerms[item.name];
+      if (permCode) {
+        return roles.includes('Admin') || (user?.permissions || []).includes(permCode);
+      }
+
+      return false;
+    }
+
+    // 2. Employee Only Mode: Show only employee pages
     if (isEmployeeOnly) {
       return ['DASHBOARD', 'WORKWISE', 'DIGICONVERTOR', 'HOURLY GRAPH', 'CALENDAR', 'TASK', 'LEAVE'].includes(item.name);
     }
+
+    // 3. Admin Mode: Hide developer sub-pages from sidebar
+    if (allDevItemNames.includes(item.name)) {
+      return false;
+    }
+
     if (roles.includes('Admin')) {
       return true;
     }
     switch (item.name) {
       case 'DASHBOARD':
+      case 'DEV DASHBOARD':
+      case 'DEV PROJECT':
+      case 'DEV MY WORK':
+      case 'DEV TASK':
+      case 'DEV MEETING':
+      case 'DEV CORRECTION':
+      case 'DEV REPORT':
         return true;
       case 'USER':
         return hasPermission('employees.view');
@@ -143,6 +225,15 @@ const Sidebar = ({ isMobileOpen, onCloseMobile }) => {
     }
   };
 
+  const checkIsItemActive = (itemPath, isDefaultActive) => {
+    if (itemPath.includes('?tab=')) {
+      const targetTab = new URLSearchParams(itemPath.split('?')[1]).get('tab');
+      const currentTab = new URLSearchParams(location.search).get('tab') || 'dashboard';
+      return isDefaultActive && currentTab === targetTab;
+    }
+    return isDefaultActive;
+  };
+
   return (
     <>
       {isMobileOpen && (
@@ -170,7 +261,7 @@ const Sidebar = ({ isMobileOpen, onCloseMobile }) => {
                 key={item.path}
                 to={resolvedPath}
                 onClick={handleNavClick}
-                className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+                className={({ isActive }) => `nav-item${checkIsItemActive(item.path, isActive) ? ' active' : ''}`}
               >
                 <span className="nav-icon">{icon}</span>
                 <span className="nav-text">{name}</span>

@@ -109,6 +109,12 @@ public class HourlyGraphService {
         List<User> activeUsers = userRepository.findByIsActiveTrueAndDeletedAtIsNull();
         List<User> eligibleUsers = activeUsers.stream()
                 .filter(u -> {
+                    // Exclude developers whose role commences with "Dev-"
+                    boolean isDev = u.getRoleAssignments().stream()
+                            .anyMatch(ra -> ra.getRole() != null && ra.getRole().getName() != null && ra.getRole().getName().startsWith("Dev-"));
+                    if (isDev) {
+                        return false;
+                    }
                     // Admin gets to see everyone
                     if (requestingUserIsAdmin) {
                         return true;
