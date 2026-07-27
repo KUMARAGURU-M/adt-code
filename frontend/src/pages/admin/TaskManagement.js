@@ -92,11 +92,21 @@ const mapTask = (t) => ({
 
 // ── CheckboxList ──────────────────────────────────────────────────
 function CheckboxList({ title, icon, items, selected, onChange,
-  allowDeselect, labelKey = null, valueKey = null, required = false }) {
+  allowDeselect, labelKey = null, valueKey = null, required = false, showSearch = false }) {
   const getValue = (item) => valueKey ? item[valueKey] : item;
   const getLabel = (item) => labelKey ? item[labelKey] : item;
-  const allSel = items.length > 0 &&
-    items.every(i => selected.includes(getValue(i)));
+
+  const [search, setSearch] = useState("");
+
+  const filteredItems = search.trim()
+    ? items.filter(item => {
+      const lbl = getLabel(item);
+      return typeof lbl === "string" && lbl.toLowerCase().includes(search.toLowerCase());
+    })
+    : items;
+
+  const allSel = filteredItems.length > 0 &&
+    filteredItems.every(i => selected.includes(getValue(i)));
 
   const toggle = (item) => {
     const val = getValue(item);
@@ -127,14 +137,35 @@ function CheckboxList({ title, icon, items, selected, onChange,
           )}
           {!allSel && (
             <button className="tm-select-all-btn"
-              onClick={() => onChange(items.map(getValue))}>
+              onClick={() => onChange([...new Set([...selected, ...filteredItems.map(getValue)])])}>
               Select All
             </button>
           )}
         </div>
       </div>
+      {(showSearch || items.length > 5) && (
+        <div style={{ padding: "6px 8px 4px 8px" }}>
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="🔍 Search jobs..."
+            style={{
+              width: "100%",
+              padding: "6px 10px",
+              border: "1px solid #e2e8f0",
+              borderRadius: "6px",
+              fontSize: "0.82rem",
+              outline: "none",
+              boxSizing: "border-box",
+              background: "#f8fafc",
+              color: "#1a202c",
+            }}
+          />
+        </div>
+      )}
       <div className="tm-checkbox-list">
-        {items.map(item => {
+        {filteredItems.map(item => {
           const val = getValue(item);
           const lbl = getLabel(item);
           return (
@@ -153,6 +184,21 @@ function CheckboxList({ title, icon, items, selected, onChange,
             </label>
           );
         })}
+        {filteredItems.length === 0 && items.length > 0 && (
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flex: 1,
+            minHeight: "60px",
+            color: "#a0aec0",
+            padding: "12px",
+            fontSize: "0.82rem",
+            textAlign: "center"
+          }}>
+            🔍 No jobs match "{search}"
+          </div>
+        )}
         {items.length === 0 && (
           <div style={{
             display: "flex",
@@ -172,6 +218,7 @@ function CheckboxList({ title, icon, items, selected, onChange,
     </div>
   );
 }
+
 
 // ── Overlay ───────────────────────────────────────────────────────
 const Overlay = ({ onClose, children }) => (

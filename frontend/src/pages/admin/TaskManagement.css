@@ -300,8 +300,8 @@
 }
 
 .col-date {
-  min-width: 120px;
-  width: 100px;
+  min-width: 180px;
+  width: 180px;
 }
 
 .col-project {
@@ -310,8 +310,8 @@
 }
 
 .col-workflow {
-  width: 250px;
-  min-width: 250px;
+  width: 220px;
+  min-width: 180px;
 }
 
 .col-job {
@@ -360,7 +360,7 @@
 }
 
 .col-path {
-  min-width: 150px;
+  min-width: 180px;
   max-width: 250px;
 }
 
