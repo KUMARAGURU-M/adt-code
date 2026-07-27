@@ -645,6 +645,32 @@ export default function EmpWorkwise() {
     }
   };
 
+  const handleOpenPathLocally = async (path) => {
+    if (!path || path === '-') return;
+    try {
+      await apiCall(`/tasks/server-path/open?path=${encodeURIComponent(path)}`, 'POST');
+    } catch (err) {
+      alert(`Could not open locally: ${err.message}`);
+    }
+  };
+
+  const handleCopyPath = (e, path) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(path)
+      .then(() => {
+        setToast({
+          type: 'info',
+          message: '📋 Path copied to clipboard!'
+        });
+      })
+      .catch((err) => {
+        setToast({
+          type: 'error',
+          message: 'Failed to copy path: ' + err.message
+        });
+      });
+  };
+
   // Split tasks for dropdown display
   const activeTasks = myTasks.filter(t => !t.isCompleted);
 
@@ -1033,6 +1059,52 @@ export default function EmpWorkwise() {
                       value={`${selectedTask.pagesCompleted ?? 0} / ${selectedTask.assignedPages} pages completed`}
                     />
                   )}
+                  {selectedTask.serverPath && (
+                    <div className="ww-field">
+                      <label className="ww-label">
+                        <span>📁</span> Server Path
+                        <span className="ww-readonly-badge">auto-filled</span>
+                      </label>
+                      <div className="ww-readonly-value" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: '10px' }}>
+                        <button
+                          onClick={() => handleOpenPathLocally(selectedTask.serverPath)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#4f46e5',
+                            textDecoration: 'underline',
+                            cursor: 'pointer',
+                            padding: 0,
+                            fontFamily: 'monospace',
+                            fontSize: '11px',
+                            textAlign: 'left',
+                            wordBreak: 'break-all',
+                            flex: 1
+                          }}
+                          title="Click to open folder locally in Windows Explorer"
+                        >
+                          {selectedTask.serverPath}
+                        </button>
+                        <button
+                          onClick={(e) => handleCopyPath(e, selectedTask.serverPath)}
+                          style={{
+                            background: '#f1f5f9',
+                            border: '1px solid #cbd5e1',
+                            borderRadius: '4px',
+                            color: '#475569',
+                            cursor: 'pointer',
+                            padding: '4px 8px',
+                            fontSize: '11px',
+                            fontWeight: '600',
+                            whiteSpace: 'nowrap'
+                          }}
+                          title="Copy path to clipboard"
+                        >
+                          📋 Copy
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </>
               ) : selectedTask && selectedTask.isCompleted ? (
                 <div className="ww-manual-hint" style={{ color: '#16a34a' }}>
@@ -1222,15 +1294,53 @@ export default function EmpWorkwise() {
                     context.complexity || '-'],
                   ['📄', 'bg-teal', 'border-teal', 'TOTAL PAGES',
                     context.totalPages?.toString() || '-'],
-                ].map(([icon, iconBg, border, label, val]) => (
-                  <div key={label} className={`ww-run-card ${border}`}>
-                    <div className="ww-run-card-header">
-                      <span className={`ww-run-icon ${iconBg}`}>{icon}</span>
-                      <span className="ww-run-label">{label}</span>
+                  ['📁', 'bg-blue', 'border-blue', 'SERVER PATH',
+                    context.serverPath || '-'],
+                ].map(([icon, iconBg, border, label, val]) => {
+                  const isPath = label === 'SERVER PATH' && val && val !== '-';
+                  return (
+                    <div
+                      key={label}
+                      className={`ww-run-card ${border}`}
+                      onClick={isPath ? () => handleOpenPathLocally(val) : undefined}
+                      style={isPath ? { cursor: 'pointer' } : undefined}
+                      title={isPath ? 'Click to open folder locally in Windows Explorer' : undefined}
+                    >
+                      <div className="ww-run-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span className={`ww-run-icon ${iconBg}`}>{icon}</span>
+                          <span className="ww-run-label">{label}</span>
+                        </div>
+                        {isPath && (
+                          <button
+                            onClick={(e) => handleCopyPath(e, val)}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              color: '#64748b',
+                              cursor: 'pointer',
+                              padding: '2px 6px',
+                              fontSize: '11px',
+                              fontWeight: '600',
+                              borderRadius: '4px',
+                            }}
+                            title="Copy path to clipboard"
+                            onMouseEnter={(e) => e.target.style.color = '#4f46e5'}
+                            onMouseLeave={(e) => e.target.style.color = '#64748b'}
+                          >
+                            📋 Copy
+                          </button>
+                        )}
+                      </div>
+                      <div
+                        className="ww-run-value"
+                        style={isPath ? { textDecoration: 'underline', color: '#4f46e5', wordBreak: 'break-all', fontSize: '11px', fontFamily: 'monospace' } : {}}
+                      >
+                        {val}
+                      </div>
                     </div>
-                    <div className="ww-run-value">{val}</div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {context.taskDescription && (
@@ -1502,6 +1612,92 @@ export default function EmpWorkwise() {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

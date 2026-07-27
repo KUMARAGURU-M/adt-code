@@ -149,7 +149,7 @@ public class TaskService {
                 .estimateHours(request.getEstimateHours() != null
                         ? request.getEstimateHours()
                         : BigDecimal.ZERO)
-                .serverPath(request.getServerPath())
+                .serverPath(cleanServerPath(request.getServerPath()))
                 .assignedBy(assignedBy)
                 .totalPages(request.getTotalPages())
                 .build();
@@ -245,7 +245,7 @@ public class TaskService {
         task.setComplexity(emptyToNull(request.getComplexity()));
         task.setChapterArticleBatch(emptyToNull(request.getChapterArticleBatch()));
         task.setEstimateHours(request.getEstimateHours() != null ? request.getEstimateHours() : java.math.BigDecimal.ZERO);
-        task.setServerPath(emptyToNull(request.getServerPath()));
+        task.setServerPath(cleanServerPath(request.getServerPath()));
         task.setTotalPages(request.getTotalPages());
 
         task.setUpdatedAt(OffsetDateTime.now());
@@ -353,6 +353,19 @@ public class TaskService {
 
     private String emptyToNull(String value) {
         return (value == null || value.isBlank()) ? null : value.trim();
+    }
+
+    private String cleanServerPath(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        String trimmed = value.trim();
+        if (trimmed.startsWith("\"") && trimmed.endsWith("\"")) {
+            trimmed = trimmed.substring(1, trimmed.length() - 1);
+        } else if (trimmed.startsWith("'") && trimmed.endsWith("'")) {
+            trimmed = trimmed.substring(1, trimmed.length() - 1);
+        }
+        return trimmed.trim();
     }
 
     // ─────────────────────────────────────────────

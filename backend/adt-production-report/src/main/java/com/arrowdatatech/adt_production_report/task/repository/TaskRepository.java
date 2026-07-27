@@ -129,4 +129,7 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
            AND t.process IS NOT NULL
            """)
     List<Object[]> findProcessNamesByProjectIds(@Param("projectIds") List<UUID> projectIds);
+
+    @Query("SELECT DISTINCT t.serverPath FROM Task t WHERE t.serverPath IS NOT NULL AND t.serverPath != ''")
+    List<String> findAllServerPaths();
 }

@@ -160,6 +160,7 @@ public class WorkwiseService {
                     .complexity(t.getComplexity())
                     .chapterArticleBatch(t.getChapterArticleBatch())
                     .isCompleted(isCompleted)
+                    .serverPath(t.getServerPath())
                     .jobs(jobs)
                     .build();
         }).collect(Collectors.toList());
@@ -232,6 +233,7 @@ public class WorkwiseService {
                 .complexity(t.getComplexity())
                 .chapterArticleBatch(t.getChapterArticleBatch())
                 .isCompleted(false)
+                .serverPath(t.getServerPath())
                 .jobs(jobs)
                 .build();
     }
@@ -1008,6 +1010,7 @@ public class WorkwiseService {
                 .pagesCompletedSoFar(pagesCompletedSoFar)
                 .taskDescription(log.getTask() != null ? log.getTask().getDescription()
                         : (log.getDevTask() != null ? log.getDevTask().getDescription() : null))
+                .serverPath(log.getTask() != null ? log.getTask().getServerPath() : null)
                 // Dev-task specific
                 .taskTitle(devTaskTitle)
                 .priority(devPriority)
@@ -1326,4 +1329,3 @@ public class WorkwiseService {
                 .build();
     }
 }
-

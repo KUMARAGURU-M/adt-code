@@ -26,6 +26,18 @@ const fmtDue = (d) => {
   }
 };
 
+const fmtTime = (dt) => {
+  if (!dt) return "";
+  try {
+    const d = new Date(dt);
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    return `${hh}:${mm}`;
+  } catch {
+    return "";
+  }
+};
+
 const badgeClass = (s) => {
   const lower = s?.toLowerCase() || "";
   if (["finish", "completed", "uploaded"].includes(lower)) return "completed";
@@ -75,6 +87,7 @@ const mapTask = (t) => ({
   serverPath: t.serverPath || "",
   assignedBy: t.assignedByName || "",
   assignedById: t.assignedById || null,
+  createdAt: t.createdAt || "",
 });
 
 // ── CheckboxList ──────────────────────────────────────────────────
@@ -556,7 +569,7 @@ function TaskModal({ mode, task, onClose, onSave,
         complexity: showComplexity ? form.complexity : null,
         chapterArticleBatch: finalChapter || null,
         estimateHours: finalHours,
-        serverPath: form.serverPath || null,
+        serverPath: form.serverPath ? form.serverPath.replace(/^"(.*)"$/, '$1').replace(/^'(.*)'$/, '$1').trim() : null,
         assignedBy: form.assignedBy || null,
         totalPages: finalPagesVal,
         jobAssignments: form.jobIds.map(id => ({
@@ -974,6 +987,14 @@ function TaskModal({ mode, task, onClose, onSave,
 // MAIN COMPONENT
 // ═════════════════════════════════════════════════════════════════
 export default function TaskManagement() {
+
+  const handleOpenPathLocally = async (path) => {
+    try {
+      await apiCall(`/tasks/server-path/open?path=${encodeURIComponent(path)}`, 'POST');
+    } catch (err) {
+      alert(`Could not open locally: ${err.message}`);
+    }
+  };
 
   const [tasks, setTasks] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -1454,7 +1475,12 @@ export default function TaskManagement() {
                 ) : paginated.map(task => (
                   <tr key={task.id}>
                     <td className="col-date">
-                      {fmtDue(task.date) || "-"}
+                      <span>{fmtDue(task.date) || "-"}</span>
+                      {task.createdAt && (
+                        <span style={{ color: '#6b7280', fontSize: '15px', marginLeft: '8px' }}>
+                          ⏱️{fmtTime(task.createdAt)}
+                        </span>
+                      )}
                     </td>
                     <td className="col-client">
                       <span className="cell-client">{task.client || "-"}</span>
@@ -1507,7 +1533,50 @@ export default function TaskManagement() {
                         fontFamily: "monospace",
                         fontSize: "11px", wordBreak: "break-all"
                       }}>
-                      {task.serverPath || "-"}
+                      {task.serverPath ? (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                          <button
+                            onClick={() => handleOpenPathLocally(task.serverPath)}
+                            style={{
+                              background: "none",
+                              border: "none",
+                              color: "#6366f1",
+                              textDecoration: "underline",
+                              cursor: "pointer",
+                              padding: 0,
+                              fontFamily: "inherit",
+                              fontSize: "inherit",
+                              textAlign: "left",
+                              wordBreak: "break-all",
+                              flex: 1
+                            }}
+                            title="Click to open locally in Windows Explorer"
+                          >
+                            📁 {task.serverPath}
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigator.clipboard.writeText(task.serverPath)
+                                .then(() => alert('Path copied to clipboard!'))
+                                .catch(err => alert('Failed to copy: ' + err.message));
+                            }}
+                            style={{
+                              background: "none",
+                              border: "none",
+                              color: "#64748b",
+                              cursor: "pointer",
+                              fontSize: "12px",
+                              padding: "2px 4px"
+                            }}
+                            title="Copy path to clipboard"
+                          >
+                            📋
+                          </button>
+                        </div>
+                      ) : (
+                        "-"
+                      )}
                     </td>
                     <td className="col-actions">
                       <div className="tm-actions">
@@ -1582,6 +1651,8 @@ export default function TaskManagement() {
         />
       )}
 
+
+
       {/* ── Delete Confirm ── */}
       {modal?.type === "delete" && (
         <Overlay onClose={() => setModal(null)}>
@@ -1613,6 +1684,7 @@ export default function TaskManagement() {
     </div>
   );
 }
+
 
 
 

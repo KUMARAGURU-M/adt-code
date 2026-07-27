@@ -28,6 +28,7 @@ public class WorkwiseContextResponse {
     private String  complexity;
     private Integer totalPages;
     private String  taskDescription;
+    private String  serverPath;
 
     // Dev-task specific context
     private String  taskTitle;

@@ -696,7 +696,7 @@ export default function Invoice() {
     if (filterProject !== "All Projects" && dp.project !== filterProject) return false;
     if (filterWorkflow !== "All Task Names" && (!dp.workflow || !dp.workflow.includes(filterWorkflow))) return false;
     if (filterComplexity !== "All" && dp.complexity !== filterComplexity) return false;
-    if (filterFileStatus !== "All" && dp.fileStatus !== filterFileStatus) return false;
+    if (filterFileStatus !== "All" && (dp.fileStatus || "").toLowerCase() !== filterFileStatus.toLowerCase()) return false;
     if (filterStartDate && (!dp.startDate || dp.startDate < filterStartDate)) return false;
     if (filterEndDate && (!dp.endDate || dp.endDate > filterEndDate)) return false;
     return true;

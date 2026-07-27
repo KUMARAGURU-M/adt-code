@@ -27,6 +27,7 @@ public class MyTaskOption {
     private String  chapterArticleBatch;
     @com.fasterxml.jackson.annotation.JsonProperty("isCompleted")
     private boolean isCompleted;
+    private String  serverPath;
     private List<JobInfo> jobs;
 
     @Getter

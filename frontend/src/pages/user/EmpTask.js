@@ -28,6 +28,14 @@ const EmpTask = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const handleOpenPathLocally = async (path) => {
+    try {
+      await apiCall(`/tasks/server-path/open?path=${encodeURIComponent(path)}`, 'POST');
+    } catch (err) {
+      alert(`Could not open locally: ${err.message}`);
+    }
+  };
+
   // Dropdown list options derived from loaded tasks
   const [projectsList, setProjectsList] = useState([]);
   const [jobsList, setJobsList] = useState([]);
@@ -262,13 +270,14 @@ const EmpTask = () => {
                   <th>Due Date</th>
                   <th>Pages</th>
                   <th>Chapter</th>
+                  <th>Server Path</th>
                   <th className="et-th-desc">Description</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredTasks.length === 0 ? (
                   <tr>
-                    <td colSpan={11} style={{ padding: '40px', color: '#666' }}>
+                    <td colSpan={12} style={{ padding: '40px', color: '#666' }}>
                       No tasks found.
                     </td>
                   </tr>
@@ -291,6 +300,52 @@ const EmpTask = () => {
                         <td>{task.dueDate || '-'}</td>
                         <td>{task.assignedPages || '-'}</td>
                         <td className="et-td-chapter">{task.chapterArticleBatch || '-'}</td>
+                        <td className="et-td-path" style={{ fontFamily: 'monospace', fontSize: '11px' }}>
+                          {task.serverPath ? (
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                              <button
+                                onClick={() => handleOpenPathLocally(task.serverPath)}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  color: '#6366f1',
+                                  textDecoration: 'underline',
+                                  cursor: 'pointer',
+                                  padding: 0,
+                                  fontFamily: 'inherit',
+                                  fontSize: 'inherit',
+                                  textAlign: 'left',
+                                  wordBreak: 'break-all',
+                                  flex: 1
+                                }}
+                                title="Click to open locally in Windows Explorer"
+                              >
+                                📁 {task.serverPath}
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigator.clipboard.writeText(task.serverPath)
+                                    .then(() => alert('Path copied to clipboard!'))
+                                    .catch(err => alert('Failed to copy: ' + err.message));
+                                }}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  color: '#64748b',
+                                  cursor: 'pointer',
+                                  fontSize: '12px',
+                                  padding: '2px 4px'
+                                }}
+                                title="Copy path to clipboard"
+                              >
+                                📋
+                              </button>
+                            </div>
+                          ) : (
+                            '-'
+                          )}
+                        </td>
                         <td className="et-td-desc">{task.description || '-'}</td>
                       </tr>
                     );
@@ -307,3 +362,8 @@ const EmpTask = () => {
 };
 
 export default EmpTask;
+
+
+
+
+

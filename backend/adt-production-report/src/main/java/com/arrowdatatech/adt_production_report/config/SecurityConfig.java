@@ -58,7 +58,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/projects", "/api/projects/**", "/api/processes", "/api/processes/**", "/api/shifts", "/api/shifts/**").authenticated()
                 .requestMatchers("/api/projects", "/api/projects/**", "/api/processes/**", "/api/shifts/**").hasAnyAuthority("ROLE_Admin", "ROLE_Manager", "projects.create", "projects.update", "projects.delete", "processes.manage", "shifts.manage")
                 .requestMatchers("/api/activity-logs/**").hasAnyAuthority("ROLE_Admin", "ROLE_Manager", "ROLE_Team Leader", "activity_logs.view")
-                .requestMatchers("/api/tasks/my-tasks").authenticated()
+                .requestMatchers("/api/tasks/my-tasks", "/api/tasks/server-path/**").authenticated()
                 .requestMatchers("/api/tasks/**", "/api/jobs/**", "/api/reports/**").hasAnyAuthority("ROLE_Admin", "ROLE_Manager", "ROLE_Team Leader", "tasks.create", "tasks.update", "tasks.delete", "jobs.create", "jobs.update", "jobs.delete", "reports.view", "developer_reports.view")
                 .requestMatchers("/api/chat/admin/**").hasAnyAuthority("ROLE_Admin", "chat_monitor.view", "chat_monitor.delete")
                 .requestMatchers("/api/chat/**", "/api/workwise/**", "/api/leave/**", "/api/notifications/**", "/api/timelog/**").authenticated()
