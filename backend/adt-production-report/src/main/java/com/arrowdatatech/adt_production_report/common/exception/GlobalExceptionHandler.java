@@ -9,6 +9,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -68,6 +69,20 @@ public class GlobalExceptionHandler {
                         .error("Validation failed")
                         .data(errors)
                         .build());
+    }
+
+    /**
+     * Handle missing static resources (e.g. browser/scanner probes for config.json,
+     * credentials.json, settings.json, etc.). These are benign 404s — log at DEBUG
+     * level only to avoid polluting error logs.
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNoResourceFound(
+            NoResourceFoundException ex) {
+        log.debug("Static resource not found: {}", ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error("Not found"));
     }
 
     @ExceptionHandler(Exception.class)
