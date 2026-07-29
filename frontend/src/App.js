@@ -7,18 +7,6 @@ import './company/company.css';
 
 /* ── Company Public Site ── */
 import CompanyErrorBoundary from './company/components/system/ErrorBoundary';
-const CompanyNavbar = lazy(() => import('./company/components/common/Navbar'));
-const CompanyFooter = lazy(() => import('./company/components/common/Footer'));
-const CompanyRouteEffects = lazy(() => import('./company/components/system/RouteEffects'));
-const CompanyPageLoader = lazy(() => import('./company/components/system/PageLoader'));
-
-const CompanyHome = lazy(() => import('./company/pages/Home'));
-const CompanyServicesOverview = lazy(() => import('./company/pages/ServicesOverview'));
-const CompanyServiceDetail = lazy(() => import('./company/pages/ServiceDetail'));
-const CompanyAbout = lazy(() => import('./company/pages/About'));
-const CompanyContact = lazy(() => import('./company/pages/Contact'));
-const CompanyCareers = lazy(() => import('./company/pages/Careers'));
-const CompanySitemap = lazy(() => import('./company/pages/Sitemap'));
 
 /* ── Layouts ── */
 import Sidebar from './components/layouts/Sidebar';
@@ -68,6 +56,20 @@ import CareerApplications from './pages/admin/CareerApplications';
 import EmpCheckInGuard from './components/layouts/EmpCheckInGuard';
 
 import { getCurrentUser, getRolePrefix, refreshCurrentUser } from './utils/api';
+
+/* ── Lazy Loaded Company Public Site ── */
+const CompanyNavbar = lazy(() => import('./company/components/common/Navbar'));
+const CompanyFooter = lazy(() => import('./company/components/common/Footer'));
+const CompanyRouteEffects = lazy(() => import('./company/components/system/RouteEffects'));
+const CompanyPageLoader = lazy(() => import('./company/components/system/PageLoader'));
+
+const CompanyHome = lazy(() => import('./company/pages/Home'));
+const CompanyServicesOverview = lazy(() => import('./company/pages/ServicesOverview'));
+const CompanyServiceDetail = lazy(() => import('./company/pages/ServiceDetail'));
+const CompanyAbout = lazy(() => import('./company/pages/About'));
+const CompanyContact = lazy(() => import('./company/pages/Contact'));
+const CompanyCareers = lazy(() => import('./company/pages/Careers'));
+const CompanySitemap = lazy(() => import('./company/pages/Sitemap'));
 
 /* ── Company Website Layout Wrapper ── */
 const CompanyLayout = ({ children }) => {
