@@ -37,7 +37,7 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource))
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/index.html", "/static/**", "/*.ico", "/*.json", "/*.png", "/images/**",
+                .requestMatchers("/", "/index.html", "/static/**", "/*.ico", "/*.json", "/*.png", "/image/**", "/images/**",
                         "/about", "/services/**", "/contact", "/careers", "/sitemap", "/workwise", "/workwise/**").permitAll()
                 
                 // 2. PUBLIC API ENDPOINTS
