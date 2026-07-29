@@ -72,7 +72,7 @@ export default function HourlyReminder() {
           n.onclick = () => {
             window.focus();
             const prefix = getRolePrefix(user.roles);
-            navigate(`/${prefix}/hourly-graph`);
+            navigate(`/workwise/${prefix}/hourly-graph`);
           };
         } catch (e) {
           console.warn('Desktop notification failed:', e);
@@ -181,7 +181,7 @@ export default function HourlyReminder() {
     const user = getCurrentUser();
     if (user) {
       const prefix = getRolePrefix(user.roles);
-      navigate(`/${prefix}/hourly-graph`);
+      navigate(`/workwise/${prefix}/hourly-graph`);
       setNotification(null);
     }
   };

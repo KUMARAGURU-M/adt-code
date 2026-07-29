@@ -28,7 +28,7 @@ const WorkPortal = () => {
           {/* BACK BUTTON */}
           <button
             className="wp-back-btn"
-            onClick={() => navigate('/executive/dashboard')}
+            onClick={() => navigate('/workwise/executive/dashboard')}
           >
             ⬅ Back to WorkWise
           </button>

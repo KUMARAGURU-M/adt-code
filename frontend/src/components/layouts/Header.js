@@ -61,7 +61,7 @@ const Header = ({ onToggleMobileMenu }) => {
       setTimeout(() => {
         closeResetModal();
         clearSession();
-        navigate('/login');
+        navigate('/workwise/login');
       }, 2000);
     } catch (err) {
       setErrorMsg(err.message || 'An error occurred. Please try again.');
@@ -72,7 +72,7 @@ const Header = ({ onToggleMobileMenu }) => {
 
   const handleLogout = () => {
     clearSession();
-    navigate('/login');
+    navigate('/workwise/login');
   };
 
   return (

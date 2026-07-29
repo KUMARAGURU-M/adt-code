@@ -84,7 +84,7 @@ const EmpCheckInGuard = ({ children, pageName = 'Page' }) => {
               {checkingIn ? 'Checking In...' : '▶ Check In Now'}
             </button>
             <button
-              onClick={() => navigate(`/${prefix}/dashboard`)}
+              onClick={() => navigate(`/workwise/${prefix}/dashboard`)}
               style={{ padding: '12px 24px', background: '#edf2f7', color: '#4a5568', border: 'none', borderRadius: '10px', fontWeight: '600', cursor: 'pointer' }}
             >
               Go to Dashboard

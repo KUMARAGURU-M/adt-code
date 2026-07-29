@@ -253,7 +253,7 @@ const Sidebar = ({ isMobileOpen, onCloseMobile }) => {
         </div>
         <nav className="sidebar-nav">
           {filteredMenuItems.map((item) => {
-            const resolvedPath = item.path.replace('/admin/', `/${prefix}/`);
+            const resolvedPath = item.path.replace('/admin/', `/workwise/${prefix}/`);
             const icon = (isEmployeeOnly && item.name === 'LEAVE') ? '🍃' : item.icon;
             const name = item.name === 'TASK' ? 'TASKS' : item.name === 'LEAVE' ? 'LEAVES' : item.name;
             return (
