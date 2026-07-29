@@ -1,0 +1,800 @@
+/* ============================================================
+   CONTACT.CSS — Arrow Data Tech Contact Page
+   ============================================================ */
+
+.contact-page {
+  padding-top: 100px;
+  background: var(--off-white);
+  min-height: 100vh;
+}
+
+/* ── Hero section ── */
+.contact-hero {
+  background: linear-gradient(135deg, var(--navy) 0%, var(--electric) 70%, var(--teal) 100%);
+  padding: 90px 0 85px;
+  position: relative;
+  overflow: hidden;
+}
+
+.contact-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 50px 50px;
+  pointer-events: none;
+}
+
+.contact-hero__content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.contact-hero__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 100px;
+  padding: 6px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.95);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 24px;
+}
+
+.contact-hero__title {
+  font-family: var(--font-display);
+  font-size: clamp(32px, 5vw, 54px);
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+  margin-bottom: 20px;
+}
+
+.contact-hero__desc {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.78);
+  line-height: 1.8;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* ── Split grid layout ── */
+.contact-core {
+  padding: 80px 0;
+}
+
+.contact-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 1.3fr;
+  gap: 60px;
+  align-items: start;
+}
+
+/* ── Left Column: Direct Info ── */
+.contact-info-col__title {
+  font-family: var(--font-display);
+  font-size: clamp(24px, 3vw, 34px);
+  font-weight: 700;
+  color: var(--navy);
+  letter-spacing: -0.02em;
+  margin-bottom: 32px;
+  margin-top: 4px;
+}
+
+.contact-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 40px;
+}
+
+.contact-info-card {
+  background: #FFFFFF;
+  border: 1px solid rgba(112, 119, 125, 0.06);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  transition: transform 0.25s var(--ease-out), box-shadow 0.25s;
+}
+
+.contact-info-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(112, 119, 125, 0.05);
+}
+
+.contact-info-card__icon {
+  font-size: 24px;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background: rgba(229, 46, 99, 0.07);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--electric);
+}
+
+.contact-info-card__label {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--navy);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+
+.contact-info-card__link {
+  display: block;
+  font-size: 15px;
+  color: var(--clr-muted);
+  text-decoration: none;
+  line-height: 1.6;
+  transition: color 0.2s;
+}
+
+.contact-info-card__link:hover {
+  color: var(--electric);
+}
+
+.contact-info-card__text {
+  font-size: 14px;
+  color: var(--clr-muted);
+  line-height: 1.5;
+}
+
+.contact-info-card__text--sub {
+  font-size: 12px;
+  color: var(--teal);
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+/* ── Left Column: Scheduler Card ── */
+.scheduler-box {
+  background: var(--navy);
+  border-radius: var(--radius-xl);
+  padding: 36px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 16px 40px rgba(112, 119, 125, 0.15);
+  margin-bottom: 40px;
+}
+
+.scheduler-box__header {
+  margin-bottom: 28px;
+}
+
+.scheduler-box__badge {
+  display: inline-block;
+  background: rgba(0, 163, 193, 0.15);
+  border: 1px solid rgba(0, 163, 193, 0.3);
+  color: var(--sky);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 4px 10px;
+  border-radius: 100px;
+  margin-bottom: 12px;
+}
+
+.scheduler-box__title {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: -0.015em;
+  margin-bottom: 6px;
+}
+
+.scheduler-box__desc {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.5;
+}
+
+.scheduler-days {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.scheduler-day-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  padding: 10px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.25s var(--ease-out);
+}
+
+.scheduler-day-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.scheduler-day-btn.active {
+  background: var(--electric);
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(229, 46, 99, 0.3);
+}
+
+.scheduler-day-name {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 4px;
+}
+
+.scheduler-day-btn.active .scheduler-day-name {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.scheduler-day-date {
+  font-size: 12px;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+
+.scheduler-slots-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  margin-bottom: 12px;
+}
+
+.scheduler-slots {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.scheduler-slot-btn {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm);
+  padding: 10px 4px;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.scheduler-slot-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #FFFFFF;
+}
+
+.scheduler-slot-btn.active {
+  background: var(--teal);
+  border-color: transparent;
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(8, 175, 196, 0.3);
+}
+
+.btn-scheduler {
+  width: 100%;
+  padding: 14px;
+  background: var(--electric);
+  color: #FFFFFF;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s;
+}
+
+.btn-scheduler:hover:not(:disabled) {
+  background: #08AFC4;
+  transform: translateY(-1px);
+}
+
+.btn-scheduler:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Scheduler Success */
+.scheduler-success {
+  text-align: center;
+  padding: 16px 0;
+}
+
+.scheduler-success__icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(8, 175, 196, 0.15);
+  color: var(--teal);
+  font-size: 24px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+}
+
+.scheduler-success__title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin-bottom: 12px;
+}
+
+.scheduler-success__desc {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+
+.scheduler-success__sub {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+.btn-scheduler-reset {
+  background: transparent;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 18px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-scheduler-reset:hover {
+  border-color: #FFFFFF;
+  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* Social links box */
+.contact-socials-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--clr-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 14px;
+}
+
+.contact-socials-grid {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.contact-social-btn {
+  background: #FFFFFF;
+  border: 1px solid rgba(112, 119, 125, 0.06);
+  color: var(--navy);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  transition: all 0.25s;
+}
+
+.contact-social-btn:hover {
+  background: var(--light-blue-tint);
+  border-color: rgba(229, 46, 99, 0.15);
+  color: var(--electric);
+  transform: translateY(-1px);
+}
+
+/* ── Right Column: Form Card ── */
+.contact-form-card {
+  background: #FFFFFF;
+  border: 1.5px solid rgba(112, 119, 125, 0.06);
+  border-radius: var(--radius-xl);
+  padding: 48px;
+  box-shadow: 0 16px 50px rgba(112, 119, 125, 0.04);
+  position: relative;
+  min-height: 520px;
+}
+
+.contact-form-card__title {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--navy);
+  letter-spacing: -0.015em;
+  margin-bottom: 8px;
+  margin-top: 4px;
+}
+
+.contact-form-card__desc {
+  font-size: 14px;
+  color: var(--clr-muted);
+  line-height: 1.6;
+  margin-bottom: 36px;
+}
+
+.contact-form-el {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--navy);
+}
+
+.form-group label .req {
+  color: #FF5F57;
+  margin-left: 2px;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--off-white);
+  border: 1.5px solid rgba(112, 119, 125, 0.05);
+  border-radius: var(--radius-sm);
+  color: var(--navy);
+  font-family: var(--font-body);
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: #9ea8b5;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+  background: #FFFFFF;
+  border-color: var(--electric);
+  box-shadow: 0 0 0 4px rgba(229, 46, 99, 0.08);
+}
+
+.form-group input.input-err,
+.form-group textarea.input-err {
+  border-color: #FF5F57;
+  background: rgba(255, 95, 87, 0.02);
+}
+
+.form-group input.input-err:focus,
+.form-group textarea.input-err:focus {
+  box-shadow: 0 0 0 4px rgba(255, 95, 87, 0.08);
+}
+
+.field-err {
+  font-size: 11px;
+  font-weight: 600;
+  color: #FF5F57;
+  margin-top: 2px;
+}
+
+/* Custom Styled Select Dropdown */
+.select-wrapper {
+  position: relative;
+}
+
+.select-wrapper::after {
+  content: '▼';
+  font-size: 9px;
+  color: var(--clr-muted);
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  position: absolute;
+  pointer-events: none;
+}
+
+.form-group select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 40px;
+  cursor: pointer;
+}
+
+.btn-submit {
+  width: 100%;
+  padding: 16px;
+  margin-top: 10px;
+  background: linear-gradient(135deg, var(--electric), var(--navy));
+  color: #FFFFFF;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s var(--ease-out);
+  box-shadow: 0 4px 14px rgba(229, 46, 99, 0.2);
+}
+
+.btn-submit:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(229, 46, 99, 0.3);
+}
+
+.btn-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Spinner */
+.spinner-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.btn-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #FFFFFF;
+  border-radius: 50%;
+  animation: btnSpin 0.8s linear infinite;
+}
+
+@keyframes btnSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* Successful submit overlay styling */
+.form-success-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 0;
+  height: 100%;
+}
+
+.form-success-overlay__circle {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(8, 175, 196, 0.08);
+  border: 2.5px solid var(--teal);
+  color: var(--teal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.form-success-overlay__title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 12px;
+}
+
+.form-success-overlay__desc {
+  font-size: 15px;
+  color: var(--clr-muted);
+  line-height: 1.75;
+  max-width: 380px;
+  margin-bottom: 32px;
+}
+
+.btn-form-reset {
+  background: transparent;
+  border: 1.5px solid rgba(112, 119, 125, 0.15);
+  color: var(--navy);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 22px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-form-reset:hover {
+  border-color: var(--electric);
+  color: var(--electric);
+  background: var(--light-blue-tint);
+}
+
+/* ── Interactive Map Embed ── */
+.contact-map {
+  padding: 80px 0;
+  background: #FFFFFF;
+  border-top: 1px solid var(--clr-border);
+  border-bottom: 1px solid var(--clr-border);
+}
+
+.map-frame {
+  background: var(--off-white);
+  border: 1.5px solid rgba(112, 119, 125, 0.06);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: 0 16px 50px rgba(112, 119, 125, 0.04);
+  line-height: 0;
+}
+
+/* ── FAQ Accordion Section ── */
+.contact-faq {
+  padding: 80px 0;
+  background: var(--off-white);
+}
+
+.contact-faq-item {
+  background: #FFFFFF;
+  border: 1px solid rgba(112, 119, 125, 0.06);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+
+.contact-faq-item.open {
+  box-shadow: 0 4px 20px rgba(112, 119, 125, 0.06);
+}
+
+.contact-faq-item__question {
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--navy);
+  text-align: left;
+  transition: color 0.2s;
+}
+
+.contact-faq-item__question:hover {
+  color: var(--electric);
+}
+
+.contact-faq-item__icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--light-blue-tint);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 300;
+  color: var(--electric);
+  flex-shrink: 0;
+  transition: transform 0.3s, background 0.3s;
+}
+
+.contact-faq-item.open .contact-faq-item__icon {
+  transform: rotate(45deg);
+  background: var(--electric);
+  color: #FFFFFF;
+}
+
+.contact-faq-item__answer {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s var(--ease-out);
+}
+
+.contact-faq-item.open .contact-faq-item__answer {
+  max-height: 400px;
+}
+
+.contact-faq-item__answer-inner {
+  padding: 0 24px 20px 24px;
+  font-size: 14px;
+  color: var(--clr-muted);
+  line-height: 1.75;
+  border-top: 1px solid rgba(112, 119, 125, 0.05);
+  padding-top: 16px;
+}
+
+/* ── Animation Fade In Utility ── */
+.animate-fade-in {
+  animation: fadeIn 0.4s var(--ease-out) forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* ============================================================
+   RESPONSIVE DESIGN (<= 992px)
+   ============================================================ */
+
+@media (max-width: 992px) {
+  .contact-grid {
+    grid-template-columns: 1fr;
+    gap: 50px;
+  }
+}
+
+@media (max-width: 600px) {
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .contact-form-card {
+    padding: 30px 20px;
+  }
+  .scheduler-box {
+    padding: 24px 16px;
+  }
+  .scheduler-days {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+  .scheduler-slots {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.form-submit-error {
+  padding: 12px 14px;
+  border: 1px solid rgba(180, 35, 35, 0.28);
+  border-radius: var(--radius-sm);
+  background: rgba(180, 35, 35, 0.07);
+  color: #8f1f1f;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.map-frame__embed {
+  display: block;
+  border: 0;
+  filter: grayscale(0.35) contrast(1.05);
+}

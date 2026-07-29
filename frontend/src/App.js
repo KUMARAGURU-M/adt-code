@@ -1,8 +1,24 @@
 // src/App.js
 
-import React from 'react';
-import { HashRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import React, { lazy, Suspense } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import './App.css';
+import './company/company.css';
+
+/* ── Company Public Site ── */
+import CompanyErrorBoundary from './company/components/system/ErrorBoundary';
+const CompanyNavbar = lazy(() => import('./company/components/common/Navbar'));
+const CompanyFooter = lazy(() => import('./company/components/common/Footer'));
+const CompanyRouteEffects = lazy(() => import('./company/components/system/RouteEffects'));
+const CompanyPageLoader = lazy(() => import('./company/components/system/PageLoader'));
+
+const CompanyHome = lazy(() => import('./company/pages/Home'));
+const CompanyServicesOverview = lazy(() => import('./company/pages/ServicesOverview'));
+const CompanyServiceDetail = lazy(() => import('./company/pages/ServiceDetail'));
+const CompanyAbout = lazy(() => import('./company/pages/About'));
+const CompanyContact = lazy(() => import('./company/pages/Contact'));
+const CompanyCareers = lazy(() => import('./company/pages/Careers'));
+const CompanySitemap = lazy(() => import('./company/pages/Sitemap'));
 
 /* ── Layouts ── */
 import Sidebar from './components/layouts/Sidebar';
@@ -46,10 +62,30 @@ import ChatMonitor from './pages/admin/ChatMonitor';
 import ChatWidget from './components/layouts/ChatWidget';
 import DigiConvertor from './pages/admin/DigiConvertor';
 import HourlyReminder from './components/layouts/HourlyReminder';
+import ContactInquiries from './pages/admin/ContactInquiries';
+import CareerApplications from './pages/admin/CareerApplications';
 
 import EmpCheckInGuard from './components/layouts/EmpCheckInGuard';
 
 import { getCurrentUser, getRolePrefix, refreshCurrentUser } from './utils/api';
+
+/* ── Company Website Layout Wrapper ── */
+const CompanyLayout = ({ children }) => {
+  return (
+    <div className="company-root-wrapper">
+      <CompanyErrorBoundary>
+        <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading...</div>}>
+          <CompanyRouteEffects />
+          <CompanyNavbar />
+          <Suspense fallback={<CompanyPageLoader />}>
+            {children}
+          </Suspense>
+          <CompanyFooter />
+        </Suspense>
+      </CompanyErrorBoundary>
+    </div>
+  );
+};
 
 /* ── Role Component Wrappers ── */
 const RoleDashboardWrapper = () => {
@@ -101,90 +137,97 @@ const getAllowedRoutes = (roles, permissions) => {
   const prefix = getRolePrefix(roles);
 
   // Dashboard is allowed for everyone authenticated
-  allowed.push(`/${prefix}/dashboard`);
-  allowed.push(`/${prefix}/developer-dashboard`);
+  allowed.push(`/workwise/${prefix}/dashboard`);
+  allowed.push(`/workwise/${prefix}/developer-dashboard`);
 
   const hasDevRole = roles.some(r => r.startsWith('Dev-') || r.toLowerCase().startsWith('dev-'));
   const isDevRole = roles.includes('Dev-role') || roles.includes('DEV-role') || roles.includes('dev-role');
   if (isDevRole) {
-    allowed.push(`/${prefix}/roles`);
+    allowed.push(`/workwise/${prefix}/roles`);
   }
 
   const isEmployeeOnly = !hasDevRole && (prefix === 'executive' || ((roles.includes('Employee') || roles.includes('Executive')) && !roles.includes('Admin') && !roles.includes('Manager') && !roles.includes('Team Leader')));
   if (isEmployeeOnly) {
-    allowed.push(`/${prefix}/workwise`);
-    allowed.push(`/${prefix}/digiconvertor`);
-    allowed.push(`/${prefix}/hourly-graph`);
-    allowed.push(`/${prefix}/calendar`);
-    allowed.push(`/${prefix}/tasks`);
-    allowed.push(`/${prefix}/leaves`);
+    allowed.push(`/workwise/${prefix}/workwise`);
+    allowed.push(`/workwise/${prefix}/digiconvertor`);
+    allowed.push(`/workwise/${prefix}/hourly-graph`);
+    allowed.push(`/workwise/${prefix}/calendar`);
+    allowed.push(`/workwise/${prefix}/tasks`);
+    allowed.push(`/workwise/${prefix}/leaves`);
     return allowed;
   }
 
   if (roles.includes('Admin') || permissions?.includes('employees.view')) {
-    allowed.push(`/${prefix}/users`);
+    allowed.push(`/workwise/${prefix}/users`);
   }
   if (roles.includes('Admin') || permissions?.includes('timelogs.view') || permissions?.includes('tasks.view')) {
-    allowed.push(`/${prefix}/workwise`);
+    allowed.push(`/workwise/${prefix}/workwise`);
   }
   if (roles.includes('Admin') || permissions?.includes('tools.view')) {
-    allowed.push(`/${prefix}/tool`);
+    allowed.push(`/workwise/${prefix}/tool`);
   }
   if (roles.includes('Admin') || permissions?.includes('digiconvertor.view')) {
-    allowed.push(`/${prefix}/digiconvertor`);
+    allowed.push(`/workwise/${prefix}/digiconvertor`);
   }
   if (roles.includes('Admin') || permissions?.includes('attendance.view')) {
-    allowed.push(`/${prefix}/attendance`);
+    allowed.push(`/workwise/${prefix}/attendance`);
   }
   if (roles.includes('Admin') || permissions?.includes('projects.view')) {
-    allowed.push(`/${prefix}/projects`);
+    allowed.push(`/workwise/${prefix}/projects`);
   }
   if (roles.includes('Admin') || permissions?.includes('jobs.view')) {
-    allowed.push(`/${prefix}/books`);
+    allowed.push(`/workwise/${prefix}/books`);
   }
   if (roles.includes('Admin') || permissions?.includes('production.view')) {
-    allowed.push(`/${prefix}/production`);
+    allowed.push(`/workwise/${prefix}/production`);
   }
   if (roles.includes('Admin') || permissions?.includes('tasks.view')) {
-    allowed.push(`/${prefix}/tasks`);
+    allowed.push(`/workwise/${prefix}/tasks`);
   }
   if (roles.includes('Admin') || permissions?.includes('processes.view')) {
-    allowed.push(`/${prefix}/processes`);
+    allowed.push(`/workwise/${prefix}/processes`);
   }
   if (roles.includes('Admin') || permissions?.includes('shifts.view')) {
-    allowed.push(`/${prefix}/shifts`);
+    allowed.push(`/workwise/${prefix}/shifts`);
   }
   if (roles.includes('Admin') || permissions?.includes('leaves.view') || permissions?.includes('leaves.view_all')) {
-    allowed.push(`/${prefix}/leaves`);
+    allowed.push(`/workwise/${prefix}/leaves`);
   }
   if (roles.includes('Admin') || permissions?.includes('roles.view')) {
-    allowed.push(`/${prefix}/roles`);
+    allowed.push(`/workwise/${prefix}/roles`);
   }
   if (roles.includes('Admin') || permissions?.includes('reports.view')) {
-    allowed.push(`/${prefix}/reports`);
+    allowed.push(`/workwise/${prefix}/reports`);
   }
   if (roles.includes('Admin') || permissions?.includes('hourly_graph.view')) {
-    allowed.push(`/${prefix}/hourly-graph`);
+    allowed.push(`/workwise/${prefix}/hourly-graph`);
   }
   if (roles.includes('Admin') || permissions?.includes('activity_logs.view')) {
-    allowed.push(`/${prefix}/activity-logs`);
+    allowed.push(`/workwise/${prefix}/activity-logs`);
   }
   if (roles.includes('Admin') || permissions?.includes('timelogs.view_all')) {
-    allowed.push(`/${prefix}/timelog`);
+    allowed.push(`/workwise/${prefix}/timelog`);
   }
   if (roles.includes('Admin') || permissions?.includes('invoices.view')) {
-    allowed.push(`/${prefix}/invoices`);
+    allowed.push(`/workwise/${prefix}/invoices`);
   }
 
   if (roles.includes('Admin') || permissions?.includes('chat_monitor.view')) {
-    allowed.push(`/${prefix}/chat-monitor`);
+    allowed.push(`/workwise/${prefix}/chat-monitor`);
+  }
+
+  if (roles.includes('Admin') || permissions?.includes('contact_inquiries.view')) {
+    allowed.push(`/workwise/${prefix}/contact-inquiries`);
+  }
+  if (roles.includes('Admin') || permissions?.includes('career_applications.view')) {
+    allowed.push(`/workwise/${prefix}/career-applications`);
   }
 
   if (roles.includes('Admin') || permissions?.includes('settings.view')) {
-    allowed.push(`/${prefix}/settings`);
+    allowed.push(`/workwise/${prefix}/settings`);
   }
 
-  allowed.push(`/${prefix}/calendar`);
+  allowed.push(`/workwise/${prefix}/calendar`);
   return allowed;
 };
 
@@ -195,7 +238,7 @@ const AdminLayout = ({ children }) => {
   const location = useLocation();
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/workwise/login" replace />;
   }
 
   const roles = user.roles || [];
@@ -206,7 +249,7 @@ const AdminLayout = ({ children }) => {
     if (allowedRoutes.length > 0) {
       return <Navigate to={allowedRoutes[0]} replace />;
     } else {
-      return <Navigate to="/executive/dashboard" replace />;
+      return <Navigate to="/workwise/executive/dashboard" replace />;
     }
   }
 
@@ -290,140 +333,166 @@ function App() {
   return (
     <Router>
       <Routes>
+        {/* ========================================== */}
+        {/* PUBLIC COMPANY PAGES (Served at root /)     */}
+        {/* ========================================== */}
+        <Route path="/" element={<CompanyLayout><CompanyHome /></CompanyLayout>} />
+        <Route path="/about" element={<CompanyLayout><CompanyAbout /></CompanyLayout>} />
+        <Route path="/services" element={<CompanyLayout><CompanyServicesOverview /></CompanyLayout>} />
+        <Route path="/services/:slug" element={<CompanyLayout><CompanyServiceDetail /></CompanyLayout>} />
+        <Route path="/contact" element={<CompanyLayout><CompanyContact /></CompanyLayout>} />
+        <Route path="/careers" element={<CompanyLayout><CompanyCareers /></CompanyLayout>} />
+        <Route path="/sitemap" element={<CompanyLayout><CompanySitemap /></CompanyLayout>} />
 
-        {/* Default */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        {/* ========================================== */}
+        {/* EMPLOYEE PORTAL PAGES (Prefixed with /workwise) */}
+        {/* ========================================== */}
+        <Route path="/workwise">
+          {/* Default redirect: /workwise -> /workwise/login */}
+          <Route index element={<Navigate to="login" replace />} />
 
-        {/* Auth */}
-        <Route path="/login" element={<Login />} />
+          {/* Auth */}
+          <Route path="login" element={<Login />} />
 
-        {/* Employee */}
-        <Route path="/executive/dashboard" element={
-          <AdminLayout><RoleDashboardWrapper /></AdminLayout>
-        } />
-        <Route path="/workportal" element={<WorkPortal />} />
+          {/* Employee */}
+          <Route path="executive/dashboard" element={
+            <AdminLayout><RoleDashboardWrapper /></AdminLayout>
+          } />
+          <Route path="workportal" element={<WorkPortal />} />
 
-        {/* Role-Prefixed Routes */}
-        <Route path="/:role/dashboard" element={
-          <AdminLayout><RoleDashboardWrapper /></AdminLayout>
-        } />
-        <Route path="/:role/developer-dashboard" element={
-          <AdminLayout><DeveloperDashboard /></AdminLayout>
-        } />
-        <Route path="/developer/dashboard" element={
-          <AdminLayout><DeveloperDashboard /></AdminLayout>
-        } />
+          {/* Role-Prefixed Routes */}
+          <Route path=":role/dashboard" element={
+            <AdminLayout><RoleDashboardWrapper /></AdminLayout>
+          } />
+          <Route path=":role/developer-dashboard" element={
+            <AdminLayout><DeveloperDashboard /></AdminLayout>
+          } />
+          <Route path="developer/dashboard" element={
+            <AdminLayout><DeveloperDashboard /></AdminLayout>
+          } />
 
-        <Route path="/:role/users" element={
-          <AdminLayout><UserManagement /></AdminLayout>
-        } />
+          <Route path=":role/users" element={
+            <AdminLayout><UserManagement /></AdminLayout>
+          } />
 
-        <Route path="/:role/workwise" element={
-          <AdminLayout>
-            <EmpCheckInGuard pageName="WorkWise">
-              <RoleWorkwiseWrapper />
-            </EmpCheckInGuard>
-          </AdminLayout>
-        } />
+          <Route path=":role/workwise" element={
+            <AdminLayout>
+              <EmpCheckInGuard pageName="WorkWise">
+                <RoleWorkwiseWrapper />
+              </EmpCheckInGuard>
+            </AdminLayout>
+          } />
 
-        <Route path="/:role/attendance" element={
-          <AdminLayout><Attendance /></AdminLayout>
-        } />
+          <Route path=":role/attendance" element={
+            <AdminLayout><Attendance /></AdminLayout>
+          } />
 
-        <Route path="/:role/projects" element={
-          <AdminLayout><Project /></AdminLayout>
-        } />
+          <Route path=":role/projects" element={
+            <AdminLayout><Project /></AdminLayout>
+          } />
 
-        <Route path="/:role/books" element={
-          <AdminLayout><BooksJobs /></AdminLayout>
-        } />
+          <Route path=":role/books" element={
+            <AdminLayout><BooksJobs /></AdminLayout>
+          } />
 
-        <Route path="/:role/production" element={
-          <AdminLayout><Production /></AdminLayout>
-        } />
+          <Route path=":role/production" element={
+            <AdminLayout><Production /></AdminLayout>
+          } />
 
-        <Route path="/:role/tasks" element={
-          <AdminLayout>
-            <EmpCheckInGuard pageName="Tasks">
-              <RoleTasksWrapper />
-            </EmpCheckInGuard>
-          </AdminLayout>
-        } />
+          <Route path=":role/tasks" element={
+            <AdminLayout>
+              <EmpCheckInGuard pageName="Tasks">
+                <RoleTasksWrapper />
+              </EmpCheckInGuard>
+            </AdminLayout>
+          } />
 
-        <Route path="/:role/processes" element={
-          <AdminLayout><ProcessManagement /></AdminLayout>
-        } />
+          <Route path=":role/processes" element={
+            <AdminLayout><ProcessManagement /></AdminLayout>
+          } />
 
-        <Route path="/:role/shifts" element={
-          <AdminLayout><ShiftManagement /></AdminLayout>
-        } />
+          <Route path=":role/shifts" element={
+            <AdminLayout><ShiftManagement /></AdminLayout>
+          } />
 
-        <Route path="/:role/tool" element={
-          <AdminLayout><Tools /></AdminLayout>
-        } />
+          <Route path=":role/tool" element={
+            <AdminLayout><Tools /></AdminLayout>
+          } />
 
-        <Route path="/:role/leaves" element={
-          <AdminLayout>
-            <EmpCheckInGuard pageName="Leaves">
-              <RoleLeavesWrapper />
-            </EmpCheckInGuard>
-          </AdminLayout>
-        } />
+          <Route path=":role/leaves" element={
+            <AdminLayout>
+              <EmpCheckInGuard pageName="Leaves">
+                <RoleLeavesWrapper />
+              </EmpCheckInGuard>
+            </AdminLayout>
+          } />
 
-        <Route path="/:role/calendar" element={
-          <AdminLayout>
-            <EmpCheckInGuard pageName="Calendar">
-              <EmpCalendar />
-            </EmpCheckInGuard>
-          </AdminLayout>
-        } />
+          <Route path=":role/calendar" element={
+            <AdminLayout>
+              <EmpCheckInGuard pageName="Calendar">
+                <EmpCalendar />
+              </EmpCheckInGuard>
+            </AdminLayout>
+          } />
 
-        <Route path="/:role/roles" element={
-          <AdminLayout><RolesPermission /></AdminLayout>
-        } />
+          <Route path=":role/roles" element={
+            <AdminLayout><RolesPermission /></AdminLayout>
+          } />
 
-        <Route path="/:role/reports" element={
-          <AdminLayout><ReportsAnalytics /></AdminLayout>
-        } />
+          <Route path=":role/reports" element={
+            <AdminLayout><ReportsAnalytics /></AdminLayout>
+          } />
 
-        <Route path="/:role/hourly-graph" element={
-          <AdminLayout>
-            <EmpCheckInGuard pageName="Hourly Graph">
-              <HourlyGraph />
-            </EmpCheckInGuard>
-          </AdminLayout>
-        } />
+          <Route path=":role/hourly-graph" element={
+            <AdminLayout>
+              <EmpCheckInGuard pageName="Hourly Graph">
+                <HourlyGraph />
+              </EmpCheckInGuard>
+            </AdminLayout>
+          } />
 
-        <Route path="/:role/activity-logs" element={
-          <AdminLayout><ActivityLogs /></AdminLayout>
-        } />
+          <Route path=":role/activity-logs" element={
+            <AdminLayout><ActivityLogs /></AdminLayout>
+          } />
 
-        <Route path='/:role/timelog' element={
-          <AdminLayout><TimeLog /></AdminLayout>
-        } />
+          <Route path=':role/timelog' element={
+            <AdminLayout><TimeLog /></AdminLayout>
+          } />
 
-        <Route path="/:role/invoices" element={
-          <AdminLayout><Invoice /></AdminLayout>
-        } />
+          <Route path=":role/invoices" element={
+            <AdminLayout><Invoice /></AdminLayout>
+          } />
 
-        <Route path="/:role/settings" element={
-          <AdminLayout><Setting /></AdminLayout>
-        } />
+          <Route path=":role/settings" element={
+            <AdminLayout><Setting /></AdminLayout>
+          } />
 
-        <Route path="/:role/chat-monitor" element={
-          <AdminLayout><ChatMonitor /></AdminLayout>
-        } />
+          <Route path=":role/chat-monitor" element={
+            <AdminLayout><ChatMonitor /></AdminLayout>
+          } />
 
-        <Route path="/:role/digiconvertor" element={
-          <AdminLayout>
-            <EmpCheckInGuard pageName="DigiConvertor">
-              <DigiConvertor />
-            </EmpCheckInGuard>
-          </AdminLayout>
-        } />
+          <Route path=":role/digiconvertor" element={
+            <AdminLayout>
+              <EmpCheckInGuard pageName="DigiConvertor">
+                <DigiConvertor />
+              </EmpCheckInGuard>
+            </AdminLayout>
+          } />
 
-        {/* Catch-all */}
-        <Route path="*" element={<Navigate to="/login" replace />} />
+          <Route path=":role/contact-inquiries" element={
+            <AdminLayout><ContactInquiries /></AdminLayout>
+          } />
+
+          <Route path=":role/career-applications" element={
+            <AdminLayout><CareerApplications /></AdminLayout>
+          } />
+
+          {/* Catch-all for unmatched subpaths inside /workwise/* goes to login */}
+          <Route path="*" element={<Navigate to="login" replace />} />
+        </Route>
+
+        {/* Catch-all for unmatched root paths redirects to company homepage */}
+        <Route path="*" element={<Navigate to="/" replace />} />
 
       </Routes>
       <ChatWidget />
@@ -433,7 +502,3 @@ function App() {
 }
 
 export default App;
-
-
-
-

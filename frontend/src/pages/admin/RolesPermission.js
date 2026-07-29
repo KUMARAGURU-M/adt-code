@@ -25,6 +25,8 @@ const RESOURCES_LIST = [
   { id: "invoices", label: "Invoices", icon: "💰" },
   { id: "chat_monitor", label: "Chat Monitor", icon: "💬" },
   { id: "digiconvertor", label: "DigiConvertor", icon: "🔄" },
+  { id: "contact_inquiries", label: "Contact Inquiries", icon: "📬" },
+  { id: "career_applications", label: "Career Applications", icon: "💼" },
   { id: "settings", label: "Settings", icon: "🛠️" },
   { id: "developer", label: "Developer Pages (Legacy)", icon: "💻" },
   { id: "developer_dashboard", label: "Dev Dashboard", icon: "💻" },

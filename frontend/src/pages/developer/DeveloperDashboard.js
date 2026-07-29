@@ -38,14 +38,14 @@ const DeveloperDashboard = ({ hideToggle }) => {
     localStorage.setItem('active_persona_mode', 'admin');
     window.dispatchEvent(new Event('persona_change'));
     const prefix = getRolePrefix(user?.roles || []);
-    navigate(`/${prefix}/dashboard`);
+    navigate(`/workwise/${prefix}/dashboard`);
   };
 
   const handleSwitchToDeveloper = () => {
     localStorage.setItem('active_persona_mode', 'developer');
     window.dispatchEvent(new Event('persona_change'));
     const prefix = getRolePrefix(user?.roles || []);
-    navigate(`/${prefix}/developer-dashboard`);
+    navigate(`/workwise/${prefix}/developer-dashboard`);
   };
 
   // Navigation Tabs State

@@ -836,7 +836,7 @@ const UserManagement = () => {
         permissions: data.permissions
       }));
       const prefix = getRolePrefix(data.roles);
-      window.open(`/#/${prefix}/dashboard`, '_blank');
+      window.open(`/workwise/${prefix}/dashboard`, '_blank');
       close();
     } catch (err) {
       alert('Error impersonating user: ' + err.message);

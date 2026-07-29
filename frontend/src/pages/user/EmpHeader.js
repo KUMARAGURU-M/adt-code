@@ -58,7 +58,7 @@ const EmpHeader = ({ userName = 'Executive' }) => {
       setTimeout(() => {
         closeResetModal();
         clearSession();
-        navigate('/login');
+        navigate('/workwise/login');
       }, 2000);
     } catch (err) {
       setErrorMsg(err.message || 'An error occurred. Please try again.');
@@ -105,7 +105,7 @@ const EmpHeader = ({ userName = 'Executive' }) => {
             <span className="emp-welcome-name">{userName}</span>
             <span className="emp-reset-link" onClick={() => setShowResetModal(true)}>Reset Password</span>
           </div>
-          <button className="emp-logout-btn" onClick={() => navigate('/login')}>
+          <button className="emp-logout-btn" onClick={() => navigate('/workwise/login')}>
             <span>⏻</span> Logout
           </button>
         </div>

@@ -100,9 +100,9 @@ function CheckboxList({ title, icon, items, selected, onChange,
 
   const filteredItems = search.trim()
     ? items.filter(item => {
-      const lbl = getLabel(item);
-      return typeof lbl === "string" && lbl.toLowerCase().includes(search.toLowerCase());
-    })
+        const lbl = getLabel(item);
+        return typeof lbl === "string" && lbl.toLowerCase().includes(search.toLowerCase());
+      })
     : items;
 
   const allSel = filteredItems.length > 0 &&

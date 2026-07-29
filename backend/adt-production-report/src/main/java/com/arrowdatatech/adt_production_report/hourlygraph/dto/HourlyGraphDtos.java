@@ -69,6 +69,7 @@ public class HourlyGraphDtos {
         private LocalDate date;
         private String activeDay;
         private List<EmployeeRowDto> rows;
+        private Boolean hasStartedTask;
     }
 
     @Getter

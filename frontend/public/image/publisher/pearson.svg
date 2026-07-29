@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 88" width="320" height="88">
+  <rect width="100%" height="100%" fill="none"/>
+  <g transform="translate(30, 20)">
+    <circle cx="24" cy="24" r="24" fill="#007FA3"/>
+    <!-- Pearson Interrobang symbol -->
+    <path d="M22.5 12c-3.6 0-6 2.2-6 5.2h3.2c0-1.6 1.1-2.4 2.8-2.4s2.8 1 2.8 2.4c0 2-2.5 2.5-2.5 5.5v1.2h2.8v-1c0-2.2 2.5-2.4 2.5-5.7 0-3-2.2-5.2-5.6-5.2zm-2 15h2.8v3h-2.8v-3z" fill="#FFFFFF"/>
+    <rect x="20.5" y="16" width="2.8" height="8" rx="0.5" fill="#FFFFFF"/>
+  </g>
+  <text x="94" y="54" font-family="'Outfit', 'Inter', -apple-system, sans-serif" font-size="28" font-weight="700" fill="#007FA3" letter-spacing="0.5">Pearson</text>
+</svg>

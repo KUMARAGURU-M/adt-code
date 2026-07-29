@@ -1,0 +1,321 @@
+:root {
+    color-scheme: light;
+
+    /* Brand */
+    --navy: #25282b;
+    --navy-900: #17191b;
+    --electric: #e92e68;
+    --electric-700: #c91f57;
+    --sky: #08afc4;
+    --teal: #08afc4;
+    --teal-700: #078b9b;
+    --amber: #7f878d;
+    --coral: #c91f57;
+    --soft-purple: #70787f;
+    --deep-teal: #006f7c;
+
+    /* Neutral and semantic */
+    --white: #ffffff;
+    --off-white: #ffffff;
+    --light-blue-tint: #e6f1fb;
+    --charcoal: #2c2c2a;
+    --muted: #5f6b7a;
+    --subtle: #8290a3;
+    --border: rgba(37, 40, 43, 0.1);
+    --border-strong: rgba(37, 40, 43, 0.2);
+    --focus-ring: #08afc4;
+    --success: #078b9b;
+    --danger: #b42318;
+    --on-brand: #ffffff;
+    --on-brand-muted: rgba(255, 255, 255, 0.82);
+    --on-brand-soft: rgba(255, 255, 255, 0.68);
+
+    /* Compatibility aliases used by existing page styles */
+    --clr-bg: var(--off-white);
+    --clr-surface: var(--light-blue-tint);
+    --clr-card: var(--white);
+    --clr-border: var(--border);
+    --clr-border-md: var(--border-strong);
+    --clr-accent: var(--electric);
+    --clr-accent2: var(--teal);
+    --clr-text: var(--charcoal);
+    --clr-muted: var(--muted);
+    --clr-heading: var(--navy);
+    --clr-white: var(--white);
+    --light-blue: var(--light-blue-tint);
+    --warm-gray: #b4b2a9;
+    --purple: var(--soft-purple);
+    --off: var(--off-white);
+    --lb: var(--light-blue-tint);
+    --wg: var(--warm-gray);
+    --ch: var(--charcoal);
+    --border-md: var(--border-strong);
+
+    /* Typography */
+    --font-display: 'Sora', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-body: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-d: var(--font-display);
+    --font-b: var(--font-body);
+    --text-xs: 0.75rem;
+    --text-sm: 0.875rem;
+    --text-md: 1rem;
+    --text-lg: 1.125rem;
+    --text-xl: 1.25rem;
+    --text-2xl: clamp(1.5rem, 1.2rem + 1vw, 2rem);
+    --text-3xl: clamp(2rem, 1.45rem + 2vw, 3rem);
+    --text-4xl: clamp(2.5rem, 1.75rem + 3vw, 4.5rem);
+    --leading-tight: 1.12;
+    --leading-body: 1.65;
+
+    /* Spacing */
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-5: 1.25rem;
+    --space-6: 1.5rem;
+    --space-8: 2rem;
+    --space-10: 2.5rem;
+    --space-12: 3rem;
+    --space-16: 4rem;
+    --space-20: 5rem;
+    --space-24: 6rem;
+
+    /* Shape and elevation */
+    --radius-xs: 0.375rem;
+    --radius-sm: 0.5rem;
+    --radius-md: 0.75rem;
+    --radius-lg: 1rem;
+    --radius-xl: 1.5rem;
+    --radius-pill: 999px;
+    --shadow-xs: 0 1px 2px rgba(37, 40, 43, 0.06);
+    --shadow-sm: 0 4px 14px rgba(37, 40, 43, 0.08);
+    --shadow-md: 0 12px 30px rgba(37, 40, 43, 0.1);
+    --shadow-lg: 0 24px 60px rgba(37, 40, 43, 0.14);
+
+    /* Motion */
+    --duration-fast: 140ms;
+    --duration-normal: 220ms;
+    --duration-slow: 420ms;
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --ease: var(--ease-out);
+    --spring: var(--ease-spring);
+
+    /* Layout */
+    --container-sm: 720px;
+    --container-md: 960px;
+    --container-lg: 1180px;
+    --container-xl: 1320px;
+    --header-height: 76px;
+    --icon-sm: 1rem;
+    --icon-md: 1.25rem;
+    --icon-lg: 1.5rem;
+}
+
+.company-root-wrapper {
+    min-height: 100vh;
+    background: var(--off-white);
+    color: var(--charcoal);
+    font-family: var(--font-body);
+    font-size: var(--text-md);
+    line-height: var(--leading-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.company-root-wrapper *,
+.company-root-wrapper *::before,
+.company-root-wrapper *::after {
+    box-sizing: border-box;
+}
+
+.company-root-wrapper main {
+    display: block;
+    min-height: 60vh;
+}
+
+.company-root-wrapper img,
+.company-root-wrapper picture,
+.company-root-wrapper svg,
+.company-root-wrapper video,
+.company-root-wrapper canvas {
+    display: block;
+    max-width: 100%;
+}
+
+.company-root-wrapper button,
+.company-root-wrapper input,
+.company-root-wrapper textarea,
+.company-root-wrapper select {
+    font: inherit;
+}
+
+.company-root-wrapper button,
+.company-root-wrapper [role='button'],
+.company-root-wrapper a {
+    -webkit-tap-highlight-color: transparent;
+}
+
+.company-root-wrapper button:not(:disabled),
+.company-root-wrapper [role='button']:not([aria-disabled='true']) {
+    cursor: pointer;
+}
+
+.company-root-wrapper button:disabled,
+.company-root-wrapper input:disabled,
+.company-root-wrapper select:disabled,
+.company-root-wrapper textarea:disabled {
+    cursor: not-allowed;
+    opacity: 0.62;
+}
+
+.company-root-wrapper :where(h1, h2, h3, h4, h5, h6) {
+    margin-block: 0;
+    color: var(--navy);
+    font-family: var(--font-display);
+    line-height: var(--leading-tight);
+    text-wrap: balance;
+}
+
+.company-root-wrapper :where(p) {
+    text-wrap: pretty;
+}
+
+/* Keep the reset deliberately low-specificity so component text colors win. */
+.company-root-wrapper :where(a) {
+    color: inherit;
+}
+
+.company-root-wrapper .container {
+    width: min(100% - 2rem, var(--container-lg));
+    margin-inline: auto;
+}
+
+@media (min-width: 768px) {
+    .company-root-wrapper .container {
+        width: min(100% - 3rem, var(--container-lg));
+    }
+}
+
+.company-root-wrapper :focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--focus-ring) 76%, white);
+    outline-offset: 3px;
+}
+
+.company-root-wrapper :target {
+    scroll-margin-top: calc(var(--header-height) + 1rem);
+}
+
+.company-root-wrapper .skip-link {
+    position: fixed;
+    inset: 0 auto auto 1rem;
+    z-index: 10000;
+    transform: translateY(-140%);
+    border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+    background: var(--navy);
+    color: var(--white);
+    padding: 0.75rem 1rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: transform var(--duration-fast) ease;
+}
+
+.company-root-wrapper .skip-link:focus {
+    transform: translateY(0);
+}
+
+.company-root-wrapper .sr-only {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
+/* Shared interactive foundations */
+.company-root-wrapper .btn-primary,
+.company-root-wrapper .btn-ghost,
+.company-root-wrapper .btn-white,
+.company-root-wrapper .btn-outline-white,
+.company-root-wrapper .btn-outline-primary,
+.company-root-wrapper .btn-submit,
+.company-root-wrapper .btn-primary-navbar,
+.company-root-wrapper .pf-btn-primary,
+.company-root-wrapper .pf-btn-ghost {
+    min-height: 44px;
+    justify-content: center;
+}
+
+.company-root-wrapper input,
+.company-root-wrapper textarea,
+.company-root-wrapper select {
+    width: 100%;
+    min-height: 46px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    background: var(--white);
+    color: var(--charcoal);
+    padding: 0.75rem 0.875rem;
+    transition: border-color var(--duration-fast), box-shadow var(--duration-fast), background-color var(--duration-fast);
+}
+
+.company-root-wrapper textarea {
+    min-height: 7rem;
+    resize: vertical;
+}
+
+.company-root-wrapper input:hover,
+.company-root-wrapper textarea:hover,
+.company-root-wrapper select:hover {
+    border-color: rgba(233, 46, 104, 0.45);
+}
+
+.company-root-wrapper input:focus,
+.company-root-wrapper textarea:focus,
+.company-root-wrapper select:focus {
+    border-color: var(--electric);
+    box-shadow: 0 0 0 4px rgba(233, 46, 104, 0.12);
+    outline: 0;
+}
+
+.company-root-wrapper input[aria-invalid='true'],
+.company-root-wrapper textarea[aria-invalid='true'],
+.company-root-wrapper select[aria-invalid='true'],
+.company-root-wrapper .input-err {
+    border-color: var(--danger) !important;
+}
+
+.company-root-wrapper .field-err,
+.company-root-wrapper [role='alert'] {
+    color: var(--danger);
+}
+
+/* Prevent long content from breaking layouts. */
+.company-root-wrapper :is(p, li, a, button, label, td, th, code) {
+    overflow-wrap: anywhere;
+}
+
+/* Sections render more cheaply below the fold without changing appearance. */
+.company-root-wrapper main>section:not(:first-child) {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 720px;
+}
+
+/* Breakpoints: small 480, mobile 600, tablet 768, laptop 992, desktop 1200. */
+@media (max-width: 600px) {
+    .company-root-wrapper .container {
+        width: min(100% - 1.25rem, var(--container-lg));
+    }
+
+    .company-root-wrapper input,
+    .company-root-wrapper textarea,
+    .company-root-wrapper select {
+        font-size: 1rem;
+        /* prevents mobile browser zoom */
+    }
+}

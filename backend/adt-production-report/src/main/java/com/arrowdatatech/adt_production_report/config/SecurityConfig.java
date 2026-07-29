@@ -37,12 +37,15 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource))
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // 1. FRONTEND STATIC FILES - PUBLIC
-                .requestMatchers("/", "/index.html", "/static/**", "/*.ico", "/*.json", "/*.png", "/images/**").permitAll()
+                .requestMatchers("/", "/index.html", "/static/**", "/*.ico", "/*.json", "/*.png", "/images/**",
+                        "/about", "/services/**", "/contact", "/careers", "/sitemap", "/workwise", "/workwise/**").permitAll()
                 
                 // 2. PUBLIC API ENDPOINTS
                 .requestMatchers("/api/auth/login", "/api/auth/refresh", "/api/auth/logout", "/api/users/top-performers", "/api/settings/public").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/media/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/public/contact").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/public/careers/apply").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/public/careers/openings").permitAll()
                 
                 // 3. SWAGGER UI
                 .requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html").permitAll()
@@ -63,6 +66,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/chat/admin/**").hasAnyAuthority("ROLE_Admin", "chat_monitor.view", "chat_monitor.delete")
                 .requestMatchers("/api/chat/**", "/api/workwise/**", "/api/leave/**", "/api/notifications/**", "/api/timelog/**").authenticated()
                 .requestMatchers("/api/user-page-access/**").hasAnyAuthority("ROLE_Admin", "ROLE_Dev-role", "ROLE_DEV-role", "ROLE_dev-role", "ROLE_Dev-Developer", "roles.view", "roles.update", "page_access.view")
+                .requestMatchers("/api/admin/contact/**").hasAnyAuthority("ROLE_Admin", "contact_inquiries.view", "contact_inquiries.update", "contact_inquiries.delete")
+                .requestMatchers("/api/admin/careers/**").hasAnyAuthority("ROLE_Admin", "career_applications.view", "career_applications.create", "career_applications.update", "career_applications.delete")
                 
                 // Everything else requires authentication
                 .anyRequest().authenticated()

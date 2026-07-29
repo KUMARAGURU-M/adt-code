@@ -109,6 +109,7 @@ export default function HourlyGraph() {
     const currentUser = getCurrentUser();
     const isAdmin = currentUser?.roles?.includes("Admin");
     const isPrivileged = currentUser?.roles?.some(r => r === "Admin" || r === "Manager" || r === "Team Leader");
+    const isEditPrivileged = currentUser?.roles?.some(r => r === "Admin" || r === "Manager");
     const currentUserId = currentUser?.userId;
     const showTargetGraph = true;
 
@@ -142,6 +143,7 @@ export default function HourlyGraph() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [isCheckedIn, setIsCheckedIn] = useState(true); // Default to true to prevent screen flash
+    const [isTaskStarted, setIsTaskStarted] = useState(true); // Default to true to prevent screen flash
     const [notification, setNotification] = useState(null); // Floating pop-up notification
     const lastNotifiedHourRef = useRef(null);
     const lastNotifiedDateRef = useRef(null);
@@ -252,10 +254,19 @@ export default function HourlyGraph() {
                     setIsCheckedIn(!!(myRow?.inTime));
                 }
 
+                if (data && data.hasStartedTask !== undefined) {
+                    setIsTaskStarted(data.hasStartedTask);
+                } else {
+                    setIsTaskStarted(true);
+                }
+
                 setError("");
             } catch (err) {
                 console.error("Failed to load logs:", err);
-                setError("Failed to fetch hourly production records.");
+                setError(err.message || "Failed to fetch hourly production records.");
+                if (err.message && err.message.toLowerCase().includes("start a task")) {
+                    setIsTaskStarted(false);
+                }
             } finally {
                 if (showLoading) setLoading(false);
             }
@@ -444,8 +455,9 @@ export default function HourlyGraph() {
     };
 
     const canEditHour = (row, hIdx) => {
-        if (isPrivileged) return true;
+        if (isEditPrivileged) return true;
         if (row.userId !== currentUserId) return false;
+        if (!isTaskStarted) return false;
         return isHourActive(hIdx, row.shift, row.inTime);
     };
 
@@ -457,7 +469,7 @@ export default function HourlyGraph() {
                 setAutoSaving(true);
                 const currentRows = rowsRef.current;
                 const currentDate = periodDateRef.current;
-                const filteredToSave = isPrivileged
+                const filteredToSave = isEditPrivileged
                     ? currentRows
                     : currentRows.filter(r => r.userId === currentUserId);
                 if (filteredToSave.length > 0) {
@@ -479,7 +491,7 @@ export default function HourlyGraph() {
         }, 3000);
         return () => clearTimeout(timer);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [changeCount, isPrivileged, currentUserId]);
+    }, [changeCount, isEditPrivileged, currentUserId]);
 
     // ── Save Function ──
     const handleSave = async () => {
@@ -494,7 +506,7 @@ export default function HourlyGraph() {
             }
 
             // Save daily logs
-            const filteredToSave = isPrivileged ? rows : rows.filter(r => r.userId === currentUserId);
+            const filteredToSave = isEditPrivileged ? rows : rows.filter(r => r.userId === currentUserId);
             if (filteredToSave.length > 0) {
                 await apiCall("/hourly-graph/logs", "POST", {
                     date: periodDate,
@@ -755,6 +767,26 @@ export default function HourlyGraph() {
     return (
         <div className="hg-wrapper">
             {error && <div className="hg-error-banner">⚠️ {error}</div>}
+            {!isTaskStarted && !isAdmin && !currentUser?.roles?.includes("Manager") && (
+                <div className="hg-warning-banner" style={{
+                    background: "rgba(255, 59, 92, 0.08)",
+                    border: "1px solid rgba(255, 59, 92, 0.18)",
+                    borderRadius: "var(--hg-radius-md)",
+                    padding: "12px 16px",
+                    color: "var(--pink)",
+                    fontSize: "0.85rem",
+                    fontWeight: "500",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    boxShadow: "var(--hg-shadow-sm)",
+                    marginTop: "8px",
+                    marginBottom: "8px"
+                }}>
+                    <span>⚠️</span>
+                    <span>You must start a task first in Workwise to record hourly production updates.</span>
+                </div>
+            )}
 
             {/* ── Page Header ── */}
             <div className="hg-page-header">
@@ -1020,7 +1052,14 @@ export default function HourlyGraph() {
                     ) : savedAt ? (
                         <span className="hg-saved-tag">✓ Auto-saved {savedAt.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}</span>
                     ) : null}
-                    <button className="hg-save-btn" onClick={handleSave}>💾 Save Report</button>
+                    <button 
+                        className="hg-save-btn" 
+                        onClick={handleSave}
+                        disabled={!isEditPrivileged && !isTaskStarted}
+                        style={(!isEditPrivileged && !isTaskStarted) ? { opacity: 0.5, cursor: "not-allowed", background: "gray", boxShadow: "none" } : {}}
+                    >
+                        💾 Save Report
+                    </button>
                 </div>
             </div>
 
@@ -1086,7 +1125,7 @@ export default function HourlyGraph() {
                             ) : (
                                 filteredRows.map((row, idx) => {
                                     const isSelf = row.userId === currentUserId;
-                                    const canEditRow = isPrivileged || isSelf;
+                                    const canEditRow = isEditPrivileged || (isSelf && isTaskStarted);
                                     const isAbsent = row.shift === "Absent";
 
                                     return (

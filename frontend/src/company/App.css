@@ -1,0 +1,60 @@
+.app-shell {
+  min-height: 100vh;
+}
+
+.route-main {
+  min-height: 70vh;
+}
+
+.route-loader {
+  display: grid;
+  min-height: 55vh;
+  place-items: center;
+  padding: var(--space-16) var(--space-4);
+  color: var(--navy);
+  font-weight: 700;
+}
+
+.route-loader::before {
+  width: 2rem;
+  height: 2rem;
+  border: 3px solid rgba(229, 46, 99, 0.18);
+  border-top-color: var(--electric);
+  border-radius: 50%;
+  content: '';
+  animation: route-spin 0.7s linear infinite;
+}
+
+@keyframes route-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+.reveal,
+.reveal-left,
+.reveal-right {
+  opacity: 0;
+  transition: opacity 0.58s var(--ease-out), transform 0.58s var(--ease-out);
+  will-change: opacity, transform;
+}
+
+.reveal {
+  transform: translateY(1.5rem);
+}
+
+.reveal-left {
+  transform: translateX(-1.75rem);
+}
+
+.reveal-right {
+  transform: translateX(1.75rem);
+}
+
+.reveal.visible,
+.reveal-left.visible,
+.reveal-right.visible {
+  opacity: 1;
+  transform: none;
+  will-change: auto;
+}

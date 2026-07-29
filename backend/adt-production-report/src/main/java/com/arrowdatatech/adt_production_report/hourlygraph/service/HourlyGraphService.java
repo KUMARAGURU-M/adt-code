@@ -18,6 +18,7 @@ import com.arrowdatatech.adt_production_report.attendance.repository.AttendanceE
 import com.arrowdatatech.adt_production_report.user.entity.EmployeeProfile;
 import com.arrowdatatech.adt_production_report.user.entity.User;
 import com.arrowdatatech.adt_production_report.user.repository.UserRepository;
+import com.arrowdatatech.adt_production_report.workwise.repository.TimeLogRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +44,7 @@ public class HourlyGraphService {
     private final ShiftRepository shiftRepository;
     private final AttendanceRecordRepository attendanceRecordRepository;
     private final AttendanceEmployeeRepository attendanceEmployeeRepository;
+    private final TimeLogRepository timeLogRepository;
     private final ObjectMapper objectMapper;
 
     private static final UUID SETTINGS_ID = UUID.fromString("00000000-0000-0000-0000-000000000000");
@@ -201,10 +203,22 @@ public class HourlyGraphService {
         // Get day of week name (e.g. Monday)
         String activeDay = date.getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.ENGLISH);
 
+        boolean hasStartedTask = true;
+        try {
+            UUID currentUserId = SecurityUtils.getCurrentUserId();
+            if (SecurityUtils.hasRole("Executive") || SecurityUtils.hasRole("Team Leader")) {
+                LocalDate today = LocalDate.now(java.time.ZoneId.of("Asia/Kolkata"));
+                hasStartedTask = timeLogRepository.hasStartedTaskOnDate(currentUserId, today);
+            }
+        } catch (Exception e) {
+            log.warn("Could not determine task start status", e);
+        }
+
         return HourlyGraphResponse.builder()
                 .date(date)
                 .activeDay(activeDay)
                 .rows(rows)
+                .hasStartedTask(hasStartedTask)
                 .build();
     }
 
@@ -212,8 +226,15 @@ public class HourlyGraphService {
     public void saveDailyLogs(LocalDate date, SaveHourlyLogsRequest request) {
         UUID currentUserId = SecurityUtils.getCurrentUserId();
         boolean isAdmin = SecurityUtils.isAdmin();
-        boolean isManagerOrTL = SecurityUtils.hasRole("Manager") || SecurityUtils.hasRole("Team Leader");
-        boolean canEditOthers = isAdmin || isManagerOrTL;
+        boolean canEditOthers = isAdmin || SecurityUtils.hasRole("Manager");
+
+        // Enforce task start constraint for Executives and Team Leaders
+        if (SecurityUtils.hasRole("Executive") || SecurityUtils.hasRole("Team Leader")) {
+            LocalDate today = LocalDate.now(java.time.ZoneId.of("Asia/Kolkata"));
+            if (!timeLogRepository.hasStartedTaskOnDate(currentUserId, today)) {
+                throw new BadRequestException("You must start a task first to enter hourly graph data.");
+            }
+        }
 
         for (EmployeeRowDto row : request.getRows()) {
             if (row.getUserId() == null) {

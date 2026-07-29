@@ -26,17 +26,19 @@ const ALL_PAGES = [
   { name: 'TIME LOG', icon: '⏱️', permCode: 'timelogs.view_all' },
   { name: 'INVOICE', icon: '💰', permCode: 'invoices.view' },
   { name: 'CHAT MONITOR', icon: '💬', permCode: 'chat_monitor.view' },
+  { name: 'CONTACT INQUIRY', icon: '📬', permCode: 'contact_inquiries.view' },
+  { name: 'CAREER APPLICATION', icon: '💼', permCode: 'career_applications.view' },
   { name: 'SETTINGS', icon: '🛠️', permCode: 'settings.view' },
   { name: 'PAGE ACCESS', icon: '🔑', permCode: 'page_access.view' },
   // ── Developer Role Pages ──────────────────────────────────────
-  { name: 'DEV DASHBOARD', icon: '💻', permCode: 'developer_dashboard.view', group: 'Developer' },
-  { name: 'DEV PROJECT', icon: '📁', permCode: 'developer_projects.view', group: 'Developer' },
-  { name: 'DEV TASK', icon: '✅', permCode: 'developer_tasks.view', group: 'Developer' },
-  { name: 'DEV MEETING', icon: '📅', permCode: 'developer_meetings.view', group: 'Developer' },
-  { name: 'DEV CORRECTION', icon: '⚠️', permCode: 'developer_corrections.view', group: 'Developer' },
-  { name: 'DEV WORKWISE', icon: '➤', permCode: 'developer_workwise.view', group: 'Developer' },
-  { name: 'DEV LEAVE', icon: '🏖️', permCode: 'developer_leave.view', group: 'Developer' },
-  { name: 'DEV REPORT', icon: '⚙️', permCode: 'developer_reports.view', group: 'Developer' },
+  { name: 'DEV DASHBOARD',   icon: '💻', permCode: 'developer_dashboard.view',   group: 'Developer' },
+  { name: 'DEV PROJECT',     icon: '📁', permCode: 'developer_projects.view',    group: 'Developer' },
+  { name: 'DEV TASK',        icon: '✅', permCode: 'developer_tasks.view',       group: 'Developer' },
+  { name: 'DEV MEETING',     icon: '📅', permCode: 'developer_meetings.view',    group: 'Developer' },
+  { name: 'DEV CORRECTION',  icon: '⚠️', permCode: 'developer_corrections.view', group: 'Developer' },
+  { name: 'DEV WORKWISE',    icon: '➤', permCode: 'developer_workwise.view',    group: 'Developer' },
+  { name: 'DEV LEAVE',       icon: '🏖️', permCode: 'developer_leave.view',       group: 'Developer' },
+  { name: 'DEV REPORT',      icon: '⚙️', permCode: 'developer_reports.view',     group: 'Developer' },
 ];
 
 // ── Helpers ───────────────────────────────────────────────────────
@@ -49,8 +51,8 @@ function Toast({ message, type, onDone }) {
 }
 
 function PageGrid({ checkedCodes, deniedCodes = new Set(), roleCodes = new Set(), onToggle, disabled }) {
-  const standardPages = ALL_PAGES.filter(pg => !pg.group);
-  const devPages = ALL_PAGES.filter(pg => pg.group === 'Developer');
+  const standardPages  = ALL_PAGES.filter(pg => !pg.group);
+  const devPages       = ALL_PAGES.filter(pg => pg.group === 'Developer');
 
   const renderCard = (pg) => {
     const isRoleInherited = pg.permCode && roleCodes.has(pg.permCode);

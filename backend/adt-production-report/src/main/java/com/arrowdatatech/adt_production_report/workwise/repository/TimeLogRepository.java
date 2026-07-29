@@ -86,4 +86,12 @@ public interface TimeLogRepository extends JpaRepository<TimeLog, UUID> {
 
     @Query("SELECT COUNT(t) FROM TimeLog t WHERE t.logDate = :date AND t.status = 'FINISH'")
     long countTasksCompletedOnDate(@Param("date") LocalDate date);
+
+    @Query("""
+            SELECT CASE WHEN COUNT(t) > 0 THEN true ELSE false END FROM TimeLog t
+            WHERE t.user.id = :userId
+            AND t.logDate = :date
+            AND (t.task IS NOT NULL OR t.devTask IS NOT NULL)
+            """)
+    boolean hasStartedTaskOnDate(@Param("userId") UUID userId, @Param("date") LocalDate date);
 }

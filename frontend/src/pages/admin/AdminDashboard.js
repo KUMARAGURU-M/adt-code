@@ -20,9 +20,9 @@ const AdminDashboard = () => {
     window.dispatchEvent(new Event('persona_change'));
     const prefix = getRolePrefix(user?.roles || []);
     if (mode === 'developer') {
-      navigate(`/${prefix}/developer-dashboard`);
+      navigate(`/workwise/${prefix}/developer-dashboard`);
     } else {
-      navigate(`/${prefix}/dashboard`);
+      navigate(`/workwise/${prefix}/dashboard`);
     }
   };
   const roles = user?.roles || [];

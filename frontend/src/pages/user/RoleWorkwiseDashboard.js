@@ -100,7 +100,7 @@ export default function RoleWorkwiseDashboard() {
                 ? 'You must Check-In to your shift on the Dashboard to access WorkWise and start tracking your work.'
                 : 'You must Check-In to your shift on the Dashboard to access tasks.'}
             </p>
-            <button className="emp-locked-btn" onClick={() => navigate(`/${prefix}/dashboard`)}>
+            <button className="emp-locked-btn" onClick={() => navigate(`/workwise/${prefix}/dashboard`)}>
               Go to Dashboard
             </button>
           </div>

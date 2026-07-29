@@ -288,7 +288,7 @@ function Login() {
       // Navigate based on user roles
       const roles = data.data.roles || [];
       const prefix = getRolePrefix(roles);
-      navigate(`/${prefix}/dashboard`);
+      navigate(`/workwise/${prefix}/dashboard`);
     } catch (err) {
       setError("Network error. Please try again.");
     } finally {
