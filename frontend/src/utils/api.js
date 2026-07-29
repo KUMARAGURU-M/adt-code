@@ -107,7 +107,7 @@ async function doRefresh() {
   if (!res.ok) {
     if (res.status === 400 || res.status === 401 || res.status === 403) {
       clearSession();
-      window.location.href = '/';
+      window.location.href = '/workwise/login';
       throw new Error('Session expired. Please log in again.');
     }
     throw new Error(`Server error during refresh (HTTP ${res.status})`);
@@ -122,7 +122,7 @@ async function doRefresh() {
 
   if (!json.success) {
     clearSession();
-    window.location.href = '/';
+    window.location.href = '/workwise/login';
     throw new Error('Session expired. Please log in again.');
   }
 
