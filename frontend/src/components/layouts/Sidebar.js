@@ -40,6 +40,8 @@ const menuItems = [
   { name: 'TIME LOG', icon: <img src={timelogIcon} alt="Time Log" className="sidebar-img-icon" />, path: '/admin/timelog' },
   { name: 'INVOICE', icon: <img src={invoiceIcon} alt="Invoices" className="sidebar-img-icon" />, path: '/admin/invoices' },
   { name: 'CHAT MONITOR', icon: '💬', path: '/admin/chat-monitor' },
+  { name: 'CONTACT INQUIRIES', icon: '📞', path: '/admin/contact-inquiries' },
+  { name: 'CAREER APPLICATIONS', icon: '💼', path: '/admin/career-applications' },
   { name: 'SETTINGS', icon: '🛠️', path: '/admin/settings' },
 ];
 
@@ -189,6 +191,10 @@ const Sidebar = ({ isMobileOpen, onCloseMobile }) => {
         return hasPermission('invoices.view');
       case 'CHAT MONITOR':
         return hasPermission('chat_monitor.view');
+      case 'CONTACT INQUIRIES':
+        return hasPermission('contact_inquiries.view');
+      case 'CAREER APPLICATIONS':
+        return hasPermission('career_applications.view');
       case 'SETTINGS':
         return hasPermission('settings.view');
       default:
