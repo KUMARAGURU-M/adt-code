@@ -250,20 +250,20 @@ function Home() {
           <div className="hero__text-block">
             <div className="hero__eyebrow">
               <span className="hero__eyebrow-dot" />
-              Trusted by 3+ global clients
+              Trusted by 3+ Global Clients
             </div>
             <h1 className="hero__title">
-              We power your<br />
-              <span className="hero__title-accent">digital future</span>
+              We Power Your<br />
+              <span className="hero__title-accent">Digital Future</span>
             </h1>
             <p className="hero__desc">
-              From ePub conversion and XML tagging to web development,
-              automation, and digital marketing — we convert complexity
-              into competitive advantage.
+              From ePub Conversion and XML Conversion to Web Development, Software Development, AI Development,
+              App Development, Data Visualization, and Content Writing — we Convert Complexity
+              into Competitive Advantage.
             </p>
             <div className="hero__actions">
-              <Link to="/contact" className="btn-primary">Get a free quote →</Link>
-              <Link to="/services" className="btn-ghost">Explore services</Link>
+              <Link to="/contact" className="btn-primary">Get a Free Quote →</Link>
+              <Link to="/services" className="btn-ghost">Explore Services</Link>
             </div>
           </div>
 
@@ -307,12 +307,12 @@ function Home() {
                     <div className="dashboard">
                       <div className="dash__header">
                         <div>
-                          <div className="dash__welcome">Welcome back!</div>
-                          <div className="dash__sub">Your conversion pipeline</div>
+                          <div className="dash__welcome">Welcome Back!</div>
+                          <div className="dash__sub">Your Conversion Pipeline</div>
                         </div>
                         <div className="dash__badge">
                           <span className="dash__badge-dot" />
-                          3 active jobs
+                          3 Active Jobs
                         </div>
                       </div>
 
@@ -341,7 +341,7 @@ function Home() {
                             { val: '60%', lbl: 'Avg. cost saved', c: '#7F878D' },
                           ].map(m => (
                             <div className="dash__stat-item" key={m.lbl}>
-                              <div className="dash__stat-val" style={{ color: m.c }}>{m.val}</div>
+                              <div className="dash__stat-val notranslate" style={{ color: m.c }}>{m.val}</div>
                               <div className="dash__stat-lbl">{m.lbl}</div>
                             </div>
                           ))}
@@ -368,7 +368,7 @@ function Home() {
       {/* ── CLIENTS MARQUEE ───────────────────────────────── */}
       <section className="clients">
         <div className="container">
-          <p className="clients__label">Trusted by leading publishers & enterprises worldwide</p>
+          <p className="clients__label">Trusted by Leading Publishers & Enterprises Worldwide</p>
         </div>
         <div className="clients__track">
           <div className="clients__inner">
@@ -412,10 +412,10 @@ function Home() {
           <div className="services__header">
             <div className="reveal-left">
               <span className="section-label">What we do</span>
-              <h2 className="services__title">Services that drive<br />transformation</h2>
+              <h2 className="services__title">Services that Drive<br />Transformation</h2>
             </div>
             <p className="services__desc reveal-right">
-              We help businesses and publishers transition from legacy workflows to modern,
+              We help Businesses and Publishers transition from legacy workflows to modern,
               scalable digital processes — reducing costs, improving speed, and creating
               better end-user experiences.
             </p>
@@ -479,7 +479,7 @@ function Home() {
       {/* ── TESTIMONIALS ──────────────────────────────────── */}
       <section className="testimonials">
         <div className="container">
-          <h2 className="testimonials__title reveal">What our clients say</h2>
+          <h2 className="testimonials__title reveal">What our Clients Say</h2>
           <div className="testimonials__grid stagger">
             {TESTIMONIALS.map((t, i) => (
               <div className="testi-card reveal" key={t.name} style={{ '--i': i }}>
@@ -511,13 +511,13 @@ function Home() {
       <section className="cta-banner">
         <div className="container">
           <div className="cta-banner__inner reveal">
-            <h2 className="cta-banner__title">Ready to go digital?<br />Let's talk.</h2>
+            <h2 className="cta-banner__title">Ready to Go Digital?<br />Let's Talk.</h2>
             <p className="cta-banner__sub">
-              Book a free 30-minute consultation and see exactly how we can accelerate your digital transformation.
+              Book a free 30-minute consultation and see exactly how we can accelerate your Digital Transformation.
             </p>
             <div className="cta-banner__actions">
-              <Link to="/contact" className="btn-primary">Book a free consultation →</Link>
-              <Link to="/services" className="btn-ghost">Explore services</Link>
+              <Link to="/contact" className="btn-primary">Book a Free Consultation →</Link>
+              <Link to="/services" className="btn-ghost">Explore Services</Link>
             </div>
           </div>
         </div>

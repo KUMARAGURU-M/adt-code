@@ -139,8 +139,8 @@ function Contact() {
       <section className="contact-hero">
         <div className="container">
           <div className="contact-hero__content">
-            <div className="contact-hero__eyebrow">Connect with us</div>
-            <h1 className="contact-hero__title">Let's build something remarkable</h1>
+            <div className="contact-hero__eyebrow">Connect with Us</div>
+            <h1 className="contact-hero__title">Let's Build Something Remarkable</h1>
             <p className="contact-hero__desc">
               Reach our team in Villupuram, Tamil Nadu — or start a project conversation online today.
             </p>
@@ -163,7 +163,8 @@ function Contact() {
                   <div className="contact-info-card__icon">✉️</div>
                   <div>
                     <div className="contact-info-card__label">Email Us</div>
-                    <a href="mailto:usen@arrowdatatech.com" className="contact-info-card__link">usen@arrowdatatech.com</a>
+                    <a href="mailto:usen@arrowdatatech.com" className="contact-info-card__link notranslate">usen@arrowdatatech.com</a>
+                    <a href="mailto:usen@outlook.com" className="contact-info-card__link">usen@outlook.com</a>
                   </div>
                 </div>
 
@@ -179,7 +180,7 @@ function Contact() {
                   <div className="contact-info-card__icon">🌐</div>
                   <div>
                     <div className="contact-info-card__label">Visit Our Website</div>
-                    <a href="https://www.arrowdatatech.com" target="_blank" rel="noopener noreferrer" className="contact-info-card__link">www.arrowdatatech.com</a>
+                    <a href="https://arrowdatatech.com/" target="_blank" rel="noopener noreferrer" className="contact-info-card__link">www.arrowdatatech.com</a>
                   </div>
                 </div>
 
@@ -210,7 +211,7 @@ function Contact() {
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
                     </div>
-                    <h4 className="form-success-overlay__title">Proposal request sent</h4>
+                    <h4 className="form-success-overlay__title">Proposal Request Sent</h4>
                     <p className="form-success-overlay__desc">
                       Thank you for contacting Arrow Data Tech. The team will review the information and respond using the contact details you provided.
                     </p>

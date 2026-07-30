@@ -32,7 +32,7 @@ function ImpactNumber({ number, suffix = '', label }) {
 
   return (
     <div className="impact__item" ref={ref} aria-label={`${number}${suffix} ${label}`}>
-      <div className="impact__number" aria-hidden="true">
+      <div className="impact__number notranslate" aria-hidden="true">
         <em>{animated}{suffix}</em>
       </div>
       <div className="impact__label" aria-hidden="true">{label}</div>

@@ -8,7 +8,7 @@ export const PUBLISHING_DATA = {
     slug: 'stm-hss',
     name: 'STM/HSS Books & Journals',
     tagline: 'Scholarly typesetting, XML tagging, and editorial production.',
-    heroTitle: 'Precision production for Scientific, Technical, Medical, Humanities & Social Sciences literature',
+    heroTitle: 'Precision Production for Scientific, Technical, Medical, Humanities & Social Sciences Literature',
     heroDesc:
       'We provide end-to-end editorial, production, and digital conversion services for scientific journals and academic monographs, ensuring total compliance with global indexing and archiving standards.',
     icon: '📚',
@@ -17,6 +17,7 @@ export const PUBLISHING_DATA = {
     gradientTo: '#161E27',
     accentColor: '#E92E68',
     category: 'stm-hss',
+    tab: 'conversion',
     stats: [
       { val: '10K+', lbl: 'Books produced' },
       { val: '500K+', lbl: 'Journal articles' },
@@ -24,7 +25,7 @@ export const PUBLISHING_DATA = {
       { val: '24/7', lbl: 'Editorial support' },
     ],
     offerLabel: 'Scholarly Production',
-    offerTitle: 'Academic editing & typesetting at scale',
+    offerTitle: 'Academic Editing & Typesetting at Scale',
     offerDesc:
       'Publishing scholarly content demands absolute rigor. From complex MathML/LaTeX equation rendering to dense footnotes and reference cross-linking, we manage the entire production pipeline. We ensure your journals and monographs meet the stringent quality standards of major global libraries, repositories, and indexing services.',
     deliverables: [
@@ -118,7 +119,7 @@ export const PUBLISHING_DATA = {
     slug: 'college-textbooks',
     name: 'College Textbooks',
     tagline: 'Interactive digital layouts, rich graphics, and curriculum composition.',
-    heroTitle: 'Engaging, rich-media textbook composition and educational publishing',
+    heroTitle: 'Engaging, Rich-Media Textbook Composition and Educational Publishing',
     heroDesc:
       'We compose, design, and digitize higher education textbooks, integrating interactive multimedia, accessible figures, self-assessments, and LMS-compatible formats.',
     icon: '📖',
@@ -127,6 +128,7 @@ export const PUBLISHING_DATA = {
     gradientTo: '#08AFC4',
     accentColor: '#08AFC4',
     category: 'college-textbooks',
+    tab: 'conversion',
     stats: [
       { val: '2.5K+', lbl: 'Textbooks composed' },
       { val: '1.5M+', lbl: 'Interactive pages' },
@@ -134,7 +136,7 @@ export const PUBLISHING_DATA = {
       { val: '508 / WCAG', lbl: 'Certified standard' },
     ],
     offerLabel: 'Educational Publishing',
-    offerTitle: 'Highly structured, media-rich learning materials',
+    offerTitle: 'Highly Structured, Media-Rich Learning Materials',
     offerDesc:
       'Modern textbooks require complex layouts — from multi-column grids and colorful feature boxes to interactive study checks. Our textbook production team specializes in compositing multi-chapter curricula and converting them into fully accessible, interactive digital experiences compatible with modern learning ecosystems.',
     deliverables: [
@@ -228,7 +230,7 @@ export const PUBLISHING_DATA = {
     slug: 'publishing-services',
     name: 'Book Publishing Services',
     tagline: 'End-to-end publishing services from editing to global distribution.',
-    heroTitle: 'Turn your raw manuscript into a professionally published book',
+    heroTitle: 'Turn your Raw Manuscript into a Professionally Published Book',
     heroDesc:
       'We guide authors and publishers through every stage of the publishing journey — offering editorial services, cover design, expert typesetting, conversion, and global sales setup.',
     icon: '✍️',
@@ -237,6 +239,7 @@ export const PUBLISHING_DATA = {
     gradientTo: '#6B7280',
     accentColor: '#6B7280',
     category: 'publishing-services',
+    tab: 'conversion',
     stats: [
       { val: '15K+', lbl: 'Books published' },
       { val: '100%', lbl: 'Retail acceptance' },
@@ -244,7 +247,7 @@ export const PUBLISHING_DATA = {
       { val: '5-Star', lbl: 'Author satisfaction' },
     ],
     offerLabel: 'Full-Service Publishing',
-    offerTitle: 'Everything you need to launch your book successfully',
+    offerTitle: 'Everything you Need to Launch your Book Successfully',
     offerDesc:
       'Whether you are an independent author self-publishing for the first time or an established trade press outsourcing production, we handle all the heavy lifting. Our end-to-end publishing system covers macro and micro editing, graphic layouts, copyright compliance, conversion, and retailer onboarding.',
     deliverables: [

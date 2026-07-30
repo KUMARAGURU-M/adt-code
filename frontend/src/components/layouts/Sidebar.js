@@ -47,6 +47,8 @@ const menuItems = [
 
 const Sidebar = ({ isMobileOpen, onCloseMobile }) => {
   const [pendingLeavesCount, setPendingLeavesCount] = useState(0);
+  const [newContactsCount, setNewContactsCount] = useState(0);
+  const [newCareersCount, setNewCareersCount] = useState(0);
   const location = useLocation();
 
   const user = getCurrentUser();
@@ -203,6 +205,8 @@ const Sidebar = ({ isMobileOpen, onCloseMobile }) => {
   });
 
   const canApproveLeaves = roles.includes('Admin') || roles.includes('Manager') || user?.permissions?.includes('leaves.approve') || user?.permissions?.includes('leaves.view_all');
+  const canViewContacts = hasPermission('contact_inquiries.view');
+  const canViewCareers = hasPermission('career_applications.view');
 
   useEffect(() => {
     if (!canApproveLeaves) return;
@@ -224,6 +228,46 @@ const Sidebar = ({ isMobileOpen, onCloseMobile }) => {
     const interval = setInterval(fetchPendingCount, 30000);
     return () => clearInterval(interval);
   }, [location.pathname, canApproveLeaves]);
+
+  useEffect(() => {
+    if (!canViewContacts) return;
+
+    const fetchContactsCount = async () => {
+      try {
+        const data = await apiCall('/admin/contact?status=NEW');
+        if (data && Array.isArray(data)) {
+          setNewContactsCount(data.length);
+        }
+      } catch (err) {
+        console.error('Failed to fetch new contacts count:', err);
+      }
+    };
+
+    fetchContactsCount();
+
+    const interval = setInterval(fetchContactsCount, 30000);
+    return () => clearInterval(interval);
+  }, [location.pathname, canViewContacts]);
+
+  useEffect(() => {
+    if (!canViewCareers) return;
+
+    const fetchCareersCount = async () => {
+      try {
+        const data = await apiCall('/admin/careers/applications?status=NEW');
+        if (data && Array.isArray(data)) {
+          setNewCareersCount(data.length);
+        }
+      } catch (err) {
+        console.error('Failed to fetch new careers count:', err);
+      }
+    };
+
+    fetchCareersCount();
+
+    const interval = setInterval(fetchCareersCount, 30000);
+    return () => clearInterval(interval);
+  }, [location.pathname, canViewCareers]);
 
   const handleNavClick = () => {
     if (onCloseMobile) {
@@ -274,6 +318,12 @@ const Sidebar = ({ isMobileOpen, onCloseMobile }) => {
                 {item.name === 'LEAVE' && pendingLeavesCount > 0 && (
                   <span className="sidebar-badge blink">{pendingLeavesCount}</span>
                 )}
+                {item.name === 'CONTACT INQUIRIES' && newContactsCount > 0 && (
+                  <span className="sidebar-badge blink">{newContactsCount}</span>
+                )}
+                {item.name === 'CAREER APPLICATIONS' && newCareersCount > 0 && (
+                  <span className="sidebar-badge blink">{newCareersCount}</span>
+                )}
               </NavLink>
             );
           })}
@@ -284,3 +334,6 @@ const Sidebar = ({ isMobileOpen, onCloseMobile }) => {
 };
 
 export default Sidebar;
+
+
+

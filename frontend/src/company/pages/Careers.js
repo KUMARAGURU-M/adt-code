@@ -287,7 +287,7 @@ function Careers() {
           <div className="spontaneous-banner reveal">
             <div className="spontaneous-banner__inner">
               <div>
-                <h4 className="spontaneous-banner__title">Don't see the exact role you're looking for?</h4>
+                <h4 className="spontaneous-banner__title">Don't See the Exact Role you're Looking For?</h4>
                 <p className="spontaneous-banner__desc">We are always searching for top-tier talent. Send us your profile for upcoming vacancies.</p>
               </div>
               <button
@@ -353,7 +353,7 @@ function Careers() {
             {formSubmitted ? (
               <div className="modal-success">
                 <div className="modal-success__icon">✓</div>
-                <h3 id="career-dialog-title" className="modal-success__title">Application sent</h3>
+                <h3 id="career-dialog-title" className="modal-success__title">Application Sent</h3>
                 <p className="modal-success__desc">
                   Thank you for applying for <strong>{appliedJob?.title}</strong>. The recruiting team will review the information and contact you if your profile matches an active requirement.
                 </p>

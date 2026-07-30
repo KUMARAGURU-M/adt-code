@@ -2,7 +2,7 @@
 
 /* ── Glassmorphism base ── */
 .sidebar {
-  width: 190px;
+  width: 220px;
   height: 100vh;
   position: fixed;
   left: 0;
@@ -15,19 +15,17 @@
     2. Deep dark base  — keeps readability
   */
   background:
-    linear-gradient(
-      135deg,
-      rgba(255, 59,  92,  0.22)  0%,
+    linear-gradient(135deg,
+      rgba(255, 59, 92, 0.22) 0%,
       rgba(155, 155, 155, 0.08) 50%,
-      rgba(19,  198, 223, 0.22) 100%
-    ),
+      rgba(19, 198, 223, 0.22) 100%),
     rgba(8, 13, 26, 0.78);
 
   backdrop-filter: blur(24px) saturate(170%);
   -webkit-backdrop-filter: blur(24px) saturate(170%);
 
   border-right: 1px solid rgba(255, 255, 255, 0.10);
-  border-top:   1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
 
   box-shadow:
     4px 0 36px rgba(0, 0, 0, 0.40),
@@ -40,9 +38,15 @@
 }
 
 /* ── Scrollbar ── */
-.sidebar::-webkit-scrollbar        { width: 4px; }
-.sidebar::-webkit-scrollbar-track  { background: transparent; }
-.sidebar::-webkit-scrollbar-thumb  {
+.sidebar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.10);
   border-radius: 10px;
 }
@@ -50,7 +54,8 @@
 /* ── Header ── */
 .sidebar-header {
   padding: 20px 14px 16px;
-  text-align: left;               /* ← was center */
+  text-align: left;
+  /* ← was center */
   flex-shrink: 0;
   background: rgba(255, 255, 255, 0.03);
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
@@ -80,7 +85,8 @@
   border-radius: 4px;
   background: rgba(19, 198, 223, 0.18);
   border: 1px solid rgba(19, 198, 223, 0.40);
-  color: #13c6df;                 /* ← solid visible color, not transparent text */
+  color: #13c6df;
+  /* ← solid visible color, not transparent text */
   -webkit-text-fill-color: #13c6df;
   text-shadow: 0 0 8px rgba(19, 198, 223, 0.50);
 }
@@ -112,11 +118,11 @@
   border: 1px solid transparent;
 
   transition:
-    background   0.28s ease,
+    background 0.28s ease,
     border-color 0.28s ease,
-    color        0.28s ease,
-    transform    0.22s ease,
-    box-shadow   0.28s ease;
+    color 0.28s ease,
+    transform 0.22s ease,
+    box-shadow 0.28s ease;
 }
 
 /* Shimmer sweep — slides across on hover */
@@ -124,12 +130,10 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    105deg,
-    transparent            25%,
-    rgba(255,255,255,0.07) 50%,
-    transparent            75%
-  );
+  background: linear-gradient(105deg,
+      transparent 25%,
+      rgba(255, 255, 255, 0.07) 50%,
+      transparent 75%);
   transform: translateX(-120%);
   transition: transform 0.55s ease;
   border-radius: inherit;
@@ -173,23 +177,22 @@
 }
 
 .nav-item:hover::before {
-  transform: translateX(120%);  /* shimmer slides through */
+  transform: translateX(120%);
+  /* shimmer slides through */
 }
 
 /* ── Active ── */
 .nav-item.active {
-  background: linear-gradient(
-    135deg,
-    rgba(255, 59,  92,  0.70)  0%,
-    rgba(140, 140, 155, 0.38) 50%,
-    rgba(19,  198, 223, 0.70) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(255, 59, 92, 0.70) 0%,
+      rgba(140, 140, 155, 0.38) 50%,
+      rgba(19, 198, 223, 0.70) 100%);
   border-color: rgba(255, 255, 255, 0.16);
   color: #ffffff !important;
   transform: translateX(5px);
   box-shadow:
-    0 4px 20px rgba(255, 59,  92,  0.25),
-    0 2px 10px rgba(19,  198, 223, 0.18),
+    0 4px 20px rgba(255, 59, 92, 0.25),
+    0 2px 10px rgba(19, 198, 223, 0.18),
     inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 
@@ -200,19 +203,24 @@
 
 /* Active shimmer — subtle persistent glow */
 .nav-item.active::before {
-  background: linear-gradient(
-    105deg,
-    transparent            15%,
-    rgba(255,255,255,0.08) 50%,
-    transparent            85%
-  );
+  background: linear-gradient(105deg,
+      transparent 15%,
+      rgba(255, 255, 255, 0.08) 50%,
+      transparent 85%);
   transform: translateX(0);
   animation: shimmer-pulse 3s ease-in-out infinite;
 }
 
 @keyframes shimmer-pulse {
-  0%,  100% { opacity: 0.6; }
-  50%        { opacity: 1.0; }
+
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+
+  50% {
+    opacity: 1.0;
+  }
 }
 
 /* ── Icon ── */
@@ -235,7 +243,7 @@
   display: block;
 }
 
-.nav-item:hover  .nav-icon,
+.nav-item:hover .nav-icon,
 .nav-item.active .nav-icon {
   transform: scale(1.18);
 }
@@ -291,10 +299,12 @@
     transform: scale(1);
     box-shadow: 0 0 0 0 rgba(255, 59, 92, 0.7);
   }
+
   70% {
     transform: scale(1.08);
     box-shadow: 0 0 0 6px rgba(255, 59, 92, 0);
   }
+
   100% {
     transform: scale(1);
     box-shadow: 0 0 0 0 rgba(255, 59, 92, 0);
@@ -329,7 +339,12 @@
   }
 
   @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
   }
 }

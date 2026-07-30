@@ -92,6 +92,46 @@
   line-height: 1.6;
 }
 
+/* Tabs Navigation styling */
+.services-tabs-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 50px;
+}
+
+.services-tabs-container {
+  display: inline-flex;
+  background: rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  padding: 6px;
+  border-radius: 100px;
+  gap: 8px;
+}
+
+.services-tab-btn {
+  border: none;
+  background: transparent;
+  padding: 12px 36px;
+  border-radius: 100px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--clr-muted);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+}
+
+.services-tab-btn:hover {
+  color: var(--navy);
+}
+
+.services-tab-btn.active {
+  background: #FFFFFF;
+  color: var(--electric);
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08);
+}
+
 .services-cards-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -170,6 +210,38 @@
 
 .service-overview-card.publishing-services::before {
   background: linear-gradient(90deg, #2C1A3A, #6B7280);
+}
+
+.service-overview-card.epub-accessibility::before {
+  background: linear-gradient(90deg, #1e3a8a, #3b82f6);
+}
+
+.service-overview-card.pdf-accessibility::before {
+  background: linear-gradient(90deg, #7f1d1d, #ef4444);
+}
+
+.service-overview-card.ocr-extraction::before {
+  background: linear-gradient(90deg, #064e3b, #10b981);
+}
+
+.service-overview-card.arab-language::before {
+  background: linear-gradient(90deg, #78350f, #f59e0b);
+}
+
+.service-overview-card.app-development::before {
+  background: linear-gradient(90deg, #312e81, #6366f1);
+}
+
+.service-overview-card.software-development::before {
+  background: linear-gradient(90deg, #1f2937, #4b5563);
+}
+
+.service-overview-card.ai-development::before {
+  background: linear-gradient(90deg, #4c1d95, #8b5cf6);
+}
+
+.service-overview-card.ai-agent-automation::before {
+  background: linear-gradient(90deg, #831843, #ec4899);
 }
 
 .service-overview-card__icon {

@@ -125,7 +125,7 @@ export default function About() {
                             </div>
                             <h1 className="ab-hero__title">
                                 Innovations<br />
-                                <span className="ab-hero__accent">behind your success</span>
+                                <span className="ab-hero__accent">Behind your Success</span>
                             </h1>
                             <p className="ab-hero__desc">
                                 An E-publishing company with unmatched expertise in content
@@ -165,7 +165,7 @@ export default function About() {
                         <div className="ab-about__left rv-l">
                             <span className="section-label">Who we are</span>
                             <h2 className="ab-section__title">
-                                End-to-end publishing<br />expertise, delivered.
+                                End-to-End Publishing<br />Expertise, Delivered.
                             </h2>
                             <p className="ab-body">
                                 Arrow Data Tech is an E-publishing company that focuses on the fundamental
@@ -251,7 +251,7 @@ export default function About() {
                 <div className="container">
                     <div className="ab-section__header rv">
                         <span className="section-label">What drives us</span>
-                        <h2 className="ab-section__title">Core values</h2>
+                        <h2 className="ab-section__title">Core Values</h2>
                         <p className="ab-section__sub">
                             Six principles that shape every project, every relationship, every result.
                         </p>
@@ -278,7 +278,7 @@ export default function About() {
                 <div className="container">
                     <div className="ab-section__header rv">
                         <span className="section-label">Our journey</span>
-                        <h2 className="ab-section__title">Company milestones</h2>
+                        <h2 className="ab-section__title">Company Milestones</h2>
                     </div>
                     <div className="ab-timeline">
                         <div className="ab-timeline__line" />
@@ -310,7 +310,7 @@ export default function About() {
                     <div className="ab-qa__grid">
                         <div className="rv-l">
                             <span className="section-label">Quality assurance</span>
-                            <h2 className="ab-section__title">99.997% perfection<br />— our commitment</h2>
+                            <h2 className="ab-section__title">99.997% Perfection<br />— Our Commitment</h2>
                             <p className="ab-body">
                                 We implement Quality Assurance across every phase of our development cycle.
                                 Arrow Data Tech has built its own QA and quality team to verify compatibility
@@ -417,7 +417,7 @@ export default function About() {
                 <div className="container">
                     <div className="ab-section__header rv">
                         <span className="section-label">Industries served</span>
-                        <h2 className="ab-section__title">Trusted across every vertical</h2>
+                        <h2 className="ab-section__title">Trusted Across Every Vertical</h2>
                     </div>
                     <div className="ab-industries__grid stagger">
                         {INDUSTRIES.map((ind, i) => (
@@ -437,7 +437,7 @@ export default function About() {
                 <div className="container">
                     <div className="ab-cta__inner rv">
                         <div className="ab-cta__left">
-                            <h2 className="ab-cta__title">Ready to work with us?</h2>
+                            <h2 className="ab-cta__title">Ready to Work with Us?</h2>
                             <p className="ab-cta__sub">
                                 Reach our team in Villupuram, Tamil Nadu — or start a project conversation online today.
                             </p>

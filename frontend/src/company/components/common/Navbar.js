@@ -36,6 +36,65 @@ function Navbar() {
   }, [location.pathname, closeMenus]);
 
   useEffect(() => {
+    window.googleTranslateElementInit = () => {
+      new window.google.translate.TranslateElement({
+        pageLanguage: 'en',
+        autoDisplay: false
+      }, 'google_translate_element');
+    };
+
+    if (window.google && window.google.translate) {
+      window.googleTranslateElementInit();
+    } else if (!document.getElementById('google-translate-script')) {
+      const script = document.createElement('script');
+      script.id = 'google-translate-script';
+      script.type = 'text/javascript';
+      script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+      document.body.appendChild(script);
+    }
+  }, []);
+
+  useEffect(() => {
+    const overrideGoogleStyles = () => {
+      // Find and remove Google Translate banner iframe elements from the DOM completely
+      const bannerIframe = document.querySelector('.goog-te-banner-frame');
+      if (bannerIframe) {
+        bannerIframe.remove();
+      }
+
+      const skiptranslateIframe = document.querySelector('iframe.skiptranslate');
+      if (skiptranslateIframe) {
+        skiptranslateIframe.remove();
+      }
+
+      // Reset top and margin offsets on html and body
+      if (document.body.style.top && document.body.style.top !== '0px') {
+        document.body.style.setProperty('top', '0px', 'important');
+      }
+      if (document.body.style.marginTop && document.body.style.marginTop !== '0px') {
+        document.body.style.setProperty('margin-top', '0px', 'important');
+      }
+      if (document.documentElement.style.top && document.documentElement.style.top !== '0px') {
+        document.documentElement.style.setProperty('top', '0px', 'important');
+      }
+      if (document.documentElement.style.marginTop && document.documentElement.style.marginTop !== '0px') {
+        document.documentElement.style.setProperty('margin-top', '0px', 'important');
+      }
+    };
+
+    const observer = new MutationObserver(overrideGoogleStyles);
+    observer.observe(document.body, { attributes: true, attributeFilter: ['style'] });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['style'] });
+
+    const interval = setInterval(overrideGoogleStyles, 250);
+
+    return () => {
+      observer.disconnect();
+      clearInterval(interval);
+    };
+  }, []);
+
+  useEffect(() => {
     let ticking = false;
     const update = () => {
       setIsScrolled(window.scrollY > 16);
@@ -168,7 +227,8 @@ function Navbar() {
         </nav>
 
         <div className="navbar__actions">
-          <Link to="/contact" className="btn-primary-navbar">Get a quote <span aria-hidden="true">→</span></Link>
+          <div id="google_translate_element" className="navbar__translate"></div>
+          <Link to="/contact" className="btn-primary-navbar">Get a Quote <span aria-hidden="true">→</span></Link>
         </div>
 
         <button

@@ -3,28 +3,34 @@ import { Link } from 'react-router-dom';
 import BrandMark from './BrandMark';
 import './Footer.css';
 
-const SERVICE_LINKS = [
+const CONVERSION_LINKS = [
   ['ePub Conversion', '/services/epub'],
+  ['ePub Accessibility', '/services/epub-accessibility'],
+  ['PDF Accessibility', '/services/pdf-accessibility'],
   ['XML Tagging', '/services/xml'],
-  ['Web Development', '/services/web'],
-  ['Automation & RPA', '/services/automation'],
+  ['OCR Extraction', '/services/ocr-extraction'],
+  ['Arab Language', '/services/arab-language'],
   ['Data Entry Services', '/services/data-entry'],
-  ['Digital Marketing', '/services/marketing'],
   ['STM/HSS Publishing', '/services/stm-hss'],
   ['College Textbooks', '/services/college-textbooks'],
   ['Book Publishing', '/services/publishing-services'],
 ];
 
+const DEVELOPMENT_LINKS = [
+  ['Web Development', '/services/web'],
+  ['App Development', '/services/app-development'],
+  ['Software Development', '/services/software-development'],
+  ['AI Development', '/services/ai-development'],
+  ['AI Agent Automation', '/services/ai-agent-automation'],
+  ['Automation & RPA', '/services/automation'],
+  ['Digital Marketing', '/services/marketing'],
+];
+
 const COMPANY_LINKS = [
   ['About Us', '/about'],
   ['Careers', '/careers'],
-  ['Book a Meeting', '/contact'],
-];
-
-const RESOURCE_LINKS = [
-  ['All Services', '/services'],
   ['HTML Sitemap', '/sitemap'],
-  ['Contact the Team', '/contact'],
+  ['Contact Us', '/contact'],
 ];
 
 function FooterColumn({ title, links, labelledBy }) {
@@ -65,10 +71,9 @@ function Footer() {
                 Enterprise publishing production, XML structuring, accessible digital conversion and automated workflows.
               </p>
             </div>
-
-            <FooterColumn title="Services" links={SERVICE_LINKS} labelledBy="footer-services" />
+            <FooterColumn title="Digital Conversion" links={CONVERSION_LINKS} labelledBy="footer-conversion" />
+            <FooterColumn title="Development" links={DEVELOPMENT_LINKS} labelledBy="footer-development" />
             <FooterColumn title="Company" links={COMPANY_LINKS} labelledBy="footer-company" />
-            <FooterColumn title="Resources" links={RESOURCE_LINKS} labelledBy="footer-resources" />
 
             <section className="footer-box__col footer-box__col--contact" aria-labelledby="footer-contact">
               <h3 id="footer-contact" className="footer-box__col-title">Get in touch</h3>
@@ -76,11 +81,15 @@ function Footer() {
                 <ul className="footer-box__col-links footer-box__col-links--contact">
                   <li>
                     <span className="contact-icon-ref" aria-hidden="true">✉</span>
-                    <a href="mailto:usen@arrowdatatech.com">usen@arrowdatatech.com</a>
+                    <a href="mailto:usen@arrowdatatech.com" className="notranslate">usen@arrowdatatech.com</a>
+                  </li>
+                  <li>
+                    <span className="contact-icon-ref" aria-hidden="true">✉</span>
+                    <a href="mailto:usen@outlook.com" className="notranslate">usen@outlook.com</a>
                   </li>
                   <li>
                     <span className="contact-icon-ref" aria-hidden="true">☎</span>
-                    <a href="tel:+919894562152">+91 98945 62152</a>
+                    <a href="tel:+919894562152" className="notranslate">+91 98945 62152</a>
                   </li>
                   <li>
                     <span className="contact-icon-ref" aria-hidden="true">⌖</span>
@@ -133,7 +142,6 @@ function Footer() {
 }
 
 export default Footer;
-
 
 
 
