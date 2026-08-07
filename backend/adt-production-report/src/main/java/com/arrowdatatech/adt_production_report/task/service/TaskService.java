@@ -65,8 +65,8 @@ public class TaskService {
 
         Pageable pageable = PageRequest.of(page, size);
         return taskRepository.searchTasks(
-                projectId, clientId, workflowId, processId, userId, status, search, fromDate, pageable
-        ).map(this::toResponse);
+                projectId, clientId, workflowId, processId, userId, status, search, fromDate, pageable)
+                .map(this::toResponse);
     }
 
     // ─────────────────────────────────────────────
@@ -158,8 +158,7 @@ public class TaskService {
 
         // Link jobs to task
         if (request.getJobAssignments() != null) {
-            for (CreateTaskRequest.JobAssignment ja
-                    : request.getJobAssignments()) {
+            for (CreateTaskRequest.JobAssignment ja : request.getJobAssignments()) {
                 Job job = jobRepository.findById(ja.getJobId())
                         .orElseThrow(() -> new ResourceNotFoundException(
                                 "Job", "id", ja.getJobId()));
@@ -174,20 +173,18 @@ public class TaskService {
 
         // Link employees to task
         if (request.getEmployeeAssignments() != null) {
-            for (CreateTaskRequest.EmployeeAssignment ea
-                    : request.getEmployeeAssignments()) {
+            for (CreateTaskRequest.EmployeeAssignment ea : request.getEmployeeAssignments()) {
                 User user = userRepository
                         .findByIdWithProfile(ea.getUserId())
                         .orElseThrow(() -> new ResourceNotFoundException(
                                 "User", "id", ea.getUserId()));
-                TaskEmployeeAssignment tea =
-                        TaskEmployeeAssignment.builder()
-                                .task(task)
-                                .user(user)
-                                .assignedPages(ea.getAssignedPages())
-                                .status("Pending")    // valid DB value
-                                .updatedAt(OffsetDateTime.now())
-                                .build();
+                TaskEmployeeAssignment tea = TaskEmployeeAssignment.builder()
+                        .task(task)
+                        .user(user)
+                        .assignedPages(ea.getAssignedPages())
+                        .status("Pending") // valid DB value
+                        .updatedAt(OffsetDateTime.now())
+                        .build();
                 taskEmployeeRepository.save(tea);
             }
         }
@@ -235,7 +232,8 @@ public class TaskService {
         task.setTaskTitle(request.getTaskTitle().trim());
 
         task.setDescription(emptyToNull(request.getDescription()));
-        task.setStatus(request.getStatus() != null && !request.getStatus().isBlank() ? request.getStatus().trim() : "PENDING");
+        task.setStatus(
+                request.getStatus() != null && !request.getStatus().isBlank() ? request.getStatus().trim() : "PENDING");
         task.setDueDate(request.getDueDate());
         if (request.getAssignedDate() != null) {
             task.setAssignedDate(request.getAssignedDate());
@@ -244,7 +242,8 @@ public class TaskService {
         task.setAssignedPagesStr(emptyToNull(request.getAssignedPagesStr()));
         task.setComplexity(emptyToNull(request.getComplexity()));
         task.setChapterArticleBatch(emptyToNull(request.getChapterArticleBatch()));
-        task.setEstimateHours(request.getEstimateHours() != null ? request.getEstimateHours() : java.math.BigDecimal.ZERO);
+        task.setEstimateHours(
+                request.getEstimateHours() != null ? request.getEstimateHours() : java.math.BigDecimal.ZERO);
         task.setServerPath(cleanServerPath(request.getServerPath()));
         task.setTotalPages(request.getTotalPages());
 
@@ -253,8 +252,7 @@ public class TaskService {
 
         if (request.getJobAssignments() != null) {
             taskJobRepository.deleteByTaskId(id);
-            for (CreateTaskRequest.JobAssignment ja
-                    : request.getJobAssignments()) {
+            for (CreateTaskRequest.JobAssignment ja : request.getJobAssignments()) {
                 Job job = jobRepository.findById(ja.getJobId())
                         .orElseThrow(() -> new ResourceNotFoundException(
                                 "Job", "id", ja.getJobId()));
@@ -269,20 +267,18 @@ public class TaskService {
 
         if (request.getEmployeeAssignments() != null) {
             taskEmployeeRepository.deleteByTaskId(id);
-            for (CreateTaskRequest.EmployeeAssignment ea
-                    : request.getEmployeeAssignments()) {
+            for (CreateTaskRequest.EmployeeAssignment ea : request.getEmployeeAssignments()) {
                 User user = userRepository
                         .findByIdWithProfile(ea.getUserId())
                         .orElseThrow(() -> new ResourceNotFoundException(
                                 "User", "id", ea.getUserId()));
-                TaskEmployeeAssignment tea =
-                        TaskEmployeeAssignment.builder()
-                                .task(task)
-                                .user(user)
-                                .assignedPages(ea.getAssignedPages())
-                                .status("Pending")
-                                .updatedAt(OffsetDateTime.now())
-                                .build();
+                TaskEmployeeAssignment tea = TaskEmployeeAssignment.builder()
+                        .task(task)
+                        .user(user)
+                        .assignedPages(ea.getAssignedPages())
+                        .status("Pending")
+                        .updatedAt(OffsetDateTime.now())
+                        .build();
                 taskEmployeeRepository.save(tea);
             }
         }
@@ -337,9 +333,11 @@ public class TaskService {
         for (Task task : all) {
             String key = task.getTaskTitle() + "|"
                     + (task.getProject() != null
-                    ? task.getProject().getId() : "")
+                            ? task.getProject().getId()
+                            : "")
                     + "|" + (task.getProcess() != null
-                    ? task.getProcess().getId() : "");
+                            ? task.getProcess().getId()
+                            : "");
             if (!seen.add(key)) {
                 taskJobRepository.deleteByTaskId(task.getId());
                 taskEmployeeRepository.deleteByTaskId(task.getId());
@@ -373,10 +371,11 @@ public class TaskService {
     // ─────────────────────────────────────────────
 
     private String autoGenerateTitle(Project project,
-                                     Process process,
-                                     CreateTaskRequest request) {
+            Process process,
+            CreateTaskRequest request) {
         StringBuilder sb = new StringBuilder();
-        if (process != null) sb.append(process.getName());
+        if (process != null)
+            sb.append(process.getName());
         if (request.getJobAssignments() != null
                 && !request.getJobAssignments().isEmpty()) {
             try {
@@ -389,9 +388,11 @@ public class TaskService {
                         sb.append(" - ").append(job.getJobIdCode());
                     }
                 });
-            } catch (Exception ignored) { /* skip */ }
+            } catch (Exception ignored) {
+                /* skip */ }
         }
-        if (project != null) sb.append(" - ").append(project.getName());
+        if (project != null)
+            sb.append(" - ").append(project.getName());
         return sb.toString().isBlank()
                 ? "Task-" + System.currentTimeMillis()
                 : sb.toString();
@@ -413,6 +414,7 @@ public class TaskService {
         List<TaskResponse.JobInfo> jobs = taskJobRepository
                 .findByTaskId(task.getId())
                 .stream()
+                .filter(tja -> tja != null && tja.getJob() != null)
                 .map(tja -> TaskResponse.JobInfo.builder()
                         .jobId(tja.getJob().getId())
                         .jobIdCode(tja.getJob().getJobIdCode())
@@ -468,13 +470,17 @@ public class TaskService {
         return TaskResponse.builder()
                 .id(task.getId())
                 .projectId(task.getProject() != null
-                        ? task.getProject().getId() : null)
+                        ? task.getProject().getId()
+                        : null)
                 .projectName(task.getProject() != null
-                        ? task.getProject().getName() : null)
+                        ? task.getProject().getName()
+                        : null)
                 .processId(task.getProcess() != null
-                        ? task.getProcess().getId() : null)
+                        ? task.getProcess().getId()
+                        : null)
                 .processName(task.getProcess() != null
-                        ? task.getProcess().getName() : null)
+                        ? task.getProcess().getName()
+                        : null)
                 .taskTitle(task.getTaskTitle())
                 .description(task.getDescription())
                 .status(task.getStatus())

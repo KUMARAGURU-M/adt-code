@@ -15,74 +15,77 @@ import java.util.UUID;
 @Repository
 public interface JobRepository extends JpaRepository<Job, UUID> {
 
-    // Per-project uniqueness — matches DB constraint UNIQUE(project_id, job_id_code)
-    boolean existsByProjectIdAndJobIdCode(UUID projectId, String jobIdCode);
+        // Per-project uniqueness — matches DB constraint UNIQUE(project_id,
+        // job_id_code)
+        boolean existsByProjectIdAndJobIdCode(UUID projectId, String jobIdCode);
 
-    List<Job> findByProjectIdOrderByReceiveDateDesc(UUID projectId);
+        List<Job> findByProjectIdOrderByReceiveDateDesc(UUID projectId);
 
-    // Jobs linked to a batch — for rollback
-    List<Job> findByImportBatchId(UUID importBatchId);
+        // Jobs linked to a batch — for rollback
+        List<Job> findByImportBatchId(UUID importBatchId);
 
-    @Query("""
-            SELECT j FROM Job j
-            WHERE (:projectId IS NULL OR j.project.id = :projectId)
-            AND (:clientId IS NULL OR j.project.client.id = :clientId)
-            AND (:workflowId IS NULL OR j.workflow.id = :workflowId)
-            AND (:jobIdCode IS NULL OR LOWER(j.jobIdCode)
-                LIKE LOWER(CONCAT('%', CAST(:jobIdCode AS string), '%')))
-            AND (:xmlIsbn IS NULL OR LOWER(j.xmlIsbn)
-                LIKE LOWER(CONCAT('%', CAST(:xmlIsbn AS string), '%')))
-            AND (CAST(:startMonthFrom AS date) IS NULL OR j.receiveDate >= :startMonthFrom)
-            AND (CAST(:startMonthTo AS date) IS NULL OR j.receiveDate <= :startMonthTo)
-            AND (:status IS NULL OR j.status = :status)
-            AND (:billingStatus IS NULL OR j.billingStatus = :billingStatus)
-            AND (:complexity IS NULL OR j.complexity = :complexity)
-            AND (:fileStatus IS NULL OR j.fileStatus = :fileStatus)
-            ORDER BY j.jobIdCode ASC
-            """)
-    Page<Job> searchJobs(
-            @Param("projectId")     UUID projectId,
-            @Param("clientId")      UUID clientId,
-            @Param("workflowId")    UUID workflowId,
-            @Param("jobIdCode")     String jobIdCode,
-            @Param("xmlIsbn")       String xmlIsbn,
-            @Param("startMonthFrom") LocalDate startMonthFrom,
-            @Param("startMonthTo")  LocalDate startMonthTo,
-            @Param("status")        String status,
-            @Param("billingStatus") String billingStatus,
-            @Param("complexity")    String complexity,
-            @Param("fileStatus")    String fileStatus,
-            Pageable pageable
-    );
+        @Query("""
+                        SELECT j FROM Job j
+                        WHERE (:projectId IS NULL OR j.project.id = :projectId)
+                        AND (:clientId IS NULL OR j.project.client.id = :clientId)
+                        AND (:workflowId IS NULL OR j.workflow.id = :workflowId)
+                        AND (:jobIdCode IS NULL OR LOWER(j.jobIdCode)
+                            LIKE LOWER(CONCAT('%', CAST(:jobIdCode AS string), '%')))
+                        AND (:xmlIsbn IS NULL OR LOWER(j.xmlIsbn)
+                            LIKE LOWER(CONCAT('%', CAST(:xmlIsbn AS string), '%')))
+                        AND (CAST(:startMonthFrom AS date) IS NULL OR j.receiveDate >= :startMonthFrom)
+                        AND (CAST(:startMonthTo AS date) IS NULL OR j.receiveDate <= :startMonthTo)
+                        AND (:status IS NULL OR j.status = :status)
+                        AND (:billingStatus IS NULL OR j.billingStatus = :billingStatus)
+                        AND (:complexity IS NULL OR j.complexity = :complexity)
+                        AND (:fileStatus IS NULL OR j.fileStatus = :fileStatus)
+                        ORDER BY j.jobIdCode ASC
+                        """)
+        Page<Job> searchJobs(
+                        @Param("projectId") UUID projectId,
+                        @Param("clientId") UUID clientId,
+                        @Param("workflowId") UUID workflowId,
+                        @Param("jobIdCode") String jobIdCode,
+                        @Param("xmlIsbn") String xmlIsbn,
+                        @Param("startMonthFrom") LocalDate startMonthFrom,
+                        @Param("startMonthTo") LocalDate startMonthTo,
+                        @Param("status") String status,
+                        @Param("billingStatus") String billingStatus,
+                        @Param("complexity") String complexity,
+                        @Param("fileStatus") String fileStatus,
+                        Pageable pageable);
 
-    // Available for task assignment
-    @Query("""
-            SELECT j FROM Job j
-            WHERE j.project.id = :projectId
-            AND j.status NOT IN ('FINISH','Completed')
-            ORDER BY j.jobIdCode ASC
-            """)
-    List<Job> findAvailableJobsForTask(@Param("projectId") UUID projectId);
+        // Available for task assignment
+        @Query("""
+                        SELECT j FROM Job j
+                        WHERE j.project.id = :projectId
+                        AND j.status NOT IN ('FINISH','Completed')
+                        ORDER BY j.jobIdCode ASC
+                        """)
+        List<Job> findAvailableJobsForTask(@Param("projectId") UUID projectId);
 
-    @Query("""
-            SELECT DISTINCT j FROM Job j
-            WHERE (:projectId IS NULL OR j.project.id = :projectId)
-            AND (:clientId IS NULL OR j.project.client.id = :clientId)
-            AND (:workflowId IS NULL OR j.workflow.id = :workflowId)
-            AND (:jobIdCode IS NULL OR LOWER(j.jobIdCode) LIKE LOWER(CONCAT('%', CAST(:jobIdCode AS string), '%')))
-            AND (:complexity IS NULL OR j.complexity = :complexity)
-            AND (CAST(:startDate AS date) IS NULL OR j.receiveDate >= :startDate)
-            AND (CAST(:endDate AS date) IS NULL OR j.receiveDate <= :endDate)
-            ORDER BY j.jobIdCode ASC
-            """)
-    Page<Job> searchProductionJobs(
-            @Param("projectId")  UUID projectId,
-            @Param("clientId")   UUID clientId,
-            @Param("workflowId") UUID workflowId,
-            @Param("jobIdCode")  String jobIdCode,
-            @Param("complexity") String complexity,
-            @Param("startDate")  LocalDate startDate,
-            @Param("endDate")    LocalDate endDate,
-            Pageable pageable
-    );
+        @Query("""
+                        SELECT DISTINCT j FROM Job j
+                        WHERE (:projectId IS NULL OR j.project.id = :projectId)
+                        AND (:clientId IS NULL OR j.project.client.id = :clientId)
+                        AND (:workflowId IS NULL OR j.workflow.id = :workflowId)
+                        AND (:jobIdCode IS NULL OR LOWER(j.jobIdCode) LIKE LOWER(CONCAT('%', CAST(:jobIdCode AS string), '%')))
+                        AND (:complexity IS NULL OR j.complexity = :complexity)
+                        AND (:processStatus IS NULL OR j.processStatus = :processStatus)
+                        AND (:qcStatus IS NULL OR j.qcStatus = :qcStatus)
+                        AND (CAST(:startDate AS date) IS NULL OR j.receiveDate >= :startDate)
+                        AND (CAST(:endDate AS date) IS NULL OR j.receiveDate <= :endDate)
+                        ORDER BY j.jobIdCode ASC
+                        """)
+        Page<Job> searchProductionJobs(
+                        @Param("projectId") UUID projectId,
+                        @Param("clientId") UUID clientId,
+                        @Param("workflowId") UUID workflowId,
+                        @Param("jobIdCode") String jobIdCode,
+                        @Param("complexity") String complexity,
+                        @Param("processStatus") String processStatus,
+                        @Param("qcStatus") String qcStatus,
+                        @Param("startDate") LocalDate startDate,
+                        @Param("endDate") LocalDate endDate,
+                        Pageable pageable);
 }

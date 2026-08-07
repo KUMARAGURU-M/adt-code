@@ -1,6 +1,9 @@
 package com.arrowdatatech.adt_production_report.job.service;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import com.arrowdatatech.adt_production_report.job.dto.JobResponse;
@@ -69,7 +72,7 @@ class JobProductionServiceTest {
     void testSearchProductionJobs_withCalculatedFields() {
         // Mock repository search response
         Page<Job> jobPage = new PageImpl<>(List.of(testJob));
-        when(jobRepository.searchProductionJobs(eq(testProject.getId()), any(), any(), any(), any(), any(), any(), any()))
+        when(jobRepository.searchProductionJobs(eq(testProject.getId()), any(), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(jobPage);
         when(taskRepository.findProcessNamesByProjectIds(anyList()))
                 .thenReturn(new ArrayList<>());
@@ -109,7 +112,7 @@ class JobProductionServiceTest {
 
         // Execute service method
         Page<JobResponse> result = jobService.searchProductionJobs(
-                testProject.getId(), null, null, null, null, null, null, 0, 10);
+                testProject.getId(), null, null, null, null, null, null, null, null, 0, 10);
 
         // Assertions
         assertNotNull(result);

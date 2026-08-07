@@ -1,7 +1,7 @@
 // src/pages/admin/Production.js
 import React, { useState, useEffect, useCallback } from 'react';
 import './Production.css';
-import { apiCall } from '../../utils/api';
+import { apiCall, getCurrentUser } from '../../utils/api';
 import productionIcon from '../../img/production.png';
 const STATUS_OPTIONS = [
   'FINISH', 'WIP', 'YTS', 'RTU', 'PENDING', 'HOLD', 'QUERY'
@@ -110,6 +110,98 @@ const BulkEditProductionModal = ({ selectedIds, selectedCount, jobs, onClose, on
   );
 };
 
+// ── Bulk Delete Modal (Production) ─────────────────────────────────
+const BulkDeleteProductionModal = ({ selectedCount, onClose, onDelete }) => (
+  <div className="prod-bulk-overlay" onClick={onClose}>
+    <div className="prod-bulk-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px', textAlign: 'center' }}>
+      <div style={{ fontSize: '2.5rem', marginBottom: '14px' }}>🗑️</div>
+      <h3 className="prod-bulk-title">Bulk Delete</h3>
+      <p style={{ fontSize: '0.9rem', color: '#475569', margin: '14px 0 24px' }}>
+        Are you sure you want to delete <strong>{selectedCount}</strong> selected jobs?<br />
+        This action cannot be undone.
+      </p>
+      <div className="prod-bulk-actions" style={{ justifyContent: 'center' }}>
+        <button className="prod-bulk-cancel" onClick={onClose}>Cancel</button>
+        <button
+          className="prod-bulk-apply"
+          onClick={onDelete}
+          style={{ background: '#dc2626' }}
+          onMouseEnter={e => e.target.style.background = '#b91c1c'}
+          onMouseLeave={e => e.target.style.background = '#dc2626'}
+        >
+          Delete
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
+// ── Bulk Reconfirm Delete Modal (Production) ──────────────────────────
+const BulkReconfirmDeleteProductionModal = ({ selectedIds, selectedCount, onClose, onDelete }) => {
+  const [inputText, setInputText] = useState('');
+  const [deleting, setDeleting] = useState(false);
+
+  const isValid = inputText.trim().toUpperCase() === 'DELETE'
+    || inputText.trim().toUpperCase() === 'YES';
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await onDelete(selectedIds);
+      onClose();
+    } catch (e) {
+      alert('Error deleting: ' + e.message);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <div className="prod-bulk-overlay" onClick={onClose}>
+      <div className="prod-bulk-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px', textAlign: 'center' }}>
+        <div style={{ fontSize: '2.5rem', marginBottom: '14px' }}>⚠️</div>
+        <h3 className="prod-bulk-title">Final Confirmation</h3>
+        <p style={{ fontSize: '0.9rem', color: '#475569', margin: '14px 0 8px' }}>
+          You are about to delete <strong>{selectedCount}</strong> selected jobs.
+        </p>
+        <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '0 0 16px' }}>
+          To confirm, type <code style={{ background: '#fee2e2', color: '#b91c1c', padding: '2px 6px', borderRadius: '4px', fontFamily: 'monospace', fontWeight: 'bold' }}>DELETE</code>:
+        </p>
+        <div style={{ margin: '14px 0' }}>
+          <input
+            type="text"
+            style={{
+              width: '100%',
+              padding: '10px 12px',
+              border: '1.5px solid #cbd5e1',
+              borderRadius: '6px',
+              fontSize: '0.9rem',
+              outline: 'none',
+              textAlign: 'center',
+              boxSizing: 'border-box'
+            }}
+            placeholder="Type DELETE to confirm"
+            value={inputText}
+            onChange={e => setInputText(e.target.value)}
+            autoFocus
+          />
+        </div>
+        <div className="prod-bulk-actions" style={{ justifyContent: 'center' }}>
+          <button className="prod-bulk-cancel" onClick={onClose}>Cancel</button>
+          <button
+            className="prod-bulk-apply"
+            disabled={!isValid || deleting}
+            onClick={handleDelete}
+            style={{ background: '#dc2626', opacity: isValid ? 1 : 0.5 }}
+          >
+            {deleting ? 'Deleting...' : 'Delete Permanently'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const fmtDate = (d) => {
   if (!d) return '—';
   try {
@@ -169,6 +261,8 @@ const Production = () => {
     workflowId: '',
     jobId: '',
     complexity: '',
+    processStatus: '',
+    qcStatus: '',
     startDate: '',
     endDate: '',
   });
@@ -188,7 +282,14 @@ const Production = () => {
   // Bulk selection state
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [showBulkEdit, setShowBulkEdit] = useState(false);
+  const [bulkDeleteModalState, setBulkDeleteModalState] = useState(null); // null | 'delete' | 'reconfirm'
   const hasActiveFilters = Object.values(filters).some(val => val !== '' && val !== null);
+
+  const _user = getCurrentUser();
+  const _roles = _user?.roles || [];
+  const _perms = _user?.permissions || [];
+  const isAdmin = _roles.includes('Admin');
+  const canDelete = isAdmin || _perms.includes('jobs.delete');
   const topScrollRef = React.useRef(null);
   const bottomScrollRef = React.useRef(null);
 
@@ -229,6 +330,8 @@ const Production = () => {
         ...(filters.workflowId && { workflowId: filters.workflowId }),
         ...(filters.jobId && { jobIdCode: filters.jobId }),
         ...(filters.complexity && { complexity: filters.complexity }),
+        ...(filters.processStatus && { processStatus: filters.processStatus }),
+        ...(filters.qcStatus && { qcStatus: filters.qcStatus }),
         ...(filters.startDate && { startDate: filters.startDate }),
         ...(filters.endDate && { endDate: filters.endDate }),
       });
@@ -299,6 +402,8 @@ const Production = () => {
       workflowId: '',
       jobId: '',
       complexity: '',
+      processStatus: '',
+      qcStatus: '',
       startDate: '',
       endDate: '',
     });
@@ -435,6 +540,12 @@ const Production = () => {
     await loadProductionJobs(page);
   };
 
+  const handleBulkDelete = async (ids) => {
+    await apiCall('/jobs/bulk-delete', 'DELETE', { ids });
+    clearSelection();
+    await loadProductionJobs(page);
+  };
+
   return (
     <div className="production-container">
       <div className="bj-page-title">
@@ -536,6 +647,36 @@ const Production = () => {
             </select>
           </div>
 
+          {/* Process Status Select */}
+          <div className="filter-group">
+            <label htmlFor="processStatus">Process Status</label>
+            <select
+              id="processStatus"
+              value={filters.processStatus}
+              onChange={e => setFilters(prev => ({ ...prev, processStatus: e.target.value }))}
+            >
+              <option value="">All Process Status</option>
+              {STATUS_OPTIONS.map(opt => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* QC Status Select */}
+          <div className="filter-group">
+            <label htmlFor="qcStatus">QC Status</label>
+            <select
+              id="qcStatus"
+              value={filters.qcStatus}
+              onChange={e => setFilters(prev => ({ ...prev, qcStatus: e.target.value }))}
+            >
+              <option value="">All QC Status</option>
+              {STATUS_OPTIONS.map(opt => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          </div>
+
           {/* Start Date */}
           <div className="filter-group">
             <label htmlFor="startDate">Start Date (From)</label>
@@ -612,6 +753,28 @@ const Production = () => {
                   <button className="prod-bulk-edit-btn" onClick={() => setShowBulkEdit(true)}>
                     ✏️ Bulk Edit
                   </button>
+                  {canDelete && (
+                    <button
+                      className="prod-bulk-delete-btn"
+                      onClick={() => setBulkDeleteModalState('delete')}
+                      style={{
+                        background: '#ef4444',
+                        color: 'white',
+                        border: 'none',
+                        padding: '6px 16px',
+                        borderRadius: '6px',
+                        fontSize: '0.82rem',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                        transition: 'background 0.2s',
+                        whiteSpace: 'nowrap',
+                      }}
+                      onMouseEnter={e => e.target.style.background = '#dc2626'}
+                      onMouseLeave={e => e.target.style.background = '#ef4444'}
+                    >
+                      🗑️ Bulk Delete
+                    </button>
+                  )}
                   <button className="prod-bulk-deselect-btn" onClick={clearSelection}>
                     ✕ Deselect All
                   </button>
@@ -897,6 +1060,23 @@ const Production = () => {
           jobs={jobs}
           onClose={() => setShowBulkEdit(false)}
           onDone={handleBulkEditDone}
+        />
+      )}
+
+      {bulkDeleteModalState === 'delete' && (
+        <BulkDeleteProductionModal
+          selectedCount={selectedIds.size}
+          onClose={() => setBulkDeleteModalState(null)}
+          onDelete={() => setBulkDeleteModalState('reconfirm')}
+        />
+      )}
+
+      {bulkDeleteModalState === 'reconfirm' && (
+        <BulkReconfirmDeleteProductionModal
+          selectedIds={Array.from(selectedIds)}
+          selectedCount={selectedIds.size}
+          onClose={() => setBulkDeleteModalState(null)}
+          onDelete={handleBulkDelete}
         />
       )}
     </div>

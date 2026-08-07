@@ -38,7 +38,6 @@ import com.arrowdatatech.adt_production_report.task.repository.TaskRepository;
 import com.arrowdatatech.adt_production_report.task.entity.TaskJobAssignment;
 import com.arrowdatatech.adt_production_report.task.entity.Task;
 
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -60,17 +59,17 @@ public class JobService {
     // ─────────────────────────────────────────────
     @Transactional(readOnly = true)
     public Page<JobResponse> searchJobs(UUID projectId,
-                                        UUID clientId,
-                                        UUID workflowId,
-                                        String jobIdCode,
-                                        String xmlIsbn,
-                                        LocalDate startMonthFrom,
-                                        LocalDate startMonthTo,
-                                        String status,
-                                        String billingStatus,
-                                        String complexity,
-                                        String fileStatus,
-                                        int page, int size) {
+            UUID clientId,
+            UUID workflowId,
+            String jobIdCode,
+            String xmlIsbn,
+            LocalDate startMonthFrom,
+            LocalDate startMonthTo,
+            String status,
+            String billingStatus,
+            String complexity,
+            String fileStatus,
+            int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Job> jobs = jobRepository.searchJobs(
                 projectId,
@@ -84,8 +83,7 @@ public class JobService {
                 emptyToNull(billingStatus),
                 emptyToNull(complexity),
                 emptyToNull(fileStatus),
-                pageable
-        );
+                pageable);
 
         if (jobs.isEmpty()) {
             return Page.empty(pageable);
@@ -94,6 +92,7 @@ public class JobService {
         List<UUID> jobIds = jobs.getContent().stream().map(Job::getId).collect(Collectors.toList());
         List<TaskJobAssignment> assignments = taskJobAssignmentRepository.findAssignmentsByJobIds(jobIds);
         Map<UUID, List<TaskJobAssignment>> assignmentsByJobId = assignments.stream()
+                .filter(tja -> tja != null && tja.getJob() != null)
                 .collect(Collectors.groupingBy(tja -> tja.getJob().getId()));
 
         List<UUID> projectIds = jobs.getContent().stream()
@@ -107,15 +106,14 @@ public class JobService {
             List<TaskJobAssignment> jobAssignments = assignmentsByJobId.getOrDefault(job.getId(), List.of());
             List<String> processes = processesByProjectId.getOrDefault(
                     job.getProject() != null ? job.getProject().getId() : null,
-                    List.of()
-            );
+                    List.of());
 
             List<String> employees = jobAssignments.stream()
                     .map(TaskJobAssignment::getTask)
                     .flatMap(task -> task.getEmployeeAssignments().stream())
                     .filter(tea -> tea != null && tea.getUser() != null)
-                    .map(tea -> tea.getUser().getEmployeeProfile() != null 
-                            ? tea.getUser().getEmployeeProfile().getFullName() 
+                    .map(tea -> tea.getUser().getEmployeeProfile() != null
+                            ? tea.getUser().getEmployeeProfile().getFullName()
                             : tea.getUser().getUserCode())
                     .distinct()
                     .collect(Collectors.toList());
@@ -146,8 +144,8 @@ public class JobService {
                 .map(TaskJobAssignment::getTask)
                 .flatMap(task -> task.getEmployeeAssignments().stream())
                 .filter(tea -> tea != null && tea.getUser() != null)
-                .map(tea -> tea.getUser().getEmployeeProfile() != null 
-                        ? tea.getUser().getEmployeeProfile().getFullName() 
+                .map(tea -> tea.getUser().getEmployeeProfile() != null
+                        ? tea.getUser().getEmployeeProfile().getFullName()
                         : tea.getUser().getUserCode())
                 .distinct()
                 .collect(Collectors.toList());
@@ -223,7 +221,9 @@ public class JobService {
         Job job = Job.builder()
                 .project(project)
                 .workflow(workflow)
-                .jobIdCode(request.getJobIdCode() != null && !request.getJobIdCode().isBlank() ? request.getJobIdCode().trim() : null)
+                .jobIdCode(request.getJobIdCode() != null && !request.getJobIdCode().isBlank()
+                        ? request.getJobIdCode().trim()
+                        : null)
                 .xmlIsbn(request.getXmlIsbn())
                 .batch(request.getBatch())
                 .titleName(request.getTitleName().trim())
@@ -235,7 +235,8 @@ public class JobService {
                 .status(emptyToNull(request.getStatus()) != null ? emptyToNull(request.getStatus()) : "PENDING")
                 .fileStatus(emptyToNull(request.getFileStatus()))
                 .uploadDate(request.getUploadDate())
-                .billingStatus(emptyToNull(request.getBillingStatus()) != null ? emptyToNull(request.getBillingStatus()) : "PENDING")
+                .billingStatus(emptyToNull(request.getBillingStatus()) != null ? emptyToNull(request.getBillingStatus())
+                        : "PENDING")
                 .receiveDate(request.getReceiveDate())
                 .startMonth(request.getStartMonth())
                 .endMonth(request.getEndMonth())
@@ -270,7 +271,7 @@ public class JobService {
         if (request.getProjectId() != null
                 && !job.getProject().getId().equals(request.getProjectId())) {
             Project project = projectRepository.findById(
-                            request.getProjectId())
+                    request.getProjectId())
                     .orElseThrow(() -> new ResourceNotFoundException(
                             "Project", "id", request.getProjectId()));
             job.setProject(project);
@@ -327,7 +328,8 @@ public class JobService {
     public void deleteJob(UUID id) {
         Job job = findJob(id);
 
-        // No suffixing needed! The database's Partial Index handles the collision natively.
+        // No suffixing needed! The database's Partial Index handles the collision
+        // natively.
         job.setDeletedAt(OffsetDateTime.now());
         job.setUpdatedAt(OffsetDateTime.now());
 
@@ -335,6 +337,35 @@ public class JobService {
 
         logAction("DELETE", job);
         log.info("Job soft-deleted: {}", job.getJobIdCode());
+    }
+
+    // ─────────────────────────────────────────────
+    // BULK DELETE
+    // ─────────────────────────────────────────────
+    @Transactional
+    public int bulkDelete(List<UUID> ids) {
+        if (ids == null || ids.isEmpty()) {
+            throw new BadRequestException("No job IDs provided.");
+        }
+        List<Job> jobs = jobRepository.findAllById(ids);
+        if (jobs.isEmpty()) {
+            throw new ResourceNotFoundException("Jobs", "ids", ids);
+        }
+        OffsetDateTime now = OffsetDateTime.now();
+        for (Job job : jobs) {
+            job.setDeletedAt(now);
+            job.setUpdatedAt(now);
+        }
+        jobRepository.saveAll(jobs);
+        User currentUser = getCurrentUserOrNull();
+        if (currentUser != null) {
+            activityLogService.log(currentUser, "DELETE", "jobs",
+                    null,
+                    "Bulk delete: " + jobs.size() + " jobs deleted",
+                    null);
+        }
+        log.info("Bulk deleted {} jobs", jobs.size());
+        return jobs.size();
     }
 
     // ─────────────────────────────────────────────
@@ -358,15 +389,20 @@ public class JobService {
         OffsetDateTime now = OffsetDateTime.now();
 
         for (Job job : jobs) {
-            if (upd.containsKey("pdfInputType"))   job.setPdfInputType(emptyToNull(upd.get("pdfInputType")));
-            if (upd.containsKey("complexity"))      job.setComplexity(emptyToNull(upd.get("complexity")));
-            if (upd.containsKey("referenceType"))   job.setReferenceType(emptyToNull(upd.get("referenceType")));
+            if (upd.containsKey("pdfInputType"))
+                job.setPdfInputType(emptyToNull(upd.get("pdfInputType")));
+            if (upd.containsKey("complexity"))
+                job.setComplexity(emptyToNull(upd.get("complexity")));
+            if (upd.containsKey("referenceType"))
+                job.setReferenceType(emptyToNull(upd.get("referenceType")));
             if (upd.containsKey("status")) {
                 String status = emptyToNull(upd.get("status"));
                 job.setStatus(status != null ? status : "PENDING");
             }
-            if (upd.containsKey("fileStatus"))      job.setFileStatus(emptyToNull(upd.get("fileStatus")));
-            if (upd.containsKey("uploadDate"))      job.setUploadDate(parseDateOrNull(upd.get("uploadDate")));
+            if (upd.containsKey("fileStatus"))
+                job.setFileStatus(emptyToNull(upd.get("fileStatus")));
+            if (upd.containsKey("uploadDate"))
+                job.setUploadDate(parseDateOrNull(upd.get("uploadDate")));
             if (upd.containsKey("billingStatus")) {
                 String billing = emptyToNull(upd.get("billingStatus"));
                 job.setBillingStatus(billing != null ? billing : "PENDING");
@@ -431,7 +467,8 @@ public class JobService {
                     try {
                         return objectMapper.<List<String>>readValue(
                                 m.getFieldOrder(),
-                                new TypeReference<>() {});
+                                new TypeReference<>() {
+                                });
                     } catch (Exception e) {
                         log.warn("Could not parse field mapping for {}: {}",
                                 projectId, e.getMessage());
@@ -490,7 +527,8 @@ public class JobService {
                     .orElseThrow(() -> new ResourceNotFoundException("Workflow", "id", request.getWorkflowId()));
         }
 
-        // HIGH-PERFORMANCE FIX: Load existing Job IDs into memory to prevent transaction death
+        // HIGH-PERFORMANCE FIX: Load existing Job IDs into memory to prevent
+        // transaction death
         Set<String> existingJobIds = jobRepository.findByProjectIdOrderByReceiveDateDesc(project.getId())
                 .stream()
                 .map(Job::getJobIdCode)
@@ -505,7 +543,8 @@ public class JobService {
                 Job job = mapRowToJob(row, fieldOrder, project);
 
                 // 1. Safe In-Memory Validation (Prevents Postgres 25P02 error)
-                if (job.getJobIdCode() != null && !job.getJobIdCode().isBlank() && existingJobIds.contains(job.getJobIdCode())) {
+                if (job.getJobIdCode() != null && !job.getJobIdCode().isBlank()
+                        && existingJobIds.contains(job.getJobIdCode())) {
                     errors.add(BulkImportResponse.RowError.builder()
                             .rowNumber(rowNum)
                             .field("jobId")
@@ -544,7 +583,8 @@ public class JobService {
         if (!errors.isEmpty()) {
             try {
                 errorJson = objectMapper.writeValueAsString(errors);
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
         }
 
         batch.setSuccessfulRows(successCount);
@@ -618,13 +658,15 @@ public class JobService {
     // ─────────────────────────────────────────────
     @Transactional(readOnly = true)
     public Page<JobResponse> searchProductionJobs(UUID projectId,
-                                                  UUID clientId,
-                                                  UUID workflowId,
-                                                  String jobIdCode,
-                                                  String complexity,
-                                                  LocalDate startDate,
-                                                  LocalDate endDate,
-                                                  int page, int size) {
+            UUID clientId,
+            UUID workflowId,
+            String jobIdCode,
+            String complexity,
+            String processStatus,
+            String qcStatus,
+            LocalDate startDate,
+            LocalDate endDate,
+            int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Job> jobs = jobRepository.searchProductionJobs(
                 projectId,
@@ -632,10 +674,11 @@ public class JobService {
                 workflowId,
                 emptyToNull(jobIdCode),
                 emptyToNull(complexity),
+                emptyToNull(processStatus),
+                emptyToNull(qcStatus),
                 startDate,
                 endDate,
-                pageable
-        );
+                pageable);
 
         if (jobs.isEmpty()) {
             return Page.empty(pageable);
@@ -648,6 +691,7 @@ public class JobService {
 
         // Group assignments by Job ID
         Map<UUID, List<TaskJobAssignment>> assignmentsByJobId = assignments.stream()
+                .filter(tja -> tja != null && tja.getJob() != null)
                 .collect(Collectors.groupingBy(tja -> tja.getJob().getId()));
 
         List<UUID> projectIds = jobs.getContent().stream()
@@ -665,8 +709,8 @@ public class JobService {
                     .map(TaskJobAssignment::getTask)
                     .flatMap(task -> task.getEmployeeAssignments().stream())
                     .filter(tea -> tea != null && tea.getUser() != null)
-                    .map(tea -> tea.getUser().getEmployeeProfile() != null 
-                            ? tea.getUser().getEmployeeProfile().getFullName() 
+                    .map(tea -> tea.getUser().getEmployeeProfile() != null
+                            ? tea.getUser().getEmployeeProfile().getFullName()
                             : tea.getUser().getUserCode())
                     .distinct()
                     .collect(Collectors.toList());
@@ -681,8 +725,7 @@ public class JobService {
 
             List<String> processes = processesByProjectId.getOrDefault(
                     job.getProject() != null ? job.getProject().getId() : null,
-                    List.of()
-            );
+                    List.of());
 
             return toResponse(job, getCombinedEmployees(job, employees), productionStartDate, processes);
         });
@@ -727,8 +770,8 @@ public class JobService {
                 .map(TaskJobAssignment::getTask)
                 .flatMap(task -> task.getEmployeeAssignments().stream())
                 .filter(tea -> tea != null && tea.getUser() != null)
-                .map(tea -> tea.getUser().getEmployeeProfile() != null 
-                        ? tea.getUser().getEmployeeProfile().getFullName() 
+                .map(tea -> tea.getUser().getEmployeeProfile() != null
+                        ? tea.getUser().getEmployeeProfile().getFullName()
                         : tea.getUser().getUserCode())
                 .distinct()
                 .collect(Collectors.toList());
@@ -753,7 +796,7 @@ public class JobService {
     // ─────────────────────────────────────────────
 
     private Job mapRowToJob(List<String> row, List<String> fieldOrder,
-                            Project project) {
+            Project project) {
         Job.JobBuilder builder = Job.builder()
                 .project(project)
                 .status("PENDING")
@@ -762,34 +805,39 @@ public class JobService {
         for (int i = 0; i < fieldOrder.size() && i < row.size(); i++) {
             String field = fieldOrder.get(i);
             String value = row.get(i) != null ? row.get(i).trim() : "";
-            if (value.isEmpty()) continue;
+            if (value.isEmpty())
+                continue;
 
             switch (field) {
-                case "jobId"       -> builder.jobIdCode(value);
-                case "title"       -> builder.titleName(value);
-                case "isbn"        -> builder.xmlIsbn(value);
-                case "batch"       -> builder.batch(value);
-                case "pageCount"   -> {
-                    try { builder.pageCount(Integer.parseInt(
-                            value.replace(",", ""))); }
-                    catch (NumberFormatException ignored) {}
+                case "jobId" -> builder.jobIdCode(value);
+                case "title" -> builder.titleName(value);
+                case "isbn" -> builder.xmlIsbn(value);
+                case "batch" -> builder.batch(value);
+                case "pageCount" -> {
+                    try {
+                        builder.pageCount(Integer.parseInt(
+                                value.replace(",", "")));
+                    } catch (NumberFormatException ignored) {
+                    }
                 }
-                case "chapters"    -> {
-                    try { builder.numberOfChapters(Integer.parseInt(
-                            value.replace(",", ""))); }
-                    catch (NumberFormatException ignored) {}
+                case "chapters" -> {
+                    try {
+                        builder.numberOfChapters(Integer.parseInt(
+                                value.replace(",", "")));
+                    } catch (NumberFormatException ignored) {
+                    }
                 }
-                case "pdfType"     -> builder.pdfInputType(value);
-                case "complexity"  -> builder.complexity(value);
-                case "refType"     -> builder.referenceType(value);
-                case "status"      -> builder.status(value);
-                case "fileStatus"  -> builder.fileStatus(value);
-                case "billing"     -> builder.billingStatus(value);
+                case "pdfType" -> builder.pdfInputType(value);
+                case "complexity" -> builder.complexity(value);
+                case "refType" -> builder.referenceType(value);
+                case "status" -> builder.status(value);
+                case "fileStatus" -> builder.fileStatus(value);
+                case "billing" -> builder.billingStatus(value);
                 case "receiveDate" -> builder.receiveDate(parseDateOrNull(value));
-                case "uploadDate"  -> builder.uploadDate(parseDateOrNull(value));
-                case "startMonth"  -> builder.startMonth(parseDateOrNull(value));
-                case "endMonth"    -> builder.endMonth(parseDateOrNull(value));
-                case "language"    -> builder.language(value);
+                case "uploadDate" -> builder.uploadDate(parseDateOrNull(value));
+                case "startMonth" -> builder.startMonth(parseDateOrNull(value));
+                case "endMonth" -> builder.endMonth(parseDateOrNull(value));
+                case "language" -> builder.language(value);
             }
         }
 
@@ -810,26 +858,29 @@ public class JobService {
     }
 
     private LocalDate parseDateOrNull(String value) {
-        if (value == null || value.isBlank()) return null;
+        if (value == null || value.isBlank())
+            return null;
         String cleaned = value.trim();
 
         // 1. Try standard numeric formats first
         String[] numericFormats = {
                 "yyyy-MM-dd", "dd/MM/yyyy", "MM/dd/yyyy",
-                "dd-MM-yyyy", "d/M/yyyy",   "yyyy/MM/dd"
+                "dd-MM-yyyy", "d/M/yyyy", "yyyy/MM/dd"
         };
         for (String fmt : numericFormats) {
             try {
                 return LocalDate.parse(cleaned, DateTimeFormatter.ofPattern(fmt));
-            } catch (DateTimeParseException ignored) {}
+            } catch (DateTimeParseException ignored) {
+            }
         }
 
-        // 2. Try text/month-name formats case-insensitively (e.g. 08-Jul-2026, 08-july-2026)
+        // 2. Try text/month-name formats case-insensitively (e.g. 08-Jul-2026,
+        // 08-july-2026)
         String[] monthNameFormats = {
                 "dd-MMM-yyyy", "dd-MMMM-yyyy",
                 "dd/MMM/yyyy", "dd/MMMM/yyyy",
-                "d-MMM-yyyy",  "d-MMMM-yyyy",
-                "d/MMM/yyyy",  "d/MMMM/yyyy"
+                "d-MMM-yyyy", "d-MMMM-yyyy",
+                "d/MMM/yyyy", "d/MMMM/yyyy"
         };
         for (String fmt : monthNameFormats) {
             try {
@@ -838,7 +889,8 @@ public class JobService {
                         .appendPattern(fmt)
                         .toFormatter(Locale.ENGLISH);
                 return LocalDate.parse(cleaned, formatter);
-            } catch (DateTimeParseException ignored) {}
+            } catch (DateTimeParseException ignored) {
+            }
         }
 
         log.warn("Could not parse date '{}' — skipping", value);
@@ -888,9 +940,9 @@ public class JobService {
         }
         if (job.getEmployeeNames() != null && !job.getEmployeeNames().isBlank()) {
             Arrays.stream(job.getEmployeeNames().split("[,|]"))
-                  .map(String::trim)
-                  .filter(s -> !s.isEmpty())
-                  .forEach(allEmps::add);
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .forEach(allEmps::add);
         }
         return new ArrayList<>(allEmps);
     }
@@ -903,13 +955,16 @@ public class JobService {
         return toResponse(job, employees, productionStartDate, null);
     }
 
-    private JobResponse toResponse(Job job, List<String> employees, LocalDate productionStartDate, List<String> processes) {
+    private JobResponse toResponse(Job job, List<String> employees, LocalDate productionStartDate,
+            List<String> processes) {
         return JobResponse.builder()
                 .id(job.getId())
                 .projectId(job.getProject() != null
-                        ? job.getProject().getId() : null)
+                        ? job.getProject().getId()
+                        : null)
                 .projectName(job.getProject() != null
-                        ? job.getProject().getName() : null)
+                        ? job.getProject().getName()
+                        : null)
                 .jobIdCode(job.getJobIdCode())
                 .xmlIsbn(job.getXmlIsbn())
                 .batch(job.getBatch())
@@ -927,7 +982,8 @@ public class JobService {
                 .startMonth(job.getStartMonth())
                 .endMonth(job.getEndMonth())
                 .importBatchId(job.getImportBatch() != null
-                        ? job.getImportBatch().getId() : null)
+                        ? job.getImportBatch().getId()
+                        : null)
                 .createdAt(job.getCreatedAt())
                 .processStatus(job.getProcessStatus())
                 .qcStatus(job.getQcStatus())
@@ -939,15 +995,18 @@ public class JobService {
                 .workflowId(job.getWorkflow() != null ? job.getWorkflow().getId() : null)
                 .workflowName(job.getWorkflow() != null ? job.getWorkflow().getName() : null)
                 .clientName(job.getProject() != null && job.getProject().getClient() != null
-                        ? job.getProject().getClient().getCompanyName() : null)
+                        ? job.getProject().getClient().getCompanyName()
+                        : null)
                 .clientId(job.getProject() != null && job.getProject().getClient() != null
-                        ? job.getProject().getClient().getId() : null)
+                        ? job.getProject().getClient().getId()
+                        : null)
                 .build();
     }
 
     private Map<UUID, List<String>> getProcessesByProjectIds(List<UUID> projectIds) {
         Map<UUID, List<String>> processesByProjectId = new HashMap<>();
-        if (projectIds == null || projectIds.isEmpty()) return processesByProjectId;
+        if (projectIds == null || projectIds.isEmpty())
+            return processesByProjectId;
         List<Object[]> rows = taskRepository.findProcessNamesByProjectIds(projectIds);
         for (Object[] r : rows) {
             UUID pid = (UUID) r[0];

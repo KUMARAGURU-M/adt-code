@@ -567,6 +567,82 @@ const ReconfirmDeleteModal = ({ job, onClose, onDelete }) => {
   );
 };
 
+// ── Bulk Delete Modal ──────────────────────────────────────────────
+const BulkDeleteModal = ({ selectedCount, onClose, onDelete }) => (
+  <Modal onClose={onClose}>
+    <div className="bj-delete-modal">
+      <div className="bj-delete-icon">🗑️</div>
+      <h2 className="bj-modal-title">Bulk Delete</h2>
+      <p className="bj-delete-msg">
+        Are you sure you want to delete <strong>{selectedCount}</strong> selected jobs?<br />
+        This action cannot be undone.
+      </p>
+      <div className="bj-modal-actions centered">
+        <button className="bj-btn-cancel" onClick={onClose}>Cancel</button>
+        <button className="bj-btn-danger" onClick={onDelete}>Delete</button>
+      </div>
+    </div>
+  </Modal>
+);
+
+// ── Bulk Reconfirm Delete Modal ────────────────────────────────────
+const BulkReconfirmDeleteModal = ({ selectedIds, selectedCount, onClose, onDelete }) => {
+  const [inputText, setInputText] = useState('');
+  const [deleting, setDeleting] = useState(false);
+
+  const isValid = inputText.trim().toUpperCase() === 'DELETE'
+    || inputText.trim().toUpperCase() === 'YES';
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await onDelete(selectedIds);
+      onClose();
+    } catch (e) {
+      alert('Error deleting: ' + e.message);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <Modal onClose={onClose}>
+      <div className="bj-reconfirm-modal">
+        <div className="bj-warning-icon">⚠️</div>
+        <h2 className="bj-modal-title">Final Confirmation</h2>
+        <p className="bj-reconfirm-msg">
+          You are about to delete <strong>{selectedCount}</strong> selected jobs.
+        </p>
+        <p className="bj-reconfirm-submsg">
+          To confirm, type{' '}
+          <code className="bj-code-confirm">DELETE</code>:
+        </p>
+        <div className="bj-form-group full" style={{ margin: '14px 0' }}>
+          <input
+            type="text"
+            className="bj-confirm-input"
+            placeholder="Type DELETE to confirm"
+            value={inputText}
+            onChange={e => setInputText(e.target.value)}
+            autoFocus
+          />
+        </div>
+        <div className="bj-modal-actions centered">
+          <button className="bj-btn-cancel" onClick={onClose}>Cancel</button>
+          <button
+            className="bj-btn-danger"
+            disabled={!isValid || deleting}
+            onClick={handleDelete}
+            style={{ opacity: isValid ? 1 : 0.5 }}
+          >
+            {deleting ? 'Deleting...' : 'Delete Permanently'}
+          </button>
+        </div>
+      </div>
+    </Modal>
+  );
+};
+
 // ── Bulk Edit Modal ───────────────────────────────────────────────
 const BULK_EDIT_FIELDS = [
   { key: 'pdfType', label: 'PDF Input Type', type: 'select', options: PDF_TYPES },
@@ -1369,6 +1445,12 @@ const BooksJobs = () => {
     await loadJobs(page);
   };
 
+  const handleBulkDelete = async (ids) => {
+    await apiCall('/jobs/bulk-delete', 'DELETE', { ids });
+    clearSelection();
+    await loadJobs(page);
+  };
+
   const handleBulkAdd = async () => {
     await loadJobs(0);
   };
@@ -1736,6 +1818,30 @@ const BooksJobs = () => {
                 >
                   ✏️ Bulk Edit
                 </button>
+                {canDelete && (
+                  <button
+                    className="bj-bulk-delete-trigger"
+                    onClick={() => open('bulk_delete')}
+                    style={{
+                      background: '#ef4444',
+                      color: 'white',
+                      border: 'none',
+                      padding: '6px 12px',
+                      borderRadius: '6px',
+                      fontSize: '0.85rem',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      transition: 'background 0.2s',
+                    }}
+                    onMouseEnter={e => e.target.style.background = '#dc2626'}
+                    onMouseLeave={e => e.target.style.background = '#ef4444'}
+                  >
+                    🗑️ Bulk Delete
+                  </button>
+                )}
                 <button
                   className="bj-bulk-clear-btn"
                   onClick={clearSelection}
@@ -1956,6 +2062,21 @@ const BooksJobs = () => {
       {modal?.type === 'bulk' && (
         <BulkImportModal onClose={close} onBulkAdd={handleBulkAdd}
           projects={projects} clients={clients} workflows={workflows} />
+      )}
+      {modal?.type === 'bulk_delete' && (
+        <BulkDeleteModal
+          selectedCount={selectedIds.size}
+          onClose={close}
+          onDelete={() => open('bulk_reconfirm_delete')}
+        />
+      )}
+      {modal?.type === 'bulk_reconfirm_delete' && (
+        <BulkReconfirmDeleteModal
+          selectedIds={Array.from(selectedIds)}
+          selectedCount={selectedIds.size}
+          onClose={close}
+          onDelete={handleBulkDelete}
+        />
       )}
       {showBulkEdit && (
         <BulkEditModal
