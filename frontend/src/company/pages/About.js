@@ -82,7 +82,7 @@ const TEAM_STATS = [
     { n: 30, s: '+', label: 'Expert Professionals', color: '#E92E68' },
     { n: 12, s: '+', label: 'Years in Publishing', color: '#08AFC4' },
 ];
-
+/*
 const FACILITIES = [
     { icon: '🖥️', text: 'Intel Core i5 Server, 16 GB RAM, 2 TB HDD' },
     { icon: '💻', text: '30 workstation nodes — i5/i7 Dual Core, 8 GB RAM' },
@@ -91,6 +91,7 @@ const FACILITIES = [
     { icon: '⚡', text: 'Online UPS with 300-min backup + Generator' },
     { icon: '📁', text: 'File transfer via FTP, E-Mail, DVD & USB' },
 ];
+*/
 
 const INDUSTRIES = [
     { name: 'STM Publishing', icon: '🔬' },

@@ -9,8 +9,6 @@ import com.arrowdatatech.adt_production_report.hourlygraph.entity.HourlyGraphSet
 import com.arrowdatatech.adt_production_report.hourlygraph.entity.HourlyProductionLog;
 import com.arrowdatatech.adt_production_report.hourlygraph.repository.HourlyGraphSettingsRepository;
 import com.arrowdatatech.adt_production_report.hourlygraph.repository.HourlyProductionLogRepository;
-import com.arrowdatatech.adt_production_report.shift.entity.Shift;
-import com.arrowdatatech.adt_production_report.shift.repository.ShiftRepository;
 import com.arrowdatatech.adt_production_report.attendance.entity.AttendanceRecord;
 import com.arrowdatatech.adt_production_report.attendance.repository.AttendanceRecordRepository;
 import com.arrowdatatech.adt_production_report.attendance.entity.AttendanceEmployee;
@@ -26,7 +24,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.TextStyle;
@@ -41,7 +38,6 @@ public class HourlyGraphService {
     private final HourlyGraphSettingsRepository settingsRepository;
     private final HourlyProductionLogRepository logRepository;
     private final UserRepository userRepository;
-    private final ShiftRepository shiftRepository;
     private final AttendanceRecordRepository attendanceRecordRepository;
     private final AttendanceEmployeeRepository attendanceEmployeeRepository;
     private final TimeLogRepository timeLogRepository;
@@ -128,7 +124,6 @@ public class HourlyGraphService {
                 .collect(Collectors.toList());
 
         List<EmployeeRowDto> rows = new ArrayList<>();
-        int index = 1;
         for (User user : eligibleUsers) {
             HourlyProductionLog savedLog = savedLogsMap.get(user.getId());
             EmployeeProfile profile = user.getEmployeeProfile();
@@ -405,25 +400,6 @@ public class HourlyGraphService {
         return 5;
     }
 
-    private String normalizeShiftName(String shiftName) {
-        if (shiftName == null) return "General Shift";
-        switch (shiftName.trim().toLowerCase()) {
-            case "general":
-            case "general shift":
-                return "General Shift";
-            case "morning":
-            case "1st shift":
-                return "1st Shift";
-            case "evening":
-            case "2nd shift":
-                return "2nd Shift";
-            case "night":
-            case "night shift":
-                return "Night Shift";
-            default:
-                return shiftName;
-        }
-    }
 
     private String ordinal(int n) {
         int j = n % 10, k = n % 100;

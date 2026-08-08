@@ -1,5 +1,5 @@
 // src/pages/developer/DevWorkwise.js
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import './DevWorkwise.css';
 import { apiCall, getCurrentUser } from '../../utils/api';
 
@@ -69,9 +69,6 @@ const ReadOnly = ({ label, icon, value, placeholder = '—' }) => (
 
 // ═════════════════════════════════════════════════════════════════
 const DevWorkwise = ({ tasks, setTasks, isCheckedIn, checkInTime, isOvertimeActive, attendanceToday }) => {
-  const user = getCurrentUser();
-  const isAdmin = user?.roles?.includes('Admin');
-  const hasAccess = (perm) => isAdmin || (user?.permissions || []).includes(perm);
 
   // ── Timer state ──────────────────────────────────────────────
   const [status, setStatus] = useState('stopped');
@@ -142,11 +139,11 @@ const DevWorkwise = ({ tasks, setTasks, isCheckedIn, checkInTime, isOvertimeActi
   const currentUser = getCurrentUser();
   const currentUserName = currentUser?.fullName || currentUser?.userCode || '';
 
-  const myAssignedTasks = (tasks || []).filter(t => {
+  const myAssignedTasks = useMemo(() => (tasks || []).filter(t => {
     if (t.completed || t.status === 'Completed') return false;
     if (!currentUserName) return true;
     return (t.assignedTo || '').toLowerCase() === currentUserName.toLowerCase();
-  });
+  }), [tasks, currentUserName]);
 
   const [selTask, setSelTask] = useState('');
   const [selectedTask, setSelectedTask] = useState(null);
@@ -155,7 +152,7 @@ const DevWorkwise = ({ tasks, setTasks, isCheckedIn, checkInTime, isOvertimeActi
     if (!selTask) { setSelectedTask(null); return; }
     const t = myAssignedTasks.find(x => String(x.id) === String(selTask));
     setSelectedTask(t || null);
-  }, [selTask, tasks]);
+  }, [selTask, myAssignedTasks]);
 
   // ── Stop popup ────────────────────────────────────────────────
   const [showStop, setShowStop] = useState(false);
@@ -266,7 +263,7 @@ const DevWorkwise = ({ tasks, setTasks, isCheckedIn, checkInTime, isOvertimeActi
 
   useEffect(() => {
     loadCurrent();
-  }, []);
+  }, [loadCurrent]);
 
   // Auto-search logs when filter changes
   useEffect(() => {

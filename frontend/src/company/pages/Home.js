@@ -24,12 +24,13 @@ const CLIENTS = [
   { name: 'Taylor & Francis', logo: '/image/publisher/taylor-francis.svg', className: 'publisher-logo--taylor' },
   { name: 'SAGE Publishing', logo: '/image/publisher/sage.svg', className: 'publisher-logo--sage' },
 ];
-
+/*
 const WORK = [
   { wide: true, tag: 'Publishing · ePub', name: 'Global STM Publisher — 50,000 Articles Converted', desc: 'End-to-end JATS XML tagging and ePub 3 production pipeline for a Tier-1 scientific journal portfolio, reducing time-to-publish by 60%.', gradient: 'linear-gradient(135deg,#161E27 0%,#E92E68 100%)', accent: '#08AFC4', tags: ['ePub 3', 'JATS XML', 'Automation', 'Python'] },
   { tag: 'E-commerce · Web', name: 'RetailBrand — Next-Gen Storefront', desc: 'Headless commerce build on Next.js + Shopify, boosting conversion by 38% in the first quarter post-launch.', gradient: 'linear-gradient(135deg,#006f7c 0%,#08AFC4 100%)', accent: '#08AFC4', tags: ['Next.js', 'Shopify', 'UI/UX'] },
   { tag: 'Logistics · Automation', name: 'FreightCo — Invoice Processing Bot', desc: 'RPA + ML pipeline that classifies and processes 12,000 invoices/day with 99.4% accuracy, replacing a 14-person data entry team.', gradient: 'linear-gradient(135deg,#2C1A3A 0%,#6B7280 100%)', accent: '#6B7280', tags: ['RPA', 'Python', 'ML', 'API'] },
 ];
+*/
 
 const TESTIMONIALS = [
   { stars: 5, quote: 'Their XML tagging accuracy is the best we\'ve encountered across five vendors. Zero re-work, tight deadlines met every time.', name: 'Sarah Chen', role: 'Production Director, Lumina Data Matics', initials: 'SC', color: '#E92E68' },

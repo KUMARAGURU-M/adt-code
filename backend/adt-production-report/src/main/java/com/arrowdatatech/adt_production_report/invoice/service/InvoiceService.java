@@ -10,7 +10,6 @@ import com.arrowdatatech.adt_production_report.invoice.entity.BankAccount;
 import com.arrowdatatech.adt_production_report.invoice.entity.Invoice;
 import com.arrowdatatech.adt_production_report.invoice.entity.InvoiceLineItem;
 import com.arrowdatatech.adt_production_report.invoice.repository.BankAccountRepository;
-import com.arrowdatatech.adt_production_report.invoice.repository.InvoiceLineItemRepository;
 import com.arrowdatatech.adt_production_report.invoice.repository.InvoiceRepository;
 import com.arrowdatatech.adt_production_report.job.entity.Job;
 import com.arrowdatatech.adt_production_report.job.repository.JobRepository;
@@ -45,7 +44,6 @@ import java.util.stream.Collectors;
 public class InvoiceService {
 
     private final InvoiceRepository invoiceRepository;
-    private final InvoiceLineItemRepository invoiceLineItemRepository;
     private final ClientRepository clientRepository;
     private final BankAccountRepository bankAccountRepository;
     private final ProjectRepository projectRepository;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getCurrentUser, getRolePrefix, apiCall, API_BASE } from '../../utils/api';
 import './DeveloperDashboard.css';
@@ -10,6 +10,68 @@ import LeadCorrectionsPage from './LeadCorrectionsPage';
 import AdminReportsPage from './AdminReportsPage';
 import DevWorkwise from './DevWorkwise';
 import EmpLeave from '../user/EmpLeave';
+
+const augmentProjects = (projectsList, tasksList) => {
+  if (!projectsList) return [];
+  return projectsList.map(p => {
+    const techStack = p.technologies
+      ? p.technologies.split(',').map(s => s.trim()).filter(Boolean)
+      : [];
+
+    const projectTasks = (tasksList || []).filter(t => t.project === p.name);
+    const completedTasks = projectTasks.filter(t => t.status === 'Completed' || t.completed);
+    const progress = projectTasks.length > 0
+      ? Math.round((completedTasks.length / projectTasks.length) * 100)
+      : 0;
+
+    // Dynamically calculate assigned members who worked on tasks in this project
+    const membersMap = {};
+    projectTasks.forEach(t => {
+      const name = t.assignedTo || 'Unassigned';
+      if (name === 'Unassigned') return;
+
+      if (!membersMap[name]) {
+        membersMap[name] = {
+          name: name,
+          role: t.assignedToRole || 'Employee',
+          taskCount: 0,
+          completedCount: 0
+        };
+      }
+
+      membersMap[name].taskCount += 1;
+      if (t.completed || t.status === 'Completed') {
+        membersMap[name].completedCount += 1;
+      }
+    });
+
+    let team = Object.values(membersMap).map(m => ({
+      name: m.name,
+      role: m.role,
+      hours: `${m.completedCount}/${m.taskCount} tasks completed`
+    }));
+
+    // Fallback if no tasks yet to keep display alive
+    if (team.length === 0) {
+      team = [
+        { name: 'Kumar', role: 'Full Stack Dev', hours: '0/0 tasks completed' },
+        { name: 'Alex Rivers', role: 'Team Lead', hours: '0/0 tasks completed' }
+      ];
+    }
+
+    return {
+      ...p,
+      client: p.client || 'Internal Product',
+      lead: p.lead || 'David Vance (Tech Lead)',
+      progress: progress,
+      repo: p.repositoryUrl || '',
+      techStack: techStack,
+      team: team,
+      updates: p.updates || [],
+      documents: p.documents || []
+    };
+  });
+};
 
 const DeveloperDashboard = ({ hideToggle }) => {
   const location = useLocation();
@@ -77,7 +139,6 @@ const DeveloperDashboard = ({ hideToggle }) => {
   const [isCheckedIn, setIsCheckedIn] = useState(false);
   const [checkInTime, setCheckInTime] = useState(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0); // working timer
-  const [isBreak, setIsBreak] = useState(false);
   const [isOvertimeActive, setIsOvertimeActive] = useState(false);
   const [overtimeSeconds, setOvertimeSeconds] = useState(0);
   const [overtimeStartTime, setOvertimeStartTime] = useState(null);
@@ -128,7 +189,6 @@ const DeveloperDashboard = ({ hideToggle }) => {
 
   // Filter States
   const [taskFilter, setTaskFilter] = useState('All');
-  const [announcementFilter, setAnnouncementFilter] = useState('All');
 
   // Timer Effect
   useEffect(() => {
@@ -149,70 +209,9 @@ const DeveloperDashboard = ({ hideToggle }) => {
     }
     return () => clearInterval(interval);
   }, [isCheckedIn, isOvertimeActive]);
-  const augmentProjects = (projectsList, tasksList) => {
-    if (!projectsList) return [];
-    return projectsList.map(p => {
-      const techStack = p.technologies
-        ? p.technologies.split(',').map(s => s.trim()).filter(Boolean)
-        : [];
-
-      const projectTasks = (tasksList || []).filter(t => t.project === p.name);
-      const completedTasks = projectTasks.filter(t => t.status === 'Completed' || t.completed);
-      const progress = projectTasks.length > 0
-        ? Math.round((completedTasks.length / projectTasks.length) * 100)
-        : 0;
-
-      // Dynamically calculate assigned members who worked on tasks in this project
-      const membersMap = {};
-      projectTasks.forEach(t => {
-        const name = t.assignedTo || 'Unassigned';
-        if (name === 'Unassigned') return;
-
-        if (!membersMap[name]) {
-          membersMap[name] = {
-            name: name,
-            role: t.assignedToRole || 'Employee',
-            taskCount: 0,
-            completedCount: 0
-          };
-        }
-
-        membersMap[name].taskCount += 1;
-        if (t.completed || t.status === 'Completed') {
-          membersMap[name].completedCount += 1;
-        }
-      });
-
-      let team = Object.values(membersMap).map(m => ({
-        name: m.name,
-        role: m.role,
-        hours: `${m.completedCount}/${m.taskCount} tasks completed`
-      }));
-
-      // Fallback if no tasks yet to keep display alive
-      if (team.length === 0) {
-        team = [
-          { name: 'Kumar', role: 'Full Stack Dev', hours: '0/0 tasks completed' },
-          { name: 'Alex Rivers', role: 'Team Lead', hours: '0/0 tasks completed' }
-        ];
-      }
-
-      return {
-        ...p,
-        client: p.client || 'Internal Product',
-        lead: p.lead || 'David Vance (Tech Lead)',
-        progress: progress,
-        repo: p.repositoryUrl || '',
-        techStack: techStack,
-        team: team,
-        updates: p.updates || [],
-        documents: p.documents || []
-      };
-    });
-  };
-  const loadDeveloperData = async () => {
+  const loadDeveloperData = useCallback(async () => {
     try {
-      const [projList, taskList, corrList, meetList, otList, attendanceRes, publicSettings, otToday] = await Promise.all([
+      const [projList, taskList, corrList, meetList, , attendanceRes, publicSettings, otToday] = await Promise.all([
         apiCall('/developer/projects'),
         apiCall('/developer/tasks'),
         apiCall('/developer/corrections'),
@@ -293,11 +292,11 @@ const DeveloperDashboard = ({ hideToggle }) => {
     } catch (e) {
       console.warn('Failed to load developer data from backend:', e);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadDeveloperData();
-  }, []);
+  }, [loadDeveloperData]);
   // Format Helper for Seconds -> HH:MM:SS
   const formatTime = (totalSeconds) => {
     const hours = Math.floor(totalSeconds / 3600);
@@ -311,9 +310,7 @@ const DeveloperDashboard = ({ hideToggle }) => {
   const [tasks, setTasks] = useState([]);
   const [announcements, setAnnouncements] = useState([]);
   const [meetings, setMeetings] = useState([]);
-  const [recentUpdates, setRecentUpdates] = useState([]);
   const [corrections, setCorrections] = useState([]);
-  const [recentActivity, setRecentActivity] = useState([]);
   const [workLogs, setWorkLogs] = useState([]);
 
 
@@ -385,26 +382,12 @@ const DeveloperDashboard = ({ hideToggle }) => {
     }));
   };
 
-  const handleMarkAnnouncementRead = (id) => {
-    setAnnouncements(announcements.map(a => a.id === id ? { ...a, isRead: !a.isRead } : a));
-  };
-
-  const handleOpenReplyModal = (corr) => {
-    setSelectedCorrection(corr);
-    setReplyMessage(corr.reply || '');
-    setShowReplyModal(true);
-  };
-
   const handleSendCorrectionReply = () => {
     if (!selectedCorrection) return;
     setCorrections(corrections.map(c => c.id === selectedCorrection.id ? { ...c, reply: replyMessage, status: 'In Review' } : c));
     setShowReplyModal(false);
     setSelectedCorrection(null);
     setReplyMessage('');
-  };
-
-  const handleMarkCorrectionCompleted = (id) => {
-    setCorrections(corrections.map(c => c.id === id ? { ...c, status: 'Resolved' } : c));
   };
 
   const handleCreateTask = (e) => {
@@ -457,15 +440,7 @@ const DeveloperDashboard = ({ hideToggle }) => {
     setShowWorkLogModal(false);
   };
 
-  // Format date as dd-Mon-yyyy (e.g. 24-Jul-2026)
-  const formatDevDate = (dateStr) => {
-    if (!dateStr) return '—';
-    try {
-      const d = new Date(dateStr);
-      if (isNaN(d)) return dateStr;
-      return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-');
-    } catch { return dateStr; }
-  };
+
 
   // Filtered Tasks — only assigned to current user; always show only Pending/Assigned tasks
   const currentUserName = user?.fullName || user?.userCode || '';
@@ -489,13 +464,7 @@ const DeveloperDashboard = ({ hideToggle }) => {
     return true;
   });
 
-  // Filtered Announcements
-  const filteredAnnouncements = announcements.filter(a => {
-    if (announcementFilter === 'Company Updates') return a.category === 'Company Updates';
-    if (announcementFilter === 'Release Notice') return a.category === 'Release Notice';
-    if (announcementFilter === 'Holiday Notice') return a.category === 'Holiday Notice';
-    return true;
-  });
+
 
   if (!isAuthorized) {
     return (

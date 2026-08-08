@@ -16,7 +16,6 @@ import Header from './components/layouts/Header';
 import Login from './pages/auth/Login/Login';
 
 /* ── Employee Portal ── */
-import EmpDashboard from './pages/user/EmpDashboard';
 import WorkPortal from './pages/user/WorkPortal';
 import EmpWorkwise from './pages/user/EmpWorkwise';
 import EmpCalendar from './pages/user/EmpCalendar';

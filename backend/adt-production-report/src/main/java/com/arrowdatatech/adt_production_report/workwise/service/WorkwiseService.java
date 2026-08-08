@@ -1,17 +1,12 @@
 package com.arrowdatatech.adt_production_report.workwise.service;
 
 import com.arrowdatatech.adt_production_report.attendance.entity.AttendanceEmployee;
-import com.arrowdatatech.adt_production_report.attendance.entity.AttendanceRecord;
 import com.arrowdatatech.adt_production_report.attendance.repository.AttendanceEmployeeRepository;
 import com.arrowdatatech.adt_production_report.attendance.repository.AttendanceRecordRepository;
-import com.arrowdatatech.adt_production_report.common.audit.service.ActivityLogService;
 import com.arrowdatatech.adt_production_report.common.exception.BadRequestException;
 import com.arrowdatatech.adt_production_report.common.exception.ResourceNotFoundException;
-import com.arrowdatatech.adt_production_report.job.repository.JobRepository;
 import com.arrowdatatech.adt_production_report.process.entity.Process;
-import com.arrowdatatech.adt_production_report.process.repository.ProcessRepository;
 import com.arrowdatatech.adt_production_report.project.entity.Project;
-import com.arrowdatatech.adt_production_report.project.repository.ProjectRepository;
 import com.arrowdatatech.adt_production_report.shift.entity.Shift;
 import com.arrowdatatech.adt_production_report.shift.repository.ShiftUserAssignmentRepository;
 import com.arrowdatatech.adt_production_report.task.entity.Task;
@@ -23,7 +18,6 @@ import com.arrowdatatech.adt_production_report.task.repository.TaskRepository;
 import com.arrowdatatech.adt_production_report.user.entity.User;
 import com.arrowdatatech.adt_production_report.user.repository.UserRepository;
 import com.arrowdatatech.adt_production_report.project.entity.DevProject;
-import com.arrowdatatech.adt_production_report.project.repository.DevProjectRepository;
 import com.arrowdatatech.adt_production_report.task.entity.DevTask;
 import com.arrowdatatech.adt_production_report.task.repository.DevTaskRepository;
 import com.arrowdatatech.adt_production_report.workwise.dto.*;
@@ -54,18 +48,13 @@ public class WorkwiseService {
         private final TimeLogRepository timeLogRepository;
         private final BreakLogRepository breakLogRepository;
         private final UserRepository userRepository;
-        private final ProjectRepository projectRepository;
-        private final ProcessRepository processRepository;
-        private final JobRepository jobRepository;
         private final TaskRepository taskRepository;
         private final TaskEmployeeAssignmentRepository taskEmployeeRepository;
         private final TaskJobAssignmentRepository taskJobRepository;
         private final ShiftUserAssignmentRepository shiftAssignmentRepository;
         private final AttendanceEmployeeRepository attendanceEmployeeRepository;
         private final AttendanceRecordRepository attendanceRecordRepository;
-        private final ActivityLogService activityLogService;
         private final DevTaskRepository devTaskRepository;
-        private final DevProjectRepository devProjectRepository;
 
         // ─────────────────────────────────────────────
         // GET CURRENT RUNNING TASK

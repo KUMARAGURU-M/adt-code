@@ -10,7 +10,6 @@ import com.arrowdatatech.adt_production_report.shift.entity.ShiftUserAssignment;
 import com.arrowdatatech.adt_production_report.shift.repository.ShiftRepository;
 import com.arrowdatatech.adt_production_report.shift.repository.ShiftUserAssignmentRepository;
 import com.arrowdatatech.adt_production_report.user.entity.User;
-import com.arrowdatatech.adt_production_report.user.repository.EmployeeProfileRepository;
 import com.arrowdatatech.adt_production_report.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +31,6 @@ public class ShiftService {
     private final ShiftRepository shiftRepository;
     private final ShiftUserAssignmentRepository shiftAssignmentRepository;
     private final UserRepository userRepository;
-    private final EmployeeProfileRepository profileRepository;
     private final ActivityLogService activityLogService;
 
     // ─────────────────────────────────────────────

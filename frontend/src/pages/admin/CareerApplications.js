@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { apiCall, API_BASE } from '../../utils/api';
 import './CareerApplications.css';
 

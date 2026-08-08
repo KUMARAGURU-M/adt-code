@@ -1,6 +1,5 @@
 package com.arrowdatatech.adt_production_report.leave.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
 import java.time.OffsetDateTime;

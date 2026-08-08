@@ -947,14 +947,6 @@ public class JobService {
         return new ArrayList<>(allEmps);
     }
 
-    private JobResponse toResponse(Job job) {
-        return toResponse(job, null, null, null);
-    }
-
-    private JobResponse toResponse(Job job, List<String> employees, LocalDate productionStartDate) {
-        return toResponse(job, employees, productionStartDate, null);
-    }
-
     private JobResponse toResponse(Job job, List<String> employees, LocalDate productionStartDate,
             List<String> processes) {
         return JobResponse.builder()

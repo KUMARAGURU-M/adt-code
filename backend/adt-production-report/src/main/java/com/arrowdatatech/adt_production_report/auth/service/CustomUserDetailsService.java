@@ -1,6 +1,5 @@
 package com.arrowdatatech.adt_production_report.auth.service;
 
-import com.arrowdatatech.adt_production_report.common.exception.ResourceNotFoundException;
 import com.arrowdatatech.adt_production_report.user.entity.User;
 import com.arrowdatatech.adt_production_report.role.repository.PermissionRepository;
 import com.arrowdatatech.adt_production_report.user.repository.UserRepository;

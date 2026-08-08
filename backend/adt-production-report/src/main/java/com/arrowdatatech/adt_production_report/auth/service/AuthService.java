@@ -14,8 +14,6 @@ import com.arrowdatatech.adt_production_report.role.repository.PermissionReposit
 import com.arrowdatatech.adt_production_report.role.repository.UserRoleAssignmentRepository;
 import com.arrowdatatech.adt_production_report.user.entity.User;
 import com.arrowdatatech.adt_production_report.user.repository.UserRepository;
-import com.arrowdatatech.adt_production_report.attendance.entity.AttendanceRecord;
-import com.arrowdatatech.adt_production_report.attendance.repository.AttendanceRecordRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +25,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.HexFormat;
 import java.util.UUID;
@@ -44,7 +41,6 @@ public class AuthService {
     private final UserRoleAssignmentRepository roleAssignmentRepository;
     private final PermissionRepository permissionRepository;
     private final AttendanceEmployeeRepository attendanceEmployeeRepository;
-    private final AttendanceRecordRepository   attendanceRecordRepository;
     private final ActivityLogService activityLogService;
     private final ImpersonationLogRepository impersonationLogRepository;
 
@@ -355,33 +351,6 @@ public class AuthService {
                 .orElseThrow(() -> new UnauthorizedException("User not found"));
     }
 
-    private void validateLoginType(User user, String loginType,
-                                   List<String> roles) {
-
-        boolean isAdmin = roles.contains("Admin");
-        boolean isManager = roles.contains("Manager");
-        boolean isAdminOrManager = isAdmin || isManager;
-        boolean isEmployeeOrTeamLeader = roles.contains("Executive")
-                || roles.contains("Team Leader");
-
-        log.info("Validating login type '{}' for roles: {}",
-                loginType, roles);
-
-        if ("Admin".equalsIgnoreCase(loginType)) {
-            // Admin tab: only Admin and Manager roles allowed
-            if (!isAdminOrManager) {
-                throw new UnauthorizedException(
-                        "Access denied. Please use Executive Login.");
-            }
-        } else {
-            // Employee tab: only non-admin roles allowed
-            // Unless user has BOTH admin AND employee roles
-            if (isAdminOrManager && !isEmployeeOrTeamLeader) {
-                throw new UnauthorizedException(
-                        "Access denied. Please use Admin Login.");
-            }
-        }
-    }
 
     private void ensureAttendanceEmployeeExists(User user) {
         try {

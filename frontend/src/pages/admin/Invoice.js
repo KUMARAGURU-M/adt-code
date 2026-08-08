@@ -24,6 +24,7 @@ const YEARS = Array.from({ length: 10 }, (_, i) => 2024 + i);
 const PROCESS_OPTIONS = ["All Processes", "EPUB - QC Process", "EPUB - Tagging", "FIG - Croping", "INDEX - Process", "MATH - Keying", "OCR - Process", "Proof Reading - Process", "REF - Process", "TABLE - Process", "VALID - Process", "WORD - QC Process", "WORD - Styling", "XML - QC Process", "XML - Tagging"];
 const COMPLEXITY_OPTIONS = ["All", "Simple", "Medium", "Complex", "Heavy Complex"];
 const FILE_STATUS_OPTIONS = ["All", "Uploaded", "RTU", "Hold", "Query"];
+const BILLING_STATUS_OPTIONS = ["All", "CREDITED", "PENDING", "INVOICED"];
 
 const PROCESS_RATES = {
   "EPUB - QC Process": 4, "EPUB - Tagging": 6, "FIG - Croping": 3,
@@ -399,6 +400,7 @@ export default function Invoice() {
   const [filterEndDate, setFilterEndDate] = useState("");
   const [filterComplexity, setFilterComplexity] = useState("All");
   const [filterFileStatus, setFilterFileStatus] = useState("All");
+  const [filterBillingStatus, setFilterBillingStatus] = useState("PENDING");
   const [selectedDPIds, setSelectedDPIds] = useState(new Set());
 
   // ── Tax ──────────────────────────────────────────────────
@@ -561,7 +563,7 @@ export default function Invoice() {
     }
   };
 
-  const fetchProjectsAndJobs = async (clientId) => {
+  const fetchProjectsAndJobs = async (clientId, bStatus = filterBillingStatus) => {
     if (!clientId) return;
     try {
       const projs = await apiCall(`/projects/by-client/${clientId}`);
@@ -574,7 +576,8 @@ export default function Invoice() {
       });
       setProjectRates(rates);
 
-      const jobsResp = await apiCall(`/jobs/search?clientId=${clientId}&billingStatus=PENDING&size=200`);
+      const billingParam = bStatus === "All" ? "" : `&billingStatus=${bStatus}`;
+      const jobsResp = await apiCall(`/jobs/search?clientId=${clientId}${billingParam}&size=200`);
       const jobs = jobsResp.content || [];
       const mapped = jobs.map(j => ({
         id: j.id,
@@ -1309,6 +1312,20 @@ export default function Invoice() {
                         </select>
                       </div>
                     ))}
+                    <div className="inv-field-block">
+                      <label className="inv-label">Billing Status</label>
+                      <select
+                        className="inv-select"
+                        value={filterBillingStatus}
+                        onChange={e => {
+                          const val = e.target.value;
+                          setFilterBillingStatus(val);
+                          fetchProjectsAndJobs(selectedClientId, val);
+                        }}
+                      >
+                        {BILLING_STATUS_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </div>
                     <div className="inv-field-block"><label className="inv-label">Start From</label><input type="date" className="inv-input" value={filterStartDate} onChange={e => setFilterStartDate(e.target.value)} /></div>
                     <div className="inv-field-block"><label className="inv-label">End To</label><input type="date" className="inv-input" value={filterEndDate} onChange={e => setFilterEndDate(e.target.value)} /></div>
                   </div>
@@ -1320,7 +1337,7 @@ export default function Invoice() {
                         </span>
                       )}
                     </div>
-                    <button className="inv-btn inv-btn--outline inv-btn--sm" onClick={() => { setFilterProject("All Projects"); setFilterWorkflow("All Task Names"); setFilterStartDate(""); setFilterEndDate(""); setFilterComplexity("All"); setFilterFileStatus("All"); }}>✕ Clear Filters</button>
+                    <button className="inv-btn inv-btn--outline inv-btn--sm" onClick={() => { setFilterProject("All Projects"); setFilterWorkflow("All Task Names"); setFilterStartDate(""); setFilterEndDate(""); setFilterComplexity("All"); setFilterFileStatus("All"); setFilterBillingStatus("PENDING"); fetchProjectsAndJobs(selectedClientId, "PENDING"); }}>✕ Clear Filters</button>
                   </div>
                 </div>
                 <div className="inv-proj-table-wrap">
@@ -1330,7 +1347,7 @@ export default function Invoice() {
                     <table className="inv-proj-table">
                       <thead><tr>
                         <th style={{ textAlign: "center" }}><input type="checkbox" checked={selectedDPIds.size === filteredDPs.length && filteredDPs.length > 0} onChange={selectAllDPs} /></th>
-                        <th>PROJECT</th><th>TASK NAME</th><th>PROCESS</th><th>JOB ID</th><th>TITLE</th>
+                        <th>PROJECT</th><th>TASK NAME</th><th>JOB ID</th><th>TITLE</th>
                         <th>PAGES</th><th>RATE/PG</th><th>AMOUNT</th><th>START DATE</th><th>END DATE</th><th>COMPLEXITY</th><th>FILE STATUS</th>
                       </tr></thead>
                       <tbody>
@@ -1345,7 +1362,6 @@ export default function Invoice() {
                               <td style={{ textAlign: "center" }}><input type="checkbox" checked={sel} onChange={() => toggleSelectDP(dp.id)} onClick={e => e.stopPropagation()} /></td>
                               <td><span className="inv-proj-tag">{dp.project || "—"}</span></td>
                               <td><span className="badge badge--workflow" style={{ background: '#e0f2fe', color: '#0369a1', border: '1px solid #bae6fd', padding: '2px 6px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: 700 }}>{dp.workflow || "—"}</span></td>
-                              <td><span className="inv-proc-tag">{dp.process || "—"}</span></td>
                               <td className="inv-td-mono">{dp.jobId}</td>
                               <td className="inv-td-title" title={dp.titleName}>{dp.titleName}</td>
                               <td className="inv-td-num">{dp.pageCount}</td>

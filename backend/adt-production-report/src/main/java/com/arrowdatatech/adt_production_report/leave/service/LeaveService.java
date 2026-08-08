@@ -8,7 +8,6 @@ import com.arrowdatatech.adt_production_report.leave.entity.*;
 import com.arrowdatatech.adt_production_report.leave.repository.*;
 import com.arrowdatatech.adt_production_report.user.entity.User;
 import com.arrowdatatech.adt_production_report.user.repository.UserRepository;
-import com.arrowdatatech.adt_production_report.attendance.entity.AttendanceEmployee;
 import com.arrowdatatech.adt_production_report.attendance.entity.AttendanceRecord;
 import com.arrowdatatech.adt_production_report.attendance.repository.AttendanceEmployeeRepository;
 import com.arrowdatatech.adt_production_report.attendance.repository.AttendanceRecordRepository;
