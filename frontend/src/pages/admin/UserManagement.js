@@ -652,6 +652,9 @@ const UserManagement = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const [itemsPerPage, setItemsPerPage] = useState(100);
+  const [currentPage, setCurrentPage] = useState(1);
+
   const location = useLocation();
 
   const currentUser = getCurrentUser();
@@ -886,6 +889,14 @@ const UserManagement = () => {
     };
   }, [users]);
 
+  // Pagination calculations
+  const totalItems = users.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const paginatedUsers = users.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   // ── Render ───────────────────────────────────────────────────
   if (loading) return (
     <div className="user-mgmt-container">
@@ -919,6 +930,72 @@ const UserManagement = () => {
         )}
       </div>
 
+      {/* ── Pagination ── */}
+      <div className="pm-pagination" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '12px', padding: '0 4px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <label style={{ fontSize: '0.85rem', color: '#4a5568' }}>Items per page:</label>
+          <select
+            value={itemsPerPage}
+            onChange={e => {
+              setItemsPerPage(Number(e.target.value));
+              setCurrentPage(1);
+            }}
+            style={{
+              padding: '4px 8px',
+              border: '1px solid #cbd5e1',
+              borderRadius: '6px',
+              outline: 'none',
+              fontSize: '0.85rem',
+              backgroundColor: '#fff'
+            }}
+          >
+            {[10, 25, 50, 100].map(n => (
+              <option key={n} value={n}>{n}</option>
+            ))}
+          </select>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {totalPages > 1 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(p => p - 1)}
+                style={{
+                  padding: '5px 12px',
+                  background: currentPage === 1 ? '#e2e8f0' : '#ffffff',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '6px',
+                  cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                  color: currentPage === 1 ? '#94a3b8' : '#334155',
+                  fontSize: '0.8rem',
+                  fontWeight: 600
+                }}
+              >‹ Prev</button>
+              <span style={{ color: '#475569', fontSize: '0.85rem', fontWeight: 500 }}>
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(p => p + 1)}
+                style={{
+                  padding: '5px 12px',
+                  background: currentPage === totalPages ? '#e2e8f0' : '#ffffff',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '6px',
+                  cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                  color: currentPage === totalPages ? '#94a3b8' : '#334155',
+                  fontSize: '0.8rem',
+                  fontWeight: 600
+                }}
+              >Next ›</button>
+            </div>
+          )}
+          <span style={{ fontSize: '0.85rem', color: '#4a5568', fontWeight: 500 }}>
+            Showing {totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} items
+          </span>
+        </div>
+      </div>
+
       {/* ── Top Scrollbar ── */}
       <div className="double-scroll-top" ref={topScrollRef}>
         <div className="double-scroll-top-inner" />
@@ -942,13 +1019,13 @@ const UserManagement = () => {
             </tr>
           </thead>
           <tbody>
-            {users.length === 0 ? (
+            {paginatedUsers.length === 0 ? (
               <tr>
                 <td colSpan="10" style={{ textAlign: 'center', padding: '40px', color: '#888' }}>
                   No users found. Click "+ Add User" to create one.
                 </td>
               </tr>
-            ) : users.map((user) => (
+            ) : paginatedUsers.map(user => (
               <tr key={user.id}>
                 <td>
                   <div className="avatar-circle">{user.initial}</div>

@@ -156,13 +156,7 @@ const DeveloperDashboard = ({ hideToggle }) => {
   // Modals state
   const [showWorkLogModal, setShowWorkLogModal] = useState(false);
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
-  const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
-  const [showReplyModal, setShowReplyModal] = useState(false);
   const [showMeetingModal, setShowMeetingModal] = useState(null);
-
-  // Correction Reply State
-  const [selectedCorrection, setSelectedCorrection] = useState(null);
-  const [replyMessage, setReplyMessage] = useState('');
 
   // Form States
   const [newWorkLog, setNewWorkLog] = useState({
@@ -178,13 +172,6 @@ const DeveloperDashboard = ({ hideToggle }) => {
     project: 'DigiConvertor Platform',
     priority: 'High',
     dueDate: '2026-07-22'
-  });
-
-  const [newAnnouncement, setNewAnnouncement] = useState({
-    title: '',
-    category: 'Company Updates',
-    body: '',
-    isPinned: false
   });
 
   // Filter States
@@ -297,6 +284,7 @@ const DeveloperDashboard = ({ hideToggle }) => {
   useEffect(() => {
     loadDeveloperData();
   }, [loadDeveloperData]);
+
   // Format Helper for Seconds -> HH:MM:SS
   const formatTime = (totalSeconds) => {
     const hours = Math.floor(totalSeconds / 3600);
@@ -305,10 +293,9 @@ const DeveloperDashboard = ({ hideToggle }) => {
     return `${String(hours).padStart(2, '0')}h ${String(minutes).padStart(2, '0')}m ${String(seconds).padStart(2, '0')}s`;
   };
 
-  // Projects, Tasks, Announcements, Meetings, Updates, Corrections, Activities and WorkLogs states initialized to empty arrays
+  // Projects, Tasks, Meetings, Corrections and WorkLogs states initialized to empty arrays
   const [projects, setProjects] = useState([]);
   const [tasks, setTasks] = useState([]);
-  const [announcements, setAnnouncements] = useState([]);
   const [meetings, setMeetings] = useState([]);
   const [corrections, setCorrections] = useState([]);
   const [workLogs, setWorkLogs] = useState([]);
@@ -382,14 +369,6 @@ const DeveloperDashboard = ({ hideToggle }) => {
     }));
   };
 
-  const handleSendCorrectionReply = () => {
-    if (!selectedCorrection) return;
-    setCorrections(corrections.map(c => c.id === selectedCorrection.id ? { ...c, reply: replyMessage, status: 'In Review' } : c));
-    setShowReplyModal(false);
-    setSelectedCorrection(null);
-    setReplyMessage('');
-  };
-
   const handleCreateTask = (e) => {
     e.preventDefault();
     if (!newTask.title.trim()) return;
@@ -407,24 +386,6 @@ const DeveloperDashboard = ({ hideToggle }) => {
     setShowAddTaskModal(false);
   };
 
-  const handleCreateAnnouncement = (e) => {
-    e.preventDefault();
-    if (!newAnnouncement.title.trim()) return;
-    const item = {
-      id: Date.now(),
-      title: newAnnouncement.title,
-      category: newAnnouncement.category,
-      body: newAnnouncement.body,
-      date: 'Today',
-      author: 'Kumar (Developer)',
-      isRead: true,
-      pinned: newAnnouncement.isPinned
-    };
-    setAnnouncements([item, ...announcements]);
-    setNewAnnouncement({ title: '', category: 'Company Updates', body: '', isPinned: false });
-    setShowAnnouncementModal(false);
-  };
-
   const handleSaveWorkLog = (e) => {
     e.preventDefault();
     const item = {
@@ -439,8 +400,6 @@ const DeveloperDashboard = ({ hideToggle }) => {
     setWorkLogs([item, ...workLogs]);
     setShowWorkLogModal(false);
   };
-
-
 
   // Filtered Tasks — only assigned to current user; always show only Pending/Assigned tasks
   const currentUserName = user?.fullName || user?.userCode || '';
@@ -463,8 +422,6 @@ const DeveloperDashboard = ({ hideToggle }) => {
     if (taskFilter === 'Pending') return status === 'pending' || status === 'assigned';
     return true;
   });
-
-
 
   if (!isAuthorized) {
     return (
@@ -946,88 +903,7 @@ const DeveloperDashboard = ({ hideToggle }) => {
         </div>
       )}
 
-      {/* 3. POST ANNOUNCEMENT MODAL */}
-      {showAnnouncementModal && (
-        <div className="dev-modal-overlay">
-          <div className="dev-modal">
-            <div className="dev-modal-header">
-              <h3 className="dev-modal-title">📢 Post Announcement / Notice</h3>
-              <button className="dev-modal-close" onClick={() => setShowAnnouncementModal(false)}>✕</button>
-            </div>
-            <form onSubmit={handleCreateAnnouncement}>
-              <div className="dev-form-group">
-                <label>Title</label>
-                <input
-                  type="text"
-                  className="dev-input"
-                  placeholder="e.g. Database patch maintenance notice"
-                  value={newAnnouncement.title}
-                  onChange={e => setNewAnnouncement({ ...newAnnouncement, title: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="dev-form-group">
-                <label>Category</label>
-                <select
-                  className="dev-select"
-                  value={newAnnouncement.category}
-                  onChange={e => setNewAnnouncement({ ...newAnnouncement, category: e.target.value })}
-                >
-                  <option value="Company Updates">Company Updates</option>
-                  <option value="Release Notice">Release Notice</option>
-                  <option value="Holiday Notice">Holiday Notice</option>
-                </select>
-              </div>
-              <div className="dev-form-group">
-                <label>Message Content</label>
-                <textarea
-                  className="dev-textarea"
-                  placeholder="Describe the update or announcement details..."
-                  value={newAnnouncement.body}
-                  onChange={e => setNewAnnouncement({ ...newAnnouncement, body: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="dev-modal-actions">
-                <button type="button" className="dev-btn dev-btn-secondary" onClick={() => setShowAnnouncementModal(false)}>Cancel</button>
-                <button type="submit" className="dev-btn dev-btn-primary">Publish Announcement</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
-      {/* 4. CORRECTION REPLY MODAL */}
-      {showReplyModal && selectedCorrection && (
-        <div className="dev-modal-overlay">
-          <div className="dev-modal">
-            <div className="dev-modal-header">
-              <h3 className="dev-modal-title">💬 Reply to Team Lead Correction</h3>
-              <button className="dev-modal-close" onClick={() => setShowReplyModal(false)}>✕</button>
-            </div>
-            <div style={{ marginBottom: '1rem', background: 'rgba(255,255,255,0.03)', padding: '0.85rem', borderRadius: '8px' }}>
-              <div style={{ fontSize: '0.8rem', color: 'var(--dev-text-muted)' }}>Lead Feedback ({selectedCorrection.lead}):</div>
-              <div style={{ fontSize: '0.9rem', color: 'var(--dev-accent-amber)', marginTop: '0.2rem' }}>
-                "{selectedCorrection.leadComment}"
-              </div>
-            </div>
-            <div className="dev-form-group">
-              <label>Your Reply & Fix Details</label>
-              <textarea
-                className="dev-textarea"
-                placeholder="Explain the changes made or reply to team lead..."
-                value={replyMessage}
-                onChange={e => setReplyMessage(e.target.value)}
-                required
-              />
-            </div>
-            <div className="dev-modal-actions">
-              <button type="button" className="dev-btn dev-btn-secondary" onClick={() => setShowReplyModal(false)}>Cancel</button>
-              <button type="button" className="dev-btn dev-btn-primary" onClick={handleSendCorrectionReply}>Submit Reply</button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* 5. MEETING DETAILS MODAL */}
       {showMeetingModal && (

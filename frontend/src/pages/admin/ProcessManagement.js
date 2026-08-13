@@ -172,7 +172,7 @@ const ProcessManagement = () => {
   const hasPermission = (perm) => currentUser?.roles?.includes('Admin') || currentUser?.permissions?.includes(perm);
 
   // Pagination
-  const [perPage, setPerPage] = useState(25);
+  const [perPage, setPerPage] = useState(100);
   const [page, setPage] = useState(1);
 
   // ── Load processes ──────────────────────────────────────────
@@ -347,6 +347,60 @@ const ProcessManagement = () => {
           </h3>
         </div>
 
+        {/* Pagination header */}
+        <div className="pm-pagination" style={{ marginBottom: "12px" }}>
+          <div className="pm-per-page">
+            <span>Items per page:</span>
+            <select
+              value={perPage}
+              onChange={e => handlePerPage(Number(e.target.value))}
+            >
+              {ITEMS_PER_PAGE_OPTIONS.map(n => (
+                <option key={n} value={n}>{n}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="pm-page-info">
+            Showing {totalItems === 0 ? 0 : startIdx + 1} to{' '}
+            {Math.min(startIdx + perPage, totalItems)} of{' '}
+            {totalItems} items
+          </div>
+
+          {totalPages > 1 && (
+            <div className="pm-page-nav">
+              <button
+                className="pm-nav-btn"
+                disabled={page === 1}
+                onClick={() => setPage(p => p - 1)}
+              >
+                ‹
+              </button>
+
+              {Array.from(
+                { length: totalPages }, (_, i) => i + 1
+              ).map(n => (
+                <button
+                  key={n}
+                  className={`pm-nav-btn${page === n ? ' active-page' : ''
+                    }`}
+                  onClick={() => setPage(n)}
+                >
+                  {n}
+                </button>
+              ))}
+
+              <button
+                className="pm-nav-btn"
+                disabled={page === totalPages}
+                onClick={() => setPage(p => p + 1)}
+              >
+                ›
+              </button>
+            </div>
+          )}
+        </div>
+
         <div className="pm-table-wrapper">
           <table className="pm-table">
             <thead>
@@ -406,59 +460,6 @@ const ProcessManagement = () => {
           </table>
         </div>
 
-        {/* ── Pagination Footer ── */}
-        <div className="pm-pagination">
-          <div className="pm-per-page">
-            <span>Items per page:</span>
-            <select
-              value={perPage}
-              onChange={e => handlePerPage(Number(e.target.value))}
-            >
-              {ITEMS_PER_PAGE_OPTIONS.map(n => (
-                <option key={n} value={n}>{n}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="pm-page-info">
-            Showing {totalItems === 0 ? 0 : startIdx + 1} to{' '}
-            {Math.min(startIdx + perPage, totalItems)} of{' '}
-            {totalItems} items
-          </div>
-
-          {totalPages > 1 && (
-            <div className="pm-page-nav">
-              <button
-                className="pm-nav-btn"
-                disabled={page === 1}
-                onClick={() => setPage(p => p - 1)}
-              >
-                ‹
-              </button>
-
-              {Array.from(
-                { length: totalPages }, (_, i) => i + 1
-              ).map(n => (
-                <button
-                  key={n}
-                  className={`pm-nav-btn${page === n ? ' active-page' : ''
-                    }`}
-                  onClick={() => setPage(n)}
-                >
-                  {n}
-                </button>
-              ))}
-
-              <button
-                className="pm-nav-btn"
-                disabled={page === totalPages}
-                onClick={() => setPage(p => p + 1)}
-              >
-                ›
-              </button>
-            </div>
-          )}
-        </div>
       </div>
 
       {/* ── Modals ── */}

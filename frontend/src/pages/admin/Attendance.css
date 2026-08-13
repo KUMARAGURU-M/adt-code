@@ -1452,3 +1452,5 @@
   background: #cbd5e1;
   border-radius: 10px;
 }
+/* Sticky header overrides */
+.att-table th { position: sticky !important; top: 0 !important; z-index: 10 !important; background-color: #1e293b !important; color: #e2e8f0 !important; }

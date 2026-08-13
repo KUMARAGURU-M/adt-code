@@ -7,12 +7,16 @@ const STATUS_OPTIONS = [
   'FINISH', 'WIP', 'YTS', 'RTU', 'PENDING', 'HOLD', 'QUERY'
 ];
 
+const QC_STATUS_OPTIONS = [
+  'FINISH', 'WIP', 'YTS', 'RTU', 'UPLOADED', 'PENDING', 'HOLD', 'QUERY'
+];
+
 const REF_TYPES = ['BK-REF', 'CH-REF', 'BK/CH-REF', 'FN-REF', 'BK/FN-REF', 'CH/FN-REF', 'PG/FN-REF'];
 
 // ── Bulk Edit Modal (Production) ────────────────────────────────────────────
 const PROD_BULK_FIELDS = [
   { key: 'processStatus', label: 'Process Status', type: 'select', options: STATUS_OPTIONS },
-  { key: 'qcStatus', label: 'QC Status', type: 'select', options: STATUS_OPTIONS },
+  { key: 'qcStatus', label: 'QC Status', type: 'select', options: QC_STATUS_OPTIONS },
   { key: 'endDate', label: 'End Date', type: 'date' },
 ];
 
@@ -22,11 +26,21 @@ const BulkEditProductionModal = ({ selectedIds, selectedCount, jobs, onClose, on
   );
   const [saving, setSaving] = useState(false);
 
-  const toggleField = key =>
+  const toggleField = key => {
+    if (key === 'endDate' && (!fields.qcStatus.enabled || fields.qcStatus.value !== 'UPLOADED')) {
+      return;
+    }
     setFields(prev => ({ ...prev, [key]: { enabled: !prev[key].enabled, value: prev[key].enabled ? '' : prev[key].value } }));
+  };
 
   const setValue = (key, value) =>
-    setFields(prev => ({ ...prev, [key]: { ...prev[key], value } }));
+    setFields(prev => {
+      const next = { ...prev, [key]: { ...prev[key], value } };
+      if (key === 'qcStatus' && value !== 'UPLOADED') {
+        next.endDate = { enabled: false, value: '' };
+      }
+      return next;
+    });
 
   const activeFields = PROD_BULK_FIELDS.filter(f => fields[f.key].enabled);
 
@@ -75,20 +89,21 @@ const BulkEditProductionModal = ({ selectedIds, selectedCount, jobs, onClose, on
         <div className="prod-bulk-fields">
           {PROD_BULK_FIELDS.map(f => {
             const { enabled, value } = fields[f.key];
+            const isDisabledField = f.key === 'endDate' && (!fields.qcStatus.enabled || fields.qcStatus.value !== 'UPLOADED');
             return (
-              <div key={f.key} className={`prod-bulk-row${enabled ? ' active' : ''}`}>
+              <div key={f.key} className={`prod-bulk-row${enabled ? ' active' : ''}`} style={isDisabledField ? { opacity: 0.5, pointerEvents: 'none' } : {}}>
                 <label className="prod-bulk-toggle">
-                  <input type="checkbox" checked={enabled} onChange={() => toggleField(f.key)} />
+                  <input type="checkbox" checked={enabled} disabled={isDisabledField} onChange={() => toggleField(f.key)} />
                   <span className="prod-bulk-label">{f.label}</span>
                 </label>
                 <div className="prod-bulk-control">
                   {f.type === 'select' ? (
-                    <select value={value} disabled={!enabled} onChange={e => setValue(f.key, e.target.value)}>
+                    <select value={value} disabled={!enabled || isDisabledField} onChange={e => setValue(f.key, e.target.value)}>
                       <option value="">-- Select --</option>
                       {f.options.map(o => <option key={o} value={o}>{o}</option>)}
                     </select>
                   ) : (
-                    <input type="date" value={value} disabled={!enabled} onChange={e => setValue(f.key, e.target.value)} />
+                    <input type="date" value={value} disabled={!enabled || isDisabledField} onChange={e => setValue(f.key, e.target.value)} />
                   )}
                 </div>
               </div>
@@ -272,7 +287,7 @@ const Production = () => {
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [totalItems, setTotalItems] = useState(0);
-  const [pageSize, setPageSize] = useState(50);
+  const [pageSize, setPageSize] = useState(100);
 
   // Unsaved Edits State: { [jobId]: { processStatus, qcStatus, endDate } }
   const [edits, setEdits] = useState({});
@@ -420,12 +435,17 @@ const Production = () => {
         [field]: value
       };
 
+      if (field === 'qcStatus' && value !== 'UPLOADED') {
+        newEdits.endDate = '';
+      }
+
       // If the edited values match the original values, remove the edit key
       const currentProcessStatus = newEdits.hasOwnProperty('processStatus') ? newEdits.processStatus : (job.processStatus || 'PENDING');
       const currentQcStatus = newEdits.hasOwnProperty('qcStatus') ? newEdits.qcStatus : (job.qcStatus || 'PENDING');
       const currentEndDate = newEdits.hasOwnProperty('endDate') ? newEdits.endDate : (job.endDate || '');
       const currentEmployees = newEdits.hasOwnProperty('employees') ? newEdits.employees : (job.employees ? job.employees.join(', ') : '');
       const currentRefType = newEdits.hasOwnProperty('refType') ? newEdits.refType : (job.referenceType || '');
+      const currentQcEmployees = newEdits.hasOwnProperty('qcEmployees') ? newEdits.qcEmployees : (job.qcEmployees ? job.qcEmployees.join(' | ') : '');
 
       const matchesOriginal =
         currentProcessStatus === (job.processStatus || 'PENDING') &&
@@ -433,6 +453,7 @@ const Production = () => {
         currentEndDate === (job.endDate || '') &&
         (newEdits.hasOwnProperty('startMonth') ? (newEdits.startMonth || null) === (job.startMonth || null) : true) &&
         currentEmployees === (job.employees ? job.employees.join(', ') : '') &&
+        currentQcEmployees === (job.qcEmployees ? job.qcEmployees.join(' | ') : '') &&
         currentRefType === (job.referenceType || '');
 
       if (matchesOriginal) {
@@ -467,7 +488,10 @@ const Production = () => {
       startMonth: rowEdits.hasOwnProperty('startMonth') ? rowEdits.startMonth : job.startMonth,
       employees: rowEdits.hasOwnProperty('employees')
         ? rowEdits.employees.split(',').map(s => s.trim()).filter(Boolean)
-        : (job.employees || [])
+        : (job.employees || []),
+      qcEmployees: rowEdits.hasOwnProperty('qcEmployees')
+        ? rowEdits.qcEmployees.split(/[,|]/).map(s => s.trim()).filter(Boolean)
+        : (job.qcEmployees || []),
     };
 
     setSavingRows(prev => ({ ...prev, [jobId]: true }));
@@ -671,7 +695,7 @@ const Production = () => {
               onChange={e => setFilters(prev => ({ ...prev, qcStatus: e.target.value }))}
             >
               <option value="">All QC Status</option>
-              {STATUS_OPTIONS.map(opt => (
+              {QC_STATUS_OPTIONS.map(opt => (
                 <option key={opt} value={opt}>{opt}</option>
               ))}
             </select>
@@ -718,6 +742,52 @@ const Production = () => {
           </div>
         </div>
       </form>
+      {/* Pagination header */}
+      <div className="table-pagination-footer" style={{ borderBottom: '1px solid #e2e8f0', borderTop: 'none', padding: '10px 14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <label style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>Items per page:</label>
+          <select
+            value={pageSize}
+            onChange={e => {
+              const newSize = Number(e.target.value);
+              setPageSize(newSize);
+              loadProductionJobs(0, newSize);
+            }}
+            style={{
+              padding: '4px 8px',
+              border: '1px solid #cbd5e1',
+              borderRadius: '6px',
+              outline: 'none',
+              fontSize: '0.8rem',
+              backgroundColor: '#ffffff',
+              color: '#334155'
+            }}
+          >
+            {[10, 25, 50, 100].map(n => (
+              <option key={n} value={n}>{n}</option>
+            ))}
+          </select>
+        </div>
+        <span className="pagination-info">
+          Showing page <strong>{page + 1}</strong> of <strong>{totalPages || 1}</strong> ({totalItems} items)
+        </span>
+        <div className="pagination-controls">
+          <button
+            disabled={page === 0 || loading}
+            onClick={() => loadProductionJobs(page - 1)}
+            className="btn-page"
+          >
+            ◀ Previous
+          </button>
+          <button
+            disabled={page >= totalPages - 1 || loading}
+            onClick={() => loadProductionJobs(page + 1)}
+            className="btn-page"
+          >
+            Next ▶
+          </button>
+        </div>
+      </div>
 
       {/* Grid view */}
       <div className="production-table-card">
@@ -742,12 +812,8 @@ const Production = () => {
         ) : (
           <>
             {/* Bulk toolbar */}
-            <div className="prod-table-topbar">
-              <div style={{ fontSize: '0.82rem', color: '#64748b' }}>
-                Showing {jobs.length} of {totalItems} records
-                {totalPages > 1 && ` (page ${page + 1} of ${totalPages})`}
-              </div>
-              {selectedIds.size > 0 && (
+            {selectedIds.size > 0 && (
+              <div className="prod-table-topbar">
                 <div className="prod-bulk-toolbar">
                   <span className="prod-bulk-count">✅ {selectedIds.size} selected</span>
                   <button className="prod-bulk-edit-btn" onClick={() => setShowBulkEdit(true)}>
@@ -779,13 +845,13 @@ const Production = () => {
                     ✕ Deselect All
                   </button>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
             <div className="double-scroll-top" ref={topScrollRef}>
               <div className="double-scroll-top-inner" />
             </div>
-            <div className="table-wrapper" ref={bottomScrollRef}>
+            <div className="table-wrapper" ref={bottomScrollRef} style={{ flex: 1, overflowY: 'auto' }}>
               <table className="production-table">
                 <thead>
                   <tr>
@@ -813,7 +879,8 @@ const Production = () => {
                     <th style={{ minWidth: '180px' }}>Employees Assigned</th>
                     <th style={{ minWidth: '130px' }}>Commenced Date</th>
                     <th style={{ minWidth: '130px' }}>Process Status</th>
-                    <th style={{ minWidth: '130px' }}>QC Status</th>
+                    <th style={{ minWidth: '180px' }}>QC / Valid Employee</th>
+                    <th style={{ minWidth: '150px' }}>QC Status</th>
                     <th>End Date</th>
                     <th>No. Day</th>
                     <th className="actions-col">Action</th>
@@ -844,6 +911,10 @@ const Production = () => {
                     const currentEmployees = rowEdits.hasOwnProperty('employees')
                       ? rowEdits.employees
                       : (job.employees ? job.employees.join(' | ') : '');
+
+                    const currentQcEmployees = rowEdits.hasOwnProperty('qcEmployees')
+                      ? rowEdits.qcEmployees
+                      : (job.qcEmployees ? job.qcEmployees.join(' | ') : '');
 
                     return (
                       <tr key={job.id} className={`${isModified ? 'modified-row' : ''} ${selectedIds.has(job.id) ? 'prod-row-selected' : ''}`}>
@@ -955,6 +1026,18 @@ const Production = () => {
                             ))}
                           </select>
                         </td>
+                        <td className="employees-col">
+                          <div className={`employee-input-wrapper${isSaving ? ' is-disabled' : ''}`}>
+                            <input
+                              type="text"
+                              className="inline-employee-input"
+                              value={currentQcEmployees}
+                              onChange={e => handleCellChange(job.id, 'qcEmployees', e.target.value)}
+                              disabled={isSaving}
+                              placeholder="QC employee names..."
+                            />
+                          </div>
+                        </td>
                         <td>
                           <select
                             className={`inline-select ${getQcStatusClass(currentQcStatus)}`}
@@ -962,7 +1045,7 @@ const Production = () => {
                             onChange={e => handleCellChange(job.id, 'qcStatus', e.target.value)}
                             disabled={isSaving}
                           >
-                            {STATUS_OPTIONS.map(opt => (
+                            {QC_STATUS_OPTIONS.map(opt => (
                               <option key={opt} value={opt}>{opt}</option>
                             ))}
                           </select>
@@ -973,7 +1056,7 @@ const Production = () => {
                             className="inline-date-input"
                             value={currentEndDate}
                             onChange={e => handleCellChange(job.id, 'endDate', e.target.value)}
-                            disabled={isSaving}
+                            disabled={isSaving || currentQcStatus !== 'UPLOADED'}
                           />
                         </td>
                         <td style={{ fontWeight: 'bold', color: '#475569' }}>
@@ -1002,52 +1085,6 @@ const Production = () => {
               </table>
             </div>
 
-            {/* Pagination footer */}
-            <div className="table-pagination-footer">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <label style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>Items per page:</label>
-                <select
-                  value={pageSize}
-                  onChange={e => {
-                    const newSize = Number(e.target.value);
-                    setPageSize(newSize);
-                    loadProductionJobs(0, newSize);
-                  }}
-                  style={{
-                    padding: '4px 8px',
-                    border: '1px solid #cbd5e1',
-                    borderRadius: '6px',
-                    outline: 'none',
-                    fontSize: '0.8rem',
-                    backgroundColor: '#ffffff',
-                    color: '#334155'
-                  }}
-                >
-                  {[10, 25, 50, 100].map(n => (
-                    <option key={n} value={n}>{n}</option>
-                  ))}
-                </select>
-              </div>
-              <span className="pagination-info">
-                Showing page <strong>{page + 1}</strong> of <strong>{totalPages || 1}</strong> ({totalItems} items)
-              </span>
-              <div className="pagination-controls">
-                <button
-                  disabled={page === 0 || loading}
-                  onClick={() => loadProductionJobs(page - 1)}
-                  className="btn-page"
-                >
-                  ◀ Previous
-                </button>
-                <button
-                  disabled={page >= totalPages - 1 || loading}
-                  onClick={() => loadProductionJobs(page + 1)}
-                  className="btn-page"
-                >
-                  Next ▶
-                </button>
-              </div>
-            </div>
           </>
         )}
       </div>

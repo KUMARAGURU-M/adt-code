@@ -252,7 +252,7 @@ public class HourlyGraphService {
             // Applicable only for non-privileged users.
             if (!canEditOthers) {
                 // Cannot update logs for past/future days
-                if (!date.equals(LocalDate.now())) {
+                if (!date.equals(LocalDate.now(java.time.ZoneId.of("Asia/Kolkata")))) {
                     throw new BadRequestException("You can only update hourly logs for the current date.");
                 }
 
@@ -399,6 +399,7 @@ public class HourlyGraphService {
         if (r.contains("employee")) return 4;
         return 5;
     }
+
 
 
     private String ordinal(int n) {

@@ -12,6 +12,7 @@ const ALL_PAGES = [
   { name: 'DIGICONVERTOR', icon: '🔄', permCode: 'digiconvertor.view' },
   { name: 'ATTENDANCE', icon: '📅', permCode: 'attendance.view' },
   { name: 'PROJECT', icon: '📁', permCode: 'projects.view' },
+  { name: 'TARGETS', icon: '🎯', permCode: 'monthly_targets.view' },
   { name: 'BOOK/JOB', icon: '📖', permCode: 'jobs.view' },
   { name: 'PRODUCTION', icon: '🏭', permCode: 'production.view' },
   { name: 'TASK', icon: '✅', permCode: 'tasks.view' },

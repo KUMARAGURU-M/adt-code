@@ -82,15 +82,15 @@ public class TaskController {
         return ResponseEntity.ok(ApiResponse.success("Tasks retrieved", tasks));
     }
 
-    // POST /tasks - Create task
+    // POST /tasks - Create task(s) — one per selected process
     @PostMapping
     @PreAuthorize("hasAnyRole('Admin','Manager','Team Leader') or hasAuthority('tasks.create')")
-    public ResponseEntity<ApiResponse<TaskResponse>> createTask(
+    public ResponseEntity<ApiResponse<List<TaskResponse>>> createTask(
             @RequestBody CreateTaskRequest request) {
-        TaskResponse created = taskService.createTask(request);
+        List<TaskResponse> created = taskService.createTask(request);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Task created", created));
+                .body(ApiResponse.success("Task(s) created", created));
     }
 
     // PUT /tasks/{id} - Update task

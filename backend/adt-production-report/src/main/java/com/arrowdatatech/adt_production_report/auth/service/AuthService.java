@@ -352,6 +352,7 @@ public class AuthService {
     }
 
 
+
     private void ensureAttendanceEmployeeExists(User user) {
         try {
             AttendanceEmployee emp = attendanceEmployeeRepository.findByUserId(user.getId())

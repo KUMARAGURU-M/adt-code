@@ -1267,7 +1267,7 @@ const BooksJobs = () => {
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [totalItems, setTotalItems] = useState(0);
-  const [pageSize, setPageSize] = useState(50);
+  const [pageSize, setPageSize] = useState(100);
 
   // ── Load projects for dropdowns ─────────────────────────────
   const loadProjects = useCallback(async () => {
@@ -1790,257 +1790,243 @@ const BooksJobs = () => {
         </div>
       </div>
 
-      {/* ── Table ── */}
-      {loading ? (
-        <div style={{ padding: '40px', textAlign: 'center', color: '#888' }}>
-          Loading jobs...
-        </div>
-      ) : error ? (
-        <div style={{ padding: '40px', textAlign: 'center', color: 'red' }}>
-          {error}
-        </div>
-      ) : (
-        <div className="bj-table-container">
-          {/* Result count + Bulk toolbar */}
-          <div className="bj-table-topbar">
-            <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>
-              Showing {rows.length} of {totalItems} jobs
-              {totalPages > 1 && ` (page ${page + 1} of ${totalPages})`}
+      <div className="bj-results-section">
+        {/* ── Pagination ── */}
+        {totalItems > 0 && (
+          <div className="bj-pagination">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <label style={{ fontSize: '0.85rem', color: '#4a5568' }}>Items per page:</label>
+              <select
+                value={pageSize}
+                onChange={e => {
+                  const newSize = Number(e.target.value);
+                  setPageSize(newSize);
+                  loadJobs(0, newSize);
+                }}
+              >
+                {[10, 25, 50, 100].map(n => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
+              <span style={{ fontSize: '0.85rem', color: '#4a5568', marginLeft: '12px', fontWeight: 500 }}>
+                Showing {page * pageSize + 1} to {Math.min((page + 1) * pageSize, totalItems)} of {totalItems} books
+              </span>
             </div>
-            {selectedIds.size > 0 && (
-              <div className="bj-bulk-toolbar">
-                <span className="bj-bulk-count">
-                  ✅ {selectedIds.size} selected
+
+            {totalPages > 1 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button
+                  className="bj-search-btn"
+                  disabled={page === 0}
+                  onClick={() => loadJobs(page - 1)}
+                  style={{ padding: '6px 14px' }}
+                >‹ Prev</button>
+                <span style={{ padding: '6px 12px', color: '#666', fontSize: '0.85rem' }}>
+                  Page {page + 1} of {totalPages}
                 </span>
                 <button
-                  className="bj-bulk-edit-trigger"
-                  onClick={() => setShowBulkEdit(true)}
-                >
-                  ✏️ Bulk Edit
-                </button>
-                {canDelete && (
-                  <button
-                    className="bj-bulk-delete-trigger"
-                    onClick={() => open('bulk_delete')}
-                    style={{
-                      background: '#ef4444',
-                      color: 'white',
-                      border: 'none',
-                      padding: '6px 12px',
-                      borderRadius: '6px',
-                      fontSize: '0.85rem',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      transition: 'background 0.2s',
-                    }}
-                    onMouseEnter={e => e.target.style.background = '#dc2626'}
-                    onMouseLeave={e => e.target.style.background = '#ef4444'}
-                  >
-                    🗑️ Bulk Delete
-                  </button>
-                )}
-                <button
-                  className="bj-bulk-clear-btn"
-                  onClick={clearSelection}
-                >
-                  ✕ Deselect All
-                </button>
+                  className="bj-search-btn"
+                  disabled={page >= totalPages - 1}
+                  onClick={() => loadJobs(page + 1)}
+                  style={{ padding: '6px 14px' }}
+                >Next ›</button>
               </div>
             )}
           </div>
+        )}
 
-          <div className="double-scroll-top" ref={topScrollRef}>
-            <div className="double-scroll-top-inner" />
+        {/* ── Table ── */}
+        {loading ? (
+          <div style={{ padding: '40px', textAlign: 'center', color: '#888' }}>
+            Loading jobs...
           </div>
-          <div className="bj-table-wrapper" ref={bottomScrollRef}>
-            <table className="bj-table">
-              <thead>
-                <tr>
-                  <th className="bj-th-check">
-                    <input
-                      type="checkbox"
-                      className="bj-row-checkbox"
-                      checked={rows.length > 0 && selectedIds.size === rows.length}
-                      onChange={toggleAll}
-                      title="Select all on this page"
-                    />
-                  </th>
-                  <th>Client</th>
-                  <th>Project</th>
-                  <th>Task Name</th>
-                  <th>Receive Date</th>
-                  <th>Job ID</th>
-                  <th>ISBN</th>
-                  <th>Batch</th>
-                  <th>Language</th>
-                  <th>Title / Article Name</th>
-                  <th>Page</th>
-                  <th>PDF Type</th>
-                  <th>Complexity</th>
-                  <th>Ref Type</th>
-                  <th>Status</th>
-                  <th>File Status</th>
-                  <th>Upload Date</th>
-                  <th>Billing Status</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.length === 0 ? (
+        ) : error ? (
+          <div style={{ padding: '40px', textAlign: 'center', color: 'red' }}>
+            {error}
+          </div>
+        ) : (
+          <div className="bj-table-container">
+            {/* Result count + Bulk toolbar */}
+            {selectedIds.size > 0 && (
+              <div className="bj-table-topbar">
+                <div className="bj-bulk-toolbar">
+                  <span className="bj-bulk-count">
+                    ✅ {selectedIds.size} selected
+                  </span>
+                  <button
+                    className="bj-bulk-edit-trigger"
+                    onClick={() => setShowBulkEdit(true)}
+                  >
+                    ✏️ Bulk Edit
+                  </button>
+                  {canDelete && (
+                    <button
+                      className="bj-bulk-delete-trigger"
+                      onClick={() => open('bulk_delete')}
+                      style={{
+                        background: '#ef4444',
+                        color: 'white',
+                        border: 'none',
+                        padding: '6px 12px',
+                        borderRadius: '6px',
+                        fontSize: '0.85rem',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        transition: 'background 0.2s',
+                      }}
+                      onMouseEnter={e => e.target.style.background = '#dc2626'}
+                      onMouseLeave={e => e.target.style.background = '#ef4444'}
+                    >
+                      🗑️ Bulk Delete
+                    </button>
+                  )}
+                  <button
+                    className="bj-bulk-clear-btn"
+                    onClick={clearSelection}
+                  >
+                    ✕ Deselect All
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="double-scroll-top" ref={topScrollRef}>
+              <div className="double-scroll-top-inner" />
+            </div>
+            <div className="bj-table-wrapper" ref={bottomScrollRef}>
+              <table className="bj-table">
+                <thead>
                   <tr>
-                    <td colSpan="20" className="bj-empty">
-                      No records found. Try different filters or add a job.
-                    </td>
-                  </tr>
-                ) : rows.map(job => (
-                  <tr key={job.id} className={selectedIds.has(job.id) ? 'bj-row-selected' : ''}>
-                    <td className="bj-td-check">
+                    <th className="bj-th-check">
                       <input
                         type="checkbox"
                         className="bj-row-checkbox"
-                        checked={selectedIds.has(job.id)}
-                        onChange={() => toggleRow(job.id)}
+                        checked={rows.length > 0 && selectedIds.size === rows.length}
+                        onChange={toggleAll}
+                        title="Select all on this page"
                       />
-                    </td>
-                    <td>
-                      {job.clientName ? (
-                        <span className="client-badge" style={{ background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', padding: '2px 6px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: 700 }}>
-                          {job.clientName}
-                        </span>
-                      ) : <span className="cell-dash">-</span>}
-                    </td>
-                    <td>
-                      {job.project
-                        ? <span className={getProjectBadgeClass(job.project)}>{job.project}</span>
-                        : <span className="cell-dash">-</span>}
-                    </td>
-                    <td>
-                      {job.workflowName ? (
-                        <span className="badge badge--workflow" style={{ background: '#e0f2fe', color: '#0369a1', border: '1px solid #bae6fd', padding: '2px 6px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: 700 }}>
-                          {job.workflowName}
-                        </span>
-                      ) : <span className="cell-dash">-</span>}
-                    </td>
-                    <td className="td-date">{fmt(job.receiveDate)}</td>
-                    <td><strong>{job.jobId}</strong></td>
-                    <td>
-                      {job.isbn
-                        ? <span className="bj-isbn-link">{job.isbn}</span>
-                        : <span className="cell-dash">-</span>}
-                    </td>
-                    <td>
-                      {job.batch || <span className="cell-dash">-</span>}
-                    </td>
-                    <td>
-                      {job.language ? <strong>{job.language}</strong> : <span className="cell-dash">-</span>}
-                    </td>
-                    <td className="td-title col-left">
-                      {job.title || <span className="cell-dash">-</span>}
-                    </td>
-                    <td className="td-center">
-                      {job.pageCount || <span className="cell-dash">-</span>}
-                    </td>
-                    <td>
-                      {job.pdfType || <span className="cell-dash">-</span>}
-                    </td>
-                    <td><ComplexityBadge value={job.complexity} /></td>
-                    <td className="td-ref">
-                      {job.refType
-                        ? <span className="ref-tag">{job.refType}</span>
-                        : <span className="cell-dash">-</span>}
-                    </td>
-                    <td>
-                      <StatusPill value={job.status} type="status" />
-                    </td>
-                    <td>
-                      <StatusPill value={job.fileStatus} type="file" />
-                    </td>
-                    <td className="td-date">{fmt(job.uploadDate)}</td>
-                    <td>
-                      {job.billing
-                        ? <span className={`billing-badge bb-${job.billing.toLowerCase()}`}>
-                          {job.billing}
-                        </span>
-                        : <span className="cell-pink">-</span>}
-                    </td>
-                    <td>
-                      <div className="bj-action-btns">
-                        {canUpdate && (
-                          <button className="bj-act-edit" title="Edit"
-                            onClick={() => open('edit', job)}>✏️</button>
-                        )}
-                        {canDelete && (
-                          <button className="bj-act-del" title="Delete"
-                            onClick={() => open('delete', job)}>🗑️</button>
-                        )}
-                      </div>
-                    </td>
+                    </th>
+                    <th>Client</th>
+                    <th>Project</th>
+                    <th>Task Name</th>
+                    <th>Receive Date</th>
+                    <th>Job ID</th>
+                    <th>ISBN</th>
+                    <th>Batch</th>
+                    <th>Language</th>
+                    <th>Title / Article Name</th>
+                    <th>Page</th>
+                    <th>PDF Type</th>
+                    <th>Complexity</th>
+                    <th>Ref Type</th>
+                    <th>Status</th>
+                    <th>File Status</th>
+                    <th>Upload Date</th>
+                    <th>Billing Status</th>
+                    <th>Action</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          {totalItems > 0 && (
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '16px',
-              borderTop: '1px solid #e2e8f0',
-              flexWrap: 'wrap',
-              gap: '12px'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <label style={{ fontSize: '0.85rem', color: '#4a5568' }}>Items per page:</label>
-                <select
-                  value={pageSize}
-                  onChange={e => {
-                    const newSize = Number(e.target.value);
-                    setPageSize(newSize);
-                    loadJobs(0, newSize);
-                  }}
-                  style={{
-                    padding: '4px 8px',
-                    border: '1px solid #cbd5e1',
-                    borderRadius: '4px',
-                    outline: 'none',
-                    fontSize: '0.85rem'
-                  }}
-                >
-                  {[10, 25, 50, 100].map(n => (
-                    <option key={n} value={n}>{n}</option>
+                </thead>
+                <tbody>
+                  {rows.length === 0 ? (
+                    <tr>
+                      <td colSpan="20" className="bj-empty">
+                        No records found. Try different filters or add a job.
+                      </td>
+                    </tr>
+                  ) : rows.map(job => (
+                    <tr key={job.id} className={selectedIds.has(job.id) ? 'bj-row-selected' : ''}>
+                      <td className="bj-td-check">
+                        <input
+                          type="checkbox"
+                          className="bj-row-checkbox"
+                          checked={selectedIds.has(job.id)}
+                          onChange={() => toggleRow(job.id)}
+                        />
+                      </td>
+                      <td>
+                        {job.clientName ? (
+                          <span className="client-badge" style={{ background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', padding: '2px 6px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: 700 }}>
+                            {job.clientName}
+                          </span>
+                        ) : <span className="cell-dash">-</span>}
+                      </td>
+                      <td>
+                        {job.project
+                          ? <span className={getProjectBadgeClass(job.project)}>{job.project}</span>
+                          : <span className="cell-dash">-</span>}
+                      </td>
+                      <td>
+                        {job.workflowName ? (
+                          <span className="badge badge--workflow" style={{ background: '#e0f2fe', color: '#0369a1', border: '1px solid #bae6fd', padding: '2px 6px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: 700 }}>
+                            {job.workflowName}
+                          </span>
+                        ) : <span className="cell-dash">-</span>}
+                      </td>
+                      <td className="td-date">{fmt(job.receiveDate)}</td>
+                      <td><strong>{job.jobId}</strong></td>
+                      <td>
+                        {job.isbn
+                          ? <span className="bj-isbn-link">{job.isbn}</span>
+                          : <span className="cell-dash">-</span>}
+                      </td>
+                      <td>
+                        {job.batch || <span className="cell-dash">-</span>}
+                      </td>
+                      <td>
+                        {job.language ? <strong>{job.language}</strong> : <span className="cell-dash">-</span>}
+                      </td>
+                      <td className="td-title col-left">
+                        {job.title || <span className="cell-dash">-</span>}
+                      </td>
+                      <td className="td-center">
+                        {job.pageCount || <span className="cell-dash">-</span>}
+                      </td>
+                      <td>
+                        {job.pdfType || <span className="cell-dash">-</span>}
+                      </td>
+                      <td><ComplexityBadge value={job.complexity} /></td>
+                      <td className="td-ref">
+                        {job.refType
+                          ? <span className="ref-tag">{job.refType}</span>
+                          : <span className="cell-dash">-</span>}
+                      </td>
+                      <td>
+                        <StatusPill value={job.status} type="status" />
+                      </td>
+                      <td>
+                        <StatusPill value={job.fileStatus} type="file" />
+                      </td>
+                      <td className="td-date">{fmt(job.uploadDate)}</td>
+                      <td>
+                        {job.billing
+                          ? <span className={`billing-badge bb-${job.billing.toLowerCase()}`}>
+                            {job.billing}
+                          </span>
+                          : <span className="cell-pink">-</span>}
+                      </td>
+                      <td>
+                        <div className="bj-action-btns">
+                          {canUpdate && (
+                            <button className="bj-act-edit" title="Edit"
+                              onClick={() => open('edit', job)}>✏️</button>
+                          )}
+                          {canDelete && (
+                            <button className="bj-act-del" title="Delete"
+                              onClick={() => open('delete', job)}>🗑️</button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
                   ))}
-                </select>
-              </div>
-
-              {totalPages > 1 && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <button
-                    className="bj-search-btn"
-                    disabled={page === 0}
-                    onClick={() => loadJobs(page - 1)}
-                    style={{ padding: '6px 14px' }}
-                  >‹ Prev</button>
-                  <span style={{ padding: '6px 12px', color: '#666', fontSize: '0.85rem' }}>
-                    Page {page + 1} of {totalPages}
-                  </span>
-                  <button
-                    className="bj-search-btn"
-                    disabled={page >= totalPages - 1}
-                    onClick={() => loadJobs(page + 1)}
-                    style={{ padding: '6px 14px' }}
-                  >Next ›</button>
-                </div>
-              )}
+                </tbody>
+              </table>
             </div>
-          )}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
 
       {/* ── Modals ── */}
       {modal?.type === 'add' && (

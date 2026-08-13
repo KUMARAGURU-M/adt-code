@@ -125,7 +125,7 @@ public class JobService {
                     .min(LocalDate::compareTo)
                     .orElse(null);
 
-            return toResponse(job, getCombinedEmployees(job, employees), productionStartDate, processes);
+            return toResponse(job, getCombinedEmployees(job, employees), null, productionStartDate, processes);
         });
     }
 
@@ -155,7 +155,7 @@ public class JobService {
                 .filter(Objects::nonNull)
                 .min(LocalDate::compareTo)
                 .orElse(null);
-        return toResponse(job, getCombinedEmployees(job, employees), productionStartDate, processes);
+        return toResponse(job, getCombinedEmployees(job, employees), null, productionStartDate, processes);
     }
 
     // ─────────────────────────────────────────────
@@ -166,7 +166,7 @@ public class JobService {
         List<String> processes = taskRepository.findProcessNamesByProjectId(projectId);
         return jobRepository.findByProjectIdOrderByReceiveDateDesc(projectId)
                 .stream()
-                .map(job -> toResponse(job, null, null, processes))
+                .map(job -> toResponse(job, null, null, null, processes))
                 .collect(Collectors.toList());
     }
 
@@ -178,7 +178,7 @@ public class JobService {
         List<String> processes = taskRepository.findProcessNamesByProjectId(projectId);
         return jobRepository.findAvailableJobsForTask(projectId)
                 .stream()
-                .map(job -> toResponse(job, null, null, processes))
+                .map(job -> toResponse(job, null, null, null, processes))
                 .collect(Collectors.toList());
     }
 
@@ -247,7 +247,7 @@ public class JobService {
         job = jobRepository.save(job);
         logAction("CREATE", job);
         List<String> processes = taskRepository.findProcessNamesByProjectId(project.getId());
-        return toResponse(job, null, null, processes);
+        return toResponse(job, null, null, null, processes);
     }
 
     // ─────────────────────────────────────────────
@@ -318,7 +318,7 @@ public class JobService {
 
         logAction("UPDATE", job);
         List<String> processes = taskRepository.findProcessNamesByProjectId(job.getProject().getId());
-        return toResponse(job, null, null, processes);
+        return toResponse(job, null, null, null, processes);
     }
 
     // ─────────────────────────────────────────────
@@ -715,6 +715,20 @@ public class JobService {
                     .distinct()
                     .collect(Collectors.toList());
 
+            // Get employees assigned to tasks where process name matches QC or Valid
+            List<String> qcTaskEmployees = jobAssignments.stream()
+                    .filter(tja -> tja.getTask() != null
+                            && tja.getTask().getProcess() != null
+                            && tja.getTask().getProcess().getName() != null
+                            && tja.getTask().getProcess().getName().matches("(?i).*(qc|valid).*"))
+                    .flatMap(tja -> tja.getTask().getEmployeeAssignments().stream())
+                    .filter(tea -> tea != null && tea.getUser() != null)
+                    .map(tea -> tea.getUser().getEmployeeProfile() != null
+                            ? tea.getUser().getEmployeeProfile().getFullName()
+                            : tea.getUser().getUserCode())
+                    .distinct()
+                    .collect(Collectors.toList());
+
             // Earliest assigned date of tasks
             LocalDate productionStartDate = jobAssignments.stream()
                     .map(TaskJobAssignment::getTask)
@@ -727,7 +741,7 @@ public class JobService {
                     job.getProject() != null ? job.getProject().getId() : null,
                     List.of());
 
-            return toResponse(job, getCombinedEmployees(job, employees), productionStartDate, processes);
+            return toResponse(job, getCombinedEmployees(job, employees), getCombinedQcEmployees(job, qcTaskEmployees), productionStartDate, processes);
         });
     }
 
@@ -749,6 +763,21 @@ public class JobService {
         // Always copy, since startMonth can be set to null or cleared
         job.setStartMonth(request.getStartMonth());
 
+        if ("UPLOADED".equalsIgnoreCase(job.getQcStatus())) {
+            job.setFileStatus("UPLOADED");
+            if (job.getEndDate() != null) {
+                job.setUploadDate(job.getEndDate());
+            } else if (job.getUploadDate() == null) {
+                job.setUploadDate(LocalDate.now());
+            }
+        } else {
+            job.setEndDate(null);
+            if ("UPLOADED".equalsIgnoreCase(job.getFileStatus())) {
+                job.setFileStatus(null);
+                job.setUploadDate(null);
+            }
+        }
+
         if (request.getEmployees() != null) {
             String joined = request.getEmployees().stream()
                     .map(String::trim)
@@ -756,6 +785,15 @@ public class JobService {
                     .distinct()
                     .collect(Collectors.joining(","));
             job.setEmployeeNames(joined.isEmpty() ? null : joined);
+        }
+
+        if (request.getQcEmployees() != null) {
+            String joined = request.getQcEmployees().stream()
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .distinct()
+                    .collect(Collectors.joining(","));
+            job.setQcEmployeeNames(joined.isEmpty() ? null : joined);
         }
 
         job.setUpdatedAt(OffsetDateTime.now());
@@ -776,6 +814,19 @@ public class JobService {
                 .distinct()
                 .collect(Collectors.toList());
 
+        List<String> qcTaskEmployees = assignments.stream()
+                .filter(tja -> tja.getTask() != null
+                        && tja.getTask().getProcess() != null
+                        && tja.getTask().getProcess().getName() != null
+                        && tja.getTask().getProcess().getName().matches("(?i).*(qc|valid).*"))
+                .flatMap(tja -> tja.getTask().getEmployeeAssignments().stream())
+                .filter(tea -> tea != null && tea.getUser() != null)
+                .map(tea -> tea.getUser().getEmployeeProfile() != null
+                        ? tea.getUser().getEmployeeProfile().getFullName()
+                        : tea.getUser().getUserCode())
+                .distinct()
+                .collect(Collectors.toList());
+
         LocalDate productionStartDate = assignments.stream()
                 .map(TaskJobAssignment::getTask)
                 .map(Task::getAssignedDate)
@@ -788,7 +839,7 @@ public class JobService {
             processes = taskRepository.findProcessNamesByProjectId(job.getProject().getId());
         }
 
-        return toResponse(job, getCombinedEmployees(job, employees), productionStartDate, processes);
+        return toResponse(job, getCombinedEmployees(job, employees), getCombinedQcEmployees(job, qcTaskEmployees), productionStartDate, processes);
     }
 
     // ─────────────────────────────────────────────
@@ -947,8 +998,24 @@ public class JobService {
         return new ArrayList<>(allEmps);
     }
 
-    private JobResponse toResponse(Job job, List<String> employees, LocalDate productionStartDate,
-            List<String> processes) {
+    private List<String> getCombinedQcEmployees(Job job, List<String> qcTaskEmployees) {
+        Set<String> allQcEmps = new LinkedHashSet<>();
+        if (qcTaskEmployees != null) {
+            allQcEmps.addAll(qcTaskEmployees);
+        }
+        if (job.getQcEmployeeNames() != null && !job.getQcEmployeeNames().isBlank()) {
+            Arrays.stream(job.getQcEmployeeNames().split("[,|]"))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .forEach(allQcEmps::add);
+        }
+        return new ArrayList<>(allQcEmps);
+    }
+
+
+
+    private JobResponse toResponse(Job job, List<String> employees, List<String> qcEmployees,
+            LocalDate productionStartDate, List<String> processes) {
         return JobResponse.builder()
                 .id(job.getId())
                 .projectId(job.getProject() != null
@@ -981,6 +1048,7 @@ public class JobService {
                 .qcStatus(job.getQcStatus())
                 .endDate(job.getEndDate())
                 .employees(employees)
+                .qcEmployees(qcEmployees)
                 .productionStartDate(productionStartDate)
                 .processes(processes)
                 .language(job.getLanguage())

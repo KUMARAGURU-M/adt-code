@@ -139,11 +139,13 @@ const DevWorkwise = ({ tasks, setTasks, isCheckedIn, checkInTime, isOvertimeActi
   const currentUser = getCurrentUser();
   const currentUserName = currentUser?.fullName || currentUser?.userCode || '';
 
-  const myAssignedTasks = useMemo(() => (tasks || []).filter(t => {
-    if (t.completed || t.status === 'Completed') return false;
-    if (!currentUserName) return true;
-    return (t.assignedTo || '').toLowerCase() === currentUserName.toLowerCase();
-  }), [tasks, currentUserName]);
+  const myAssignedTasks = useMemo(() => {
+    return (tasks || []).filter(t => {
+      if (t.completed || t.status === 'Completed') return false;
+      if (!currentUserName) return true;
+      return (t.assignedTo || '').toLowerCase() === currentUserName.toLowerCase();
+    });
+  }, [tasks, currentUserName]);
 
   const [selTask, setSelTask] = useState('');
   const [selectedTask, setSelectedTask] = useState(null);

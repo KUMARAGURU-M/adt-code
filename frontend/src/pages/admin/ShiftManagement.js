@@ -323,7 +323,7 @@ const ShiftManagement = () => {
   const [assigning, setAssigning] = useState(null);
 
   // Pagination
-  const [perPage, setPerPage] = useState(25);
+  const [perPage, setPerPage] = useState(100);
   const [page, setPage] = useState(1);
 
   // ── Load data ──────────────────────────────────────────────
@@ -655,6 +655,48 @@ const ShiftManagement = () => {
           </h3>
         </div>
 
+        {/* Pagination header */}
+        {totalItems > 0 && (
+          <div className="sm-pagination" style={{ marginBottom: "12px" }}>
+            <div className="sm-per-page">
+              <span>Items per page:</span>
+              <select value={perPage}
+                onChange={e => handlePerPage(Number(e.target.value))}>
+                {ITEMS_PER_PAGE_OPTIONS.map(n => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="sm-page-info">
+              Showing {startIdx + 1} to{' '}
+              {Math.min(startIdx + perPage, totalItems)} of{' '}
+              {totalItems} items
+            </div>
+
+            {totalPages > 1 && (
+              <div className="sm-page-nav">
+                <button className="sm-nav-btn"
+                  disabled={safePage === 1}
+                  onClick={() => setPage(p => p - 1)}>‹</button>
+                {Array.from(
+                  { length: totalPages }, (_, i) => i + 1
+                ).map(n => (
+                  <button key={n}
+                    className={`sm-nav-btn${safePage === n ? ' active-page' : ''
+                      }`}
+                    onClick={() => setPage(n)}>
+                    {n}
+                  </button>
+                ))}
+                <button className="sm-nav-btn"
+                  disabled={safePage === totalPages}
+                  onClick={() => setPage(p => p + 1)}>›</button>
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="sm-table-wrapper">
           {totalItems === 0 ? (
             <div className="sm-empty-state">
@@ -743,47 +785,6 @@ const ShiftManagement = () => {
           )}
         </div>
 
-        {/* Pagination */}
-        {totalItems > 0 && (
-          <div className="sm-pagination">
-            <div className="sm-per-page">
-              <span>Items per page:</span>
-              <select value={perPage}
-                onChange={e => handlePerPage(Number(e.target.value))}>
-                {ITEMS_PER_PAGE_OPTIONS.map(n => (
-                  <option key={n} value={n}>{n}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="sm-page-info">
-              Showing {startIdx + 1} to{' '}
-              {Math.min(startIdx + perPage, totalItems)} of{' '}
-              {totalItems} items
-            </div>
-
-            {totalPages > 1 && (
-              <div className="sm-page-nav">
-                <button className="sm-nav-btn"
-                  disabled={safePage === 1}
-                  onClick={() => setPage(p => p - 1)}>‹</button>
-                {Array.from(
-                  { length: totalPages }, (_, i) => i + 1
-                ).map(n => (
-                  <button key={n}
-                    className={`sm-nav-btn${safePage === n ? ' active-page' : ''
-                      }`}
-                    onClick={() => setPage(n)}>
-                    {n}
-                  </button>
-                ))}
-                <button className="sm-nav-btn"
-                  disabled={safePage === totalPages}
-                  onClick={() => setPage(p => p + 1)}>›</button>
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
       {/* ── Modals ── */}

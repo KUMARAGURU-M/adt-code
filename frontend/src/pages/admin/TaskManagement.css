@@ -6,6 +6,8 @@
   width: 100%;
 }
 
+
+
 /* ── Page Header ── */
 .tm-page-header {
   display: flex;
@@ -132,6 +134,10 @@
   padding: 16px 20px 18px;
   margin-bottom: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  position: sticky;
+  top: 65px;
+  z-index: 900;
+  background-color: #ffffff;
 }
 
 .tm-filter-top {
@@ -253,6 +259,10 @@
   background: white;
   border-radius: 10px;
   overflow-x: auto;
+  overflow-y: auto;
+  height: calc(100vh - 340px);
+  min-height: 200px;
+  scrollbar-gutter: stable;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
@@ -269,12 +279,17 @@
 }
 
 .tm-table th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: #f8fafc;
   padding: 14px 15px;
   color: #475569;
   font-weight: 800;
   font-size: 14px;
   border-bottom: 1px solid #edf2f7;
   white-space: nowrap;
+  box-shadow: inset 0 -1px 0 #e2e8f0;
 }
 
 .tm-table th .sort-icon {
@@ -1280,3 +1295,17 @@ input[type="date"].tm-form-input {
   color: #1d4ed8;
   font-weight: 500;
 }
+.tm-table-wrapper {
+  height: calc(100vh - 340px) !important;
+  overflow-y: auto !important;
+  overflow-x: auto !important;
+  min-height: 200px !important;
+  scrollbar-gutter: stable;
+}
+.tm-table th { position: sticky !important; top: 0 !important; z-index: 10 !important; background-color: #f8fafc !important; box-shadow: inset 0 -1px 0 #e2e8f0 !important; }
+@media (min-width: 1024px) {
+  .tm-filter-card { position: sticky !important; top: 65px !important; z-index: 900 !important; background-color: #ffffff !important; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03) !important; border-bottom: 1px solid #e2e8f0 !important; padding: 16px 20px !important; border-radius: 8px !important; margin-bottom: 16px !important; }
+}
+.tm-pagination { display: flex !important; justify-content: space-between !important; align-items: center !important; padding: 12px 16px !important; margin: 0 !important; background: #ffffff !important; border: 1px solid #e2e8f0 !important; border-radius: 8px !important; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important; width: 100% !important; box-sizing: border-box !important; }
+.tm-pagination label { display: inline-block !important; margin: 0 !important; padding: 0 !important; white-space: nowrap !important; }
+.tm-pagination select { padding: 0 !important; margin: 0 !important; }

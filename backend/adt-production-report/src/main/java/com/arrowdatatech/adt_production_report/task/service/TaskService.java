@@ -95,7 +95,7 @@ public class TaskService {
     // CREATE TASK
     // ─────────────────────────────────────────────
     @Transactional
-    public TaskResponse createTask(CreateTaskRequest request) {
+    public List<TaskResponse> createTask(CreateTaskRequest request) {
 
         Project project = null;
         if (request.getProjectId() != null) {
@@ -104,15 +104,10 @@ public class TaskService {
                             "Project", "id", request.getProjectId()));
         }
 
-        Process primaryProcess = null;
-        if (request.getProcessIds() != null
-                && !request.getProcessIds().isEmpty()) {
-            primaryProcess = processRepository
-                    .findById(request.getProcessIds().get(0))
-                    .orElseThrow(() -> new ResourceNotFoundException(
-                            "Process", "id",
-                            request.getProcessIds().get(0)));
-        }
+        // Determine which process IDs to create tasks for
+        List<UUID> processIds = (request.getProcessIds() != null && !request.getProcessIds().isEmpty())
+                ? request.getProcessIds()
+                : List.of(); // no process — create 1 task with null process
 
         User assignedBy = null;
         if (request.getAssignedBy() != null) {
@@ -121,78 +116,93 @@ public class TaskService {
                     .orElse(null);
         }
 
-        String title = request.getTaskTitle();
-        if (title == null || title.isBlank()) {
-            title = autoGenerateTitle(project, primaryProcess, request);
-        }
-
-        // FIX: default to "PENDING" (uppercase) to match DB CHECK constraint.
-        // The DB constraint on tasks.status is:
-        // ('FINISH','WIP','YTS','RTU','UPLOADED','PENDING','HOLD','QUERY')
         String status = request.getStatus();
         if (status == null || status.isBlank()) {
             status = "PENDING";
         }
 
-        Task task = Task.builder()
-                .project(project)
-                .process(primaryProcess)
-                .taskTitle(title)
-                .description(request.getDescription())
-                .status(status)
-                .assignedDate(request.getAssignedDate() != null ? request.getAssignedDate() : LocalDate.now())
-                .dueDate(request.getDueDate())
-                .assignedPages(request.getAssignedPages())
-                .assignedPagesStr(request.getAssignedPagesStr())
-                .complexity(request.getComplexity())
-                .chapterArticleBatch(request.getChapterArticleBatch())
-                .estimateHours(request.getEstimateHours() != null
-                        ? request.getEstimateHours()
-                        : BigDecimal.ZERO)
-                .serverPath(cleanServerPath(request.getServerPath()))
-                .assignedBy(assignedBy)
-                .totalPages(request.getTotalPages())
-                .build();
+        List<TaskResponse> createdResponses = new java.util.ArrayList<>();
 
-        task = taskRepository.save(task);
+        // If no processes selected, create one task with null process
+        List<UUID> effectiveProcessIds = processIds.isEmpty() ? List.of((UUID) null) : processIds;
 
-        // Link jobs to task
-        if (request.getJobAssignments() != null) {
-            for (CreateTaskRequest.JobAssignment ja : request.getJobAssignments()) {
-                Job job = jobRepository.findById(ja.getJobId())
+        for (UUID processId : effectiveProcessIds) {
+            Process process = null;
+            if (processId != null) {
+                process = processRepository.findById(processId)
                         .orElseThrow(() -> new ResourceNotFoundException(
-                                "Job", "id", ja.getJobId()));
-                TaskJobAssignment tja = TaskJobAssignment.builder()
-                        .task(task)
-                        .job(job)
-                        .assignedPages(ja.getAssignedPages())
-                        .build();
-                taskJobRepository.save(tja);
+                                "Process", "id", processId));
             }
+
+            String title = request.getTaskTitle();
+            if (title == null || title.isBlank()) {
+                title = autoGenerateTitle(project, process, request);
+            }
+
+            Task task = Task.builder()
+                    .project(project)
+                    .process(process)
+                    .taskTitle(title)
+                    .description(request.getDescription())
+                    .status(status)
+                    .assignedDate(request.getAssignedDate() != null ? request.getAssignedDate() : LocalDate.now())
+                    .dueDate(request.getDueDate())
+                    .assignedPages(request.getAssignedPages())
+                    .assignedPagesStr(request.getAssignedPagesStr())
+                    .complexity(request.getComplexity())
+                    .chapterArticleBatch(request.getChapterArticleBatch())
+                    .estimateHours(request.getEstimateHours() != null
+                            ? request.getEstimateHours()
+                            : BigDecimal.ZERO)
+                    .serverPath(cleanServerPath(request.getServerPath()))
+                    .assignedBy(assignedBy)
+                    .totalPages(request.getTotalPages())
+                    .build();
+
+            task = taskRepository.save(task);
+
+            // Link jobs to task
+            if (request.getJobAssignments() != null) {
+                for (CreateTaskRequest.JobAssignment ja : request.getJobAssignments()) {
+                    Job job = jobRepository.findById(ja.getJobId())
+                            .orElseThrow(() -> new ResourceNotFoundException(
+                                    "Job", "id", ja.getJobId()));
+                    TaskJobAssignment tja = TaskJobAssignment.builder()
+                            .task(task)
+                            .job(job)
+                            .assignedPages(ja.getAssignedPages())
+                            .build();
+                    taskJobRepository.save(tja);
+                }
+            }
+
+            // Link employees to task
+            if (request.getEmployeeAssignments() != null) {
+                for (CreateTaskRequest.EmployeeAssignment ea : request.getEmployeeAssignments()) {
+                    User user = userRepository
+                            .findByIdWithProfile(ea.getUserId())
+                            .orElseThrow(() -> new ResourceNotFoundException(
+                                    "User", "id", ea.getUserId()));
+                    TaskEmployeeAssignment tea = TaskEmployeeAssignment.builder()
+                            .task(task)
+                            .user(user)
+                            .assignedPages(ea.getAssignedPages())
+                            .status("Pending")
+                            .updatedAt(OffsetDateTime.now())
+                            .build();
+                    taskEmployeeRepository.save(tea);
+                }
+            }
+
+            logAction("CREATE", task);
+            log.info("Task created: {} (process: {})", task.getTaskTitle(),
+                    process != null ? process.getName() : "none");
+
+            UUID savedId = task.getId();
+            createdResponses.add(toResponse(taskRepository.findById(savedId).orElseThrow()));
         }
 
-        // Link employees to task
-        if (request.getEmployeeAssignments() != null) {
-            for (CreateTaskRequest.EmployeeAssignment ea : request.getEmployeeAssignments()) {
-                User user = userRepository
-                        .findByIdWithProfile(ea.getUserId())
-                        .orElseThrow(() -> new ResourceNotFoundException(
-                                "User", "id", ea.getUserId()));
-                TaskEmployeeAssignment tea = TaskEmployeeAssignment.builder()
-                        .task(task)
-                        .user(user)
-                        .assignedPages(ea.getAssignedPages())
-                        .status("Pending") // valid DB value
-                        .updatedAt(OffsetDateTime.now())
-                        .build();
-                taskEmployeeRepository.save(tea);
-            }
-        }
-
-        logAction("CREATE", task);
-        log.info("Task created: {}", task.getTaskTitle());
-
-        return toResponse(taskRepository.findById(task.getId()).orElseThrow());
+        return createdResponses;
     }
 
     // ─────────────────────────────────────────────

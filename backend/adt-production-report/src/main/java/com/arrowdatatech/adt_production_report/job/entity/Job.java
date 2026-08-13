@@ -110,6 +110,9 @@ public class Job extends BaseEntity {
     @Column(name = "employee_names", columnDefinition = "TEXT")
     private String employeeNames;
 
+    @Column(name = "qc_employee_names", columnDefinition = "TEXT")
+    private String qcEmployeeNames;
+
     @Column(name = "deleted_at")
     private OffsetDateTime deletedAt;
 

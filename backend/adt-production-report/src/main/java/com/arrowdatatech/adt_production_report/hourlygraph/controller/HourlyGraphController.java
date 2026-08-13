@@ -40,7 +40,7 @@ public class HourlyGraphController {
     @GetMapping("/logs")
     public ResponseEntity<ApiResponse<HourlyGraphResponse>> getDailyLogs(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        LocalDate targetDate = date != null ? date : LocalDate.now();
+        LocalDate targetDate = date != null ? date : LocalDate.now(java.time.ZoneId.of("Asia/Kolkata"));
         HourlyGraphResponse logs = hourlyGraphService.getDailyLogs(targetDate);
         return ResponseEntity.ok(ApiResponse.success("Hourly logs retrieved", logs));
     }
@@ -49,7 +49,7 @@ public class HourlyGraphController {
     @PostMapping("/logs")
     public ResponseEntity<ApiResponse<Void>> saveDailyLogs(
             @Valid @RequestBody SaveHourlyLogsRequest request) {
-        LocalDate targetDate = request.getDate() != null ? request.getDate() : LocalDate.now();
+        LocalDate targetDate = request.getDate() != null ? request.getDate() : LocalDate.now(java.time.ZoneId.of("Asia/Kolkata"));
         hourlyGraphService.saveDailyLogs(targetDate, request);
         return ResponseEntity.ok(ApiResponse.success("Hourly logs saved successfully", null));
     }

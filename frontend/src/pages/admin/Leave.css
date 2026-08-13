@@ -7,6 +7,8 @@
   width: 100%;
 }
 
+
+
 /* ══════════════════════════════════════════════
    HEADER
 ══════════════════════════════════════════════ */
@@ -85,6 +87,15 @@
   width: 100%;
 }
 
+@media (min-width: 1024px) {
+  .lv-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+}
+
 /* ══════════════════════════════════════════════
    FILTER CARD
 ══════════════════════════════════════════════ */
@@ -136,6 +147,14 @@
   border-radius: 10px;
   overflow-x: auto;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.lv-table-card {
+  height: calc(100vh - 320px) !important;
+  overflow-y: auto !important;
+  overflow-x: auto !important;
+  min-height: 200px !important;
+  scrollbar-gutter: stable;
 }
 
 .lv-table {
@@ -500,3 +519,11 @@
   vertical-align: middle;
   box-shadow: 0 0 8px rgba(217, 119, 6, 0.5);
 }
+/* Sticky filter overrides */
+ .lv-filter-card { position: sticky !important; top: 65px !important; z-index: 900 !important; background-color: #ffffff !important; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03) !important; border-bottom: 1px solid #e2e8f0 !important; padding: 16px 20px !important; border-radius: 8px !important; margin-bottom: 16px !important; } 
+.lv-table th { position: sticky !important; top: 0 !important; z-index: 10 !important; background-color: #f8fafc !important; box-shadow: inset 0 -1px 0 #e2e8f0 !important; }
+
+/* Scrollbar */
+.lv-table-card::-webkit-scrollbar { height: 6px; width: 6px; }
+.lv-table-card::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+.lv-table-card::-webkit-scrollbar-thumb:hover { background: #94a3b8; }

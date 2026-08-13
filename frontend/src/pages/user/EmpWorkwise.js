@@ -185,7 +185,7 @@ export default function EmpWorkwise() {
   const [logPage, setLogPage] = useState(0);
   const [logTotal, setLogTotal] = useState(0);
   const [logPages, setLogPages] = useState(0);
-  const [logSize, setLogSize] = useState(25);
+  const [logSize, setLogSize] = useState(100);
   const [logF, setLogF] = useState({
     clientId: '', projectId: '', workflowId: '', processId: '', status: '',
     startDate: '', endDate: '',
@@ -1484,6 +1484,59 @@ export default function EmpWorkwise() {
           </div>
         </div>
 
+        {/* Pagination Header */}
+        <div className="ww-pagination" style={{ borderBottom: '1px solid var(--ww-border)', borderTop: 'none', paddingBottom: '12px', marginBottom: '12px' }}>
+          <div className="ww-page-items">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginRight: '16px' }}>
+              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--ww-text-muted)' }}>Items per page:</label>
+              <select
+                value={logSize}
+                onChange={e => {
+                  const newSize = Number(e.target.value);
+                  setLogSize(newSize);
+                  loadLogs(0, logF, newSize);
+                }}
+                style={{
+                  padding: '3px 6px',
+                  border: '1.5px solid var(--ww-border)',
+                  borderRadius: 'var(--ww-radius-sm)',
+                  outline: 'none',
+                  fontSize: '0.75rem',
+                  background: 'var(--ww-surface)',
+                  color: 'var(--ww-text)'
+                }}
+              >
+                {[10, 25, 50, 100].map(n => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
+            </div>
+            <span>Showing {logs.length} of {logTotal} records</span>
+          </div>
+          {logPages > 1 && (
+            <div className="ww-page-controls">
+              <button className="ww-page-btn"
+                disabled={logPage === 0}
+                onClick={() => loadLogs(logPage - 1)}>‹</button>
+              {Array.from(
+                { length: Math.min(logPages, 7) }, (_, i) => i
+              ).map(n => (
+                <button key={n}
+                  className={`ww-page-btn ${logPage === n ? 'active' : ''}`}
+                  onClick={() => loadLogs(n)}>
+                  {n + 1}
+                </button>
+              ))}
+              {logPages > 7 && (
+                <span className="ww-page-ellipsis">…</span>
+              )}
+              <button className="ww-page-btn"
+                disabled={logPage >= logPages - 1}
+                onClick={() => loadLogs(logPage + 1)}>›</button>
+            </div>
+          )}
+        </div>
+
         <div className="ww-table-container">
           <table className="ww-table">
             <thead>
@@ -1557,57 +1610,6 @@ export default function EmpWorkwise() {
           </table>
         </div>
 
-        <div className="ww-pagination">
-          <div className="ww-page-items">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginRight: '16px' }}>
-              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--ww-text-muted)' }}>Items per page:</label>
-              <select
-                value={logSize}
-                onChange={e => {
-                  const newSize = Number(e.target.value);
-                  setLogSize(newSize);
-                  loadLogs(0, logF, newSize);
-                }}
-                style={{
-                  padding: '3px 6px',
-                  border: '1.5px solid var(--ww-border)',
-                  borderRadius: 'var(--ww-radius-sm)',
-                  outline: 'none',
-                  fontSize: '0.75rem',
-                  background: 'var(--ww-surface)',
-                  color: 'var(--ww-text)'
-                }}
-              >
-                {[10, 25, 50, 100].map(n => (
-                  <option key={n} value={n}>{n}</option>
-                ))}
-              </select>
-            </div>
-            <span>Showing {logs.length} of {logTotal} records</span>
-          </div>
-          {logPages > 1 && (
-            <div className="ww-page-controls">
-              <button className="ww-page-btn"
-                disabled={logPage === 0}
-                onClick={() => loadLogs(logPage - 1)}>‹</button>
-              {Array.from(
-                { length: Math.min(logPages, 7) }, (_, i) => i
-              ).map(n => (
-                <button key={n}
-                  className={`ww-page-btn ${logPage === n ? 'active' : ''}`}
-                  onClick={() => loadLogs(n)}>
-                  {n + 1}
-                </button>
-              ))}
-              {logPages > 7 && (
-                <span className="ww-page-ellipsis">…</span>
-              )}
-              <button className="ww-page-btn"
-                disabled={logPage >= logPages - 1}
-                onClick={() => loadLogs(logPage + 1)}>›</button>
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );

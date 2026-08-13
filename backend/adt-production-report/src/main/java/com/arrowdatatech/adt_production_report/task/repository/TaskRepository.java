@@ -132,4 +132,19 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
 
     @Query("SELECT DISTINCT t.serverPath FROM Task t WHERE t.serverPath IS NOT NULL AND t.serverPath != ''")
     List<String> findAllServerPaths();
-}
+
+    /**
+     * Returns pairs of [jobId, taskTitle] for all TaskJobAssignments
+     * belonging to tasks of the given project. Used to populate
+     * taskName in the Page Output Registry.
+     */
+    @Query("""
+           SELECT tja.job.id, t.taskTitle
+           FROM TaskJobAssignment tja
+           JOIN tja.task t
+           WHERE t.project.id = :projectId
+           AND t.taskTitle IS NOT NULL
+           AND tja.job IS NOT NULL
+           """)
+    List<Object[]> findJobIdToTaskTitleByProjectId(@Param("projectId") UUID projectId);
+}

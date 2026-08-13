@@ -9,6 +9,7 @@ const RESOURCES_LIST = [
   { id: "employees", label: "Users/Employees", icon: "👥" },
   { id: "attendance", label: "Attendance", icon: "📅" },
   { id: "projects", label: "Projects", icon: "📁" },
+  { id: "monthly_targets", label: "Monthly Targets", icon: "🎯" },
   { id: "jobs", label: "Jobs", icon: "🗂️" },
   { id: "leaves", label: "Leaves", icon: "🏖️" },
   { id: "tools", label: "Tools", icon: "🛠️" },
@@ -77,7 +78,7 @@ const RolesPermission = () => {
   const [permTotalPages, setPermTotalPages] = useState(0);
   const [permTotal, setPermTotal] = useState(0);
   const [permResource, setPermResource] = useState("");
-  const [permSize, setPermSize] = useState(25);
+  const [permSize, setPermSize] = useState(100);
 
   // Role modal
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
@@ -389,42 +390,9 @@ const RolesPermission = () => {
               </select>
             </div>
 
-            <div className="rp-grid rp-permissions-grid">
-              {permissions.length === 0 ? (
-                <div style={{
-                  gridColumn: "1/-1", textAlign: "center",
-                  color: "#aaa", padding: "32px"
-                }}>
-                  No permissions found.
-                  {" "}Click "+ Add Permission" to create some.
-                </div>
-              ) : permissions.map(perm => (
-                <div key={perm.id} className="rp-perm-card">
-                  <div className="rp-perm-card-header">
-                    <h5 className="rp-perm-name">{perm.name}</h5>
-                    {canDeletePerm ? (
-                      <button
-                        className="rp-perm-delete-btn"
-                        onClick={() => handleDeletePermission(perm.id)}
-                        title="Delete permission">🗑️</button>
-                    ) : null}
-                  </div>
-                  <div className="rp-perm-id">
-                    {perm.resource} · {perm.action}
-                  </div>
-                  <p className="rp-perm-desc">{perm.description}</p>
-                  {!perm.isActive && (
-                    <span style={{ fontSize: "0.7rem", color: "#dc2626" }}>
-                      Inactive
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-
             {/* Permissions pagination */}
             {permTotal > 0 && (
-              <div className="rp-pagination">
+              <div className="rp-pagination" style={{ marginBottom: "12px" }}>
                 <div className="rp-items-per-page">
                   <label>Items per page:</label>
                   <select
@@ -469,6 +437,40 @@ const RolesPermission = () => {
                 )}
               </div>
             )}
+
+            <div className="rp-grid rp-permissions-grid">
+              {permissions.length === 0 ? (
+                <div style={{
+                  gridColumn: "1/-1", textAlign: "center",
+                  color: "#aaa", padding: "32px"
+                }}>
+                  No permissions found.
+                  {" "}Click "+ Add Permission" to create some.
+                </div>
+              ) : permissions.map(perm => (
+                <div key={perm.id} className="rp-perm-card">
+                  <div className="rp-perm-card-header">
+                    <h5 className="rp-perm-name">{perm.name}</h5>
+                    {canDeletePerm ? (
+                      <button
+                        className="rp-perm-delete-btn"
+                        onClick={() => handleDeletePermission(perm.id)}
+                        title="Delete permission">🗑️</button>
+                    ) : null}
+                  </div>
+                  <div className="rp-perm-id">
+                    {perm.resource} · {perm.action}
+                  </div>
+                  <p className="rp-perm-desc">{perm.description}</p>
+                  {!perm.isActive && (
+                    <span style={{ fontSize: "0.7rem", color: "#dc2626" }}>
+                      Inactive
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+
           </div>
         </>
       )}

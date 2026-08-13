@@ -67,7 +67,7 @@ export default function Projects() {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [itemsPerPage, setItemsPerPage] = useState(25);
+  const [itemsPerPage, setItemsPerPage] = useState(100);
   const [currentPage, setCurrentPage] = useState(1);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -467,6 +467,51 @@ export default function Projects() {
         </div>
       </div>
 
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {/* ── Pagination ── */}
+        <div className="pm-pagination">
+        <div className="pm-pagination-left">
+          <label>Items per page:</label>
+          <select
+            value={itemsPerPage}
+            onChange={e => {
+              setItemsPerPage(Number(e.target.value));
+              setCurrentPage(1);
+            }}
+          >
+            {[10, 25, 50, 100].map(n => (
+              <option key={n} value={n}>{n}</option>
+            ))}
+          </select>
+        </div>
+        <div className="pm-pagination-right">
+          {totalPages > 1 && (
+            <>
+              <button
+                className="page-btn"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(p => p - 1)}
+              >‹</button>
+              <span className="page-info">
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                className="page-btn"
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(p => p + 1)}
+              >›</button>
+            </>
+          )}
+          <span className="page-count">
+            Showing {Math.min(
+              (currentPage - 1) * itemsPerPage + 1, totalItems
+            )} to {Math.min(
+              currentPage * itemsPerPage, totalItems
+            )} of {totalItems} items
+          </span>
+        </div>
+      </div>
+
       {/* ── Table ── */}
       <div className="pm-table-container">
         <table className="pm-table">
@@ -543,50 +588,8 @@ export default function Projects() {
           </tbody>
         </table>
       </div>
-
-      {/* ── Pagination ── */}
-      <div className="pm-pagination">
-        <div className="pm-pagination-left">
-          <label>Items per page:</label>
-          <select
-            value={itemsPerPage}
-            onChange={e => {
-              setItemsPerPage(Number(e.target.value));
-              setCurrentPage(1);
-            }}
-          >
-            {[10, 25, 50, 100].map(n => (
-              <option key={n} value={n}>{n}</option>
-            ))}
-          </select>
-        </div>
-        <div className="pm-pagination-right">
-          {totalPages > 1 && (
-            <>
-              <button
-                className="page-btn"
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage(p => p - 1)}
-              >‹</button>
-              <span className="page-info">
-                Page {currentPage} of {totalPages}
-              </span>
-              <button
-                className="page-btn"
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage(p => p + 1)}
-              >›</button>
-            </>
-          )}
-          <span className="page-count">
-            Showing {Math.min(
-              (currentPage - 1) * itemsPerPage + 1, totalItems
-            )} to {Math.min(
-              currentPage * itemsPerPage, totalItems
-            )} of {totalItems} items
-          </span>
-        </div>
       </div>
+      {/* ── Add Modal ── */}
 
       {/* ── Add Modal ── */}
       {showAddModal && (

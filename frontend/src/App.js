@@ -30,6 +30,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import UserManagement from './pages/admin/UserManagement';
 import Attendance from './pages/admin/Attendance';
 import Project from './pages/admin/Project';
+import MonthlyTargets from './pages/admin/MonthlyTargets';
 import BooksJobs from './pages/admin/BooksJobs';
 import Production from './pages/admin/Production';
 import ProcessManagement from './pages/admin/ProcessManagement';
@@ -175,6 +176,9 @@ const getAllowedRoutes = (roles, permissions) => {
   }
   if (roles.includes('Admin') || permissions?.includes('projects.view')) {
     allowed.push(`/workwise/${prefix}/projects`);
+  }
+  if (roles.includes('Admin') || permissions?.includes('monthly_targets.view')) {
+    allowed.push(`/workwise/${prefix}/targets`);
   }
   if (roles.includes('Admin') || permissions?.includes('jobs.view')) {
     allowed.push(`/workwise/${prefix}/books`);
@@ -392,6 +396,10 @@ function App() {
             <AdminLayout><Project /></AdminLayout>
           } />
 
+          <Route path=":role/targets" element={
+            <AdminLayout><MonthlyTargets /></AdminLayout>
+          } />
+
           <Route path=":role/books" element={
             <AdminLayout><BooksJobs /></AdminLayout>
           } />
@@ -503,6 +511,12 @@ function App() {
 }
 
 export default App;
+
+
+
+
+
+
 
 
 

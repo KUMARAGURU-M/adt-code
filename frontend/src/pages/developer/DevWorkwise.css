@@ -662,3 +662,6 @@
   .dww-run-card { width: 100%; }
   .dww-timers-row { flex-direction: column; }
 }
+
+.dww-page-items select { padding: 0 !important; margin: 0 !important; }
+.dww-page-items label { padding: 0 !important; margin: 0 !important; }

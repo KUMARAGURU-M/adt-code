@@ -33,4 +33,13 @@ public interface UserProjectAssignmentRepository
             AND upa.project.id = :projectId
             """)
     void deleteByUserIdAndProjectId(UUID userId, UUID projectId);
+
+    @Query("""
+            SELECT upa FROM UserProjectAssignment upa
+            JOIN FETCH upa.user u
+            LEFT JOIN FETCH u.employeeProfile ep
+            WHERE upa.project.id = :projectId
+            """)
+    List<UserProjectAssignment> findByProjectIdWithUserAndProfile(
+            @org.springframework.data.repository.query.Param("projectId") UUID projectId);
 }

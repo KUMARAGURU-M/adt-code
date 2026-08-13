@@ -22,6 +22,49 @@
   box-sizing: border-box;
 }
 
+/* Unified page container rules to ensure all page layouts align perfectly and evenly */
+.production-container,
+.user-mgmt-container,
+.sm-container,
+.st-container,
+.rp-container,
+.ra-container,
+.pm-wrapper,
+.pm-container,
+.pa-container,
+.targets-container,
+.bj-container,
+.att-container,
+.dashboard-container,
+.admin-chat-monitor-container,
+.digi-convertor-container,
+.projects-container,
+.my-work-container,
+.meetings-container,
+.corrections-container,
+.dev-dashboard-container,
+.wp-container,
+.admin-reports-container,
+.al-container,
+.tm-wrapper,
+.tl-wrapper,
+.invoice-container,
+.inv-wrapper,
+.ca-page,
+.ci-page,
+.hg-wrapper,
+.workwise-page,
+.et-page,
+.el-page,
+.ec-page,
+.emp-dashboard-body {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+}
+
 @media (max-width: 768px) {
   .main-wrapper {
     margin-left: 0;
@@ -31,9 +74,6 @@
   .content-area {
     padding: 16px 12px;
   }
-
-
-
 
 
 

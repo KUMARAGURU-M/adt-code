@@ -66,7 +66,7 @@ const ActivityLogs = () => {
   const [applied,     setApplied]     = useState({ entityType: '', action: '' });
 
   /* Pagination */
-  const [perPage, setPerPage] = useState(10);
+  const [perPage, setPerPage] = useState(100);
   const [page,    setPage]    = useState(1);
 
   /* Logs data */
@@ -190,46 +190,7 @@ const ActivityLogs = () => {
 
       {/* ── Table Card ── */}
       <div className="al-table-card">
-        <div className="al-table-wrapper">
-          <table className="al-table">
-            <thead>
-              <tr>
-                <th className="col-ts">Timestamp</th>
-                <th className="col-user">User</th>
-                <th className="col-action">Action</th>
-                <th className="col-entity-type">Entity Type</th>
-                <th className="col-entity">Entity</th>
-                <th className="col-changes">Changes</th>
-                <th className="col-ip">IP Address</th>
-              </tr>
-            </thead>
-            <tbody>
-              {logs.length === 0 ? (
-                <tr>
-                  <td colSpan="7" className="al-empty">
-                    {loading ? 'Loading...' : 'No activity logs found for selected filters.'}
-                  </td>
-                </tr>
-              ) : logs.map(log => (
-                <tr key={log.id}>
-                  <td className="td-ts">{fmtTimestamp(log.createdAt)}</td>
-                  <td className="td-user col-left">{log.userName}</td>
-                  <td className="td-action"><ActionBadge action={log.action} /></td>
-                  <td className="td-entity-type"><EntityBadge type={log.entityType} /></td>
-                  <td className="td-entity col-left">{log.entityLabel || '-'}</td>
-                  <td className="td-changes">
-                    {!log.changes || log.changes === '-'
-                      ? <span className="al-dash">-</span>
-                      : <span className="al-changes-text">{log.changes}</span>}
-                  </td>
-                  <td className="td-ip">{log.ipAddress || '-'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* ── Pagination Footer ── */}
+        {/* ── Pagination Header ── */}
         <div className="al-pagination">
           {/* Items per page */}
           <div className="al-per-page">
@@ -304,6 +265,46 @@ const ActivityLogs = () => {
             </button>
           </div>
         </div>
+
+        <div className="al-table-wrapper">
+          <table className="al-table">
+            <thead>
+              <tr>
+                <th className="col-ts">Timestamp</th>
+                <th className="col-user">User</th>
+                <th className="col-action">Action</th>
+                <th className="col-entity-type">Entity Type</th>
+                <th className="col-entity">Entity</th>
+                <th className="col-changes">Changes</th>
+                <th className="col-ip">IP Address</th>
+              </tr>
+            </thead>
+            <tbody>
+              {logs.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="al-empty">
+                    {loading ? 'Loading...' : 'No activity logs found for selected filters.'}
+                  </td>
+                </tr>
+              ) : logs.map(log => (
+                <tr key={log.id}>
+                  <td className="td-ts">{fmtTimestamp(log.createdAt)}</td>
+                  <td className="td-user col-left">{log.userName}</td>
+                  <td className="td-action"><ActionBadge action={log.action} /></td>
+                  <td className="td-entity-type"><EntityBadge type={log.entityType} /></td>
+                  <td className="td-entity col-left">{log.entityLabel || '-'}</td>
+                  <td className="td-changes">
+                    {!log.changes || log.changes === '-'
+                      ? <span className="al-dash">-</span>
+                      : <span className="al-changes-text">{log.changes}</span>}
+                  </td>
+                  <td className="td-ip">{log.ipAddress || '-'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
       </div>
 
     </div>

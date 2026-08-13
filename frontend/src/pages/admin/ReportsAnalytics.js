@@ -63,6 +63,9 @@ const ReportsAnalytics = () => {
   const [fEmployee,  setFEmployee]  = useState('');
   const [fProject,   setFProject]   = useState('');
 
+  const [itemsPerPage, setItemsPerPage] = useState(100);
+  const [currentPage, setCurrentPage] = useState(1);
+
   const [logs, setLogs] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -100,6 +103,7 @@ const ReportsAnalytics = () => {
 
       const data = await apiCall(query);
       setLogs(data || []);
+      setCurrentPage(1);
     } catch (err) {
       setError(err.message || 'Failed to fetch report logs');
     } finally {
@@ -174,7 +178,12 @@ const ReportsAnalytics = () => {
     filteredLogs.reduce((s, l) => s + (l.pagesCompleted || 0), 0),
   [filteredLogs]);
 
-  const totalLogs = filteredLogs.length;
+  const totalItems = filteredLogs.length;
+  const totalPagesCount = Math.ceil(totalItems / itemsPerPage);
+  const paginatedLogs = filteredLogs.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   /* ── Hours & Pages by Employee ── */
   const byEmployee = useMemo(() => {
@@ -328,66 +337,135 @@ const ReportsAnalytics = () => {
         />
         <StatCard
           label="Total Logs"
-          value={totalLogs}
+          value={totalItems}
           sub="Time entries"
           color="#10b981"
         />
       </div>
 
-      {/* ── Hours & Pages by Employee ── */}
-      <div className="ra-section-card">
-        <h3 className="ra-section-title">Hours &amp; Pages by Employee</h3>
-        <div className="ra-breakdown-list">
-          {byEmployee.length === 0 ? (
-            <p className="ra-empty">No data for selected filters.</p>
-          ) : byEmployee.map(row => (
-            <div key={row.name} className="ra-breakdown-row">
-              <span className="ra-breakdown-name">{row.name}</span>
-              <div className="ra-breakdown-right">
-                <span className="ra-hrs-val">{fmtHrs(row.hrs)}</span>
-                <span className="ra-sep">·</span>
-                <span className="ra-pages-icon">📄</span>
-                <span className="ra-pages-val">{row.pages} pages</span>
+      {/* ── Breakdowns Row ── */}
+      <div className="ra-breakdowns-row">
+        {/* ── Hours & Pages by Employee ── */}
+        <div className="ra-section-card">
+          <h3 className="ra-section-title">Hours &amp; Pages by Employee</h3>
+          <div className="ra-breakdown-list">
+            {byEmployee.length === 0 ? (
+              <p className="ra-empty">No data for selected filters.</p>
+            ) : byEmployee.map(row => (
+              <div key={row.name} className="ra-breakdown-row">
+                <span className="ra-breakdown-name">{row.name}</span>
+                <div className="ra-breakdown-right">
+                  <span className="ra-hrs-val">{fmtHrs(row.hrs)}</span>
+                  <span className="ra-sep">·</span>
+                  <span className="ra-pages-icon">📄</span>
+                  <span className="ra-pages-val">{row.pages} pages</span>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
 
-      {/* ── Hours & Pages by Project ── */}
-      <div className="ra-section-card">
-        <h3 className="ra-section-title">Hours &amp; Pages by Project</h3>
-        <div className="ra-breakdown-list">
-          {byProject.length === 0 ? (
-            <p className="ra-empty">No data for selected filters.</p>
-          ) : byProject.map(row => (
-            <div key={row.name} className="ra-breakdown-row">
-              <span className="ra-breakdown-name">{row.name}</span>
-              <div className="ra-breakdown-right">
-                {row.hrs > 0 && (
-                  <>
-                    <span className="ra-hrs-val">{fmtHrs(row.hrs)}</span>
-                    <span className="ra-sep">·</span>
-                  </>
-                )}
-                {row.pages > 0 && (
-                  <>
-                    <span className="ra-pages-icon">📄</span>
-                    <span className="ra-pages-val">{row.pages} pages</span>
-                  </>
-                )}
-                {row.hrs === 0 && row.pages === 0 && (
-                  <span className="ra-hrs-val">0.0 hrs</span>
-                )}
+        {/* ── Hours & Pages by Project ── */}
+        <div className="ra-section-card">
+          <h3 className="ra-section-title">Hours &amp; Pages by Project</h3>
+          <div className="ra-breakdown-list">
+            {byProject.length === 0 ? (
+              <p className="ra-empty">No data for selected filters.</p>
+            ) : byProject.map(row => (
+              <div key={row.name} className="ra-breakdown-row">
+                <span className="ra-breakdown-name">{row.name}</span>
+                <div className="ra-breakdown-right">
+                  {row.hrs > 0 && (
+                    <>
+                      <span className="ra-hrs-val">{fmtHrs(row.hrs)}</span>
+                      <span className="ra-sep">·</span>
+                    </>
+                  )}
+                  {row.pages > 0 && (
+                    <>
+                      <span className="ra-pages-icon">📄</span>
+                      <span className="ra-pages-val">{row.pages} pages</span>
+                    </>
+                  )}
+                  {row.hrs === 0 && row.pages === 0 && (
+                    <span className="ra-hrs-val">0.0 hrs</span>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
 
       {/* ── Detailed Time Logs Table ── */}
       <div className="ra-section-card">
         <h3 className="ra-section-title">Detailed Time Logs</h3>
+
+      {/* ── Pagination ── */}
+      <div className="pm-pagination" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '12px', padding: '0 4px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <label style={{ fontSize: '0.85rem', color: '#4a5568' }}>Items per page:</label>
+          <select
+            value={itemsPerPage}
+            onChange={e => {
+              setItemsPerPage(Number(e.target.value));
+              setCurrentPage(1);
+            }}
+            style={{
+              padding: '4px 8px',
+              border: '1px solid #cbd5e1',
+              borderRadius: '6px',
+              outline: 'none',
+              fontSize: '0.85rem',
+              backgroundColor: '#fff'
+            }}
+          >
+            {[10, 25, 50, 100].map(n => (
+              <option key={n} value={n}>{n}</option>
+            ))}
+          </select>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {totalPagesCount > 1 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(p => p - 1)}
+                style={{
+                  padding: '5px 12px',
+                  background: currentPage === 1 ? '#e2e8f0' : '#ffffff',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '6px',
+                  cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                  color: currentPage === 1 ? '#94a3b8' : '#334155',
+                  fontSize: '0.8rem',
+                  fontWeight: 600
+                }}
+              >‹ Prev</button>
+              <span style={{ color: '#475569', fontSize: '0.85rem', fontWeight: 500 }}>
+                Page {currentPage} of {totalPagesCount}
+              </span>
+              <button
+                disabled={currentPage === totalPagesCount}
+                onClick={() => setCurrentPage(p => p + 1)}
+                style={{
+                  padding: '5px 12px',
+                  background: currentPage === totalPagesCount ? '#e2e8f0' : '#ffffff',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '6px',
+                  cursor: currentPage === totalPagesCount ? 'not-allowed' : 'pointer',
+                  color: currentPage === totalPagesCount ? '#94a3b8' : '#334155',
+                  fontSize: '0.8rem',
+                  fontWeight: 600
+                }}
+              >Next ›</button>
+            </div>
+          )}
+          <span style={{ fontSize: '0.85rem', color: '#4a5568', fontWeight: 500 }}>
+            Showing {totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} items
+          </span>
+        </div>
+      </div>
 
       {/* ── Table Top Scrollbar ── */}
       <div className="double-scroll-top" ref={topScrollRef}>
@@ -411,13 +489,13 @@ const ReportsAnalytics = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredLogs.length === 0 ? (
+              {paginatedLogs.length === 0 ? (
                 <tr>
                   <td colSpan="9" className="ra-table-empty">
                     {loading ? 'Loading...' : 'No time logs found for selected filters.'}
                   </td>
                 </tr>
-              ) : filteredLogs.map(log => {
+              ) : paginatedLogs.map(log => {
                 const statusInfo = mapStatus(log.status);
                 return (
                   <tr key={log.id}>
@@ -458,10 +536,6 @@ const ReportsAnalytics = () => {
           </table>
         </div>
 
-        {/* Table footer */}
-        <div className="ra-table-footer">
-          Showing <strong>{filteredLogs.length}</strong> entries
-        </div>
       </div>
 
     </div>

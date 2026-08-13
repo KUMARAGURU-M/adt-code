@@ -25,6 +25,7 @@ const menuItems = [
   { name: 'DIGICONVERTOR', icon: '🔄', path: '/admin/digiconvertor' },
   { name: 'ATTENDANCE', icon: '📅', path: '/admin/attendance' },
   { name: 'PROJECT', icon: '📁', path: '/admin/projects' },
+  { name: 'TARGETS', icon: '🎯', path: '/admin/targets' },
   { name: 'BOOK/JOB', icon: '📖', path: '/admin/books' },
   { name: 'PRODUCTION', icon: <img src={productionIcon} alt="Production" className="sidebar-img-icon" />, path: '/admin/production' },
   { name: 'TASK', icon: '✅', path: '/admin/tasks' },
@@ -163,6 +164,8 @@ const Sidebar = ({ isMobileOpen, onCloseMobile }) => {
         return hasPermission('attendance.view');
       case 'PROJECT':
         return hasPermission('projects.view');
+      case 'TARGETS':
+        return hasPermission('monthly_targets.view');
       case 'BOOK/JOB':
         return hasPermission('jobs.view');
       case 'PRODUCTION':
@@ -334,6 +337,7 @@ const Sidebar = ({ isMobileOpen, onCloseMobile }) => {
 };
 
 export default Sidebar;
+
 
 
 

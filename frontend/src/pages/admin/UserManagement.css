@@ -54,8 +54,9 @@
   overflow-x: auto;
   overflow-y: auto;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  max-height: calc(100vh - 180px);
-  min-height: 700px;
+  height: calc(100vh - 250px);
+  min-height: 200px;
+  scrollbar-gutter: stable;
 }
 
 .user-table {
@@ -598,7 +599,7 @@
   line-height: 1.6;
 }
 
-/* ── Assign list scrollbar ── */
+/* -- Assign list scrollbar -- */
 .assign-list::-webkit-scrollbar {
   width: 4px;
 }
@@ -608,7 +609,7 @@
   border-radius: 4px;
 }
 
-/* ── Modal scrollbar ── */
+/* -- Modal scrollbar -- */
 .modal-box::-webkit-scrollbar {
   width: 5px;
 }
@@ -618,9 +619,7 @@
   border-radius: 6px;
 }
 
-/* ══════════════════════════════════════════════
-   ADD USER MODAL — form rows side by side
-══════════════════════════════════════════════ */
+/* ADD USER MODAL - form rows side by side */
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -663,4 +662,20 @@
 .double-scroll-top::-webkit-scrollbar-thumb:hover,
 .table-wrapper::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
+}
+
+.user-mgmt-container .table-wrapper {
+  height: calc(100vh - 250px) !important;
+  overflow-y: auto !important;
+  overflow-x: auto !important;
+  min-height: 200px !important;
+  scrollbar-gutter: stable;
+}
+
+.user-table th {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 10 !important;
+  background-color: #f8fafc !important;
+  box-shadow: inset 0 -1px 0 #e2e8f0 !important;
 }

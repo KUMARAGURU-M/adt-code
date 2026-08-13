@@ -15,8 +15,7 @@ import java.util.UUID;
 @Repository
 public interface JobRepository extends JpaRepository<Job, UUID> {
 
-        // Per-project uniqueness — matches DB constraint UNIQUE(project_id,
-        // job_id_code)
+        // Per-project uniqueness — matches DB constraint UNIQUE(project_id, job_id_code)
         boolean existsByProjectIdAndJobIdCode(UUID projectId, String jobIdCode);
 
         List<Job> findByProjectIdOrderByReceiveDateDesc(UUID projectId);
@@ -88,4 +87,58 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
                         @Param("startDate") LocalDate startDate,
                         @Param("endDate") LocalDate endDate,
                         Pageable pageable);
+
+        @Query("""
+                        SELECT j FROM Job j
+                        WHERE (j.endDate >= :startDate AND j.endDate <= :endDate)
+                           OR (j.receiveDate >= :startDate AND j.receiveDate <= :endDate)
+                           OR (j.uploadDate >= :startDate AND j.uploadDate <= :endDate)
+                           OR (j.startMonth >= :startDate AND j.startMonth <= :endDate)
+                           OR (j.endMonth >= :startDate AND j.endMonth <= :endDate)
+                        """)
+        List<Job> findActiveOrCompletedJobsInDateRange(
+                        @Param("startDate") LocalDate startDate,
+                        @Param("endDate") LocalDate endDate);
+
+        @Query("""
+                        SELECT j FROM Job j
+                        WHERE j.project.id = :projectId
+                          AND (
+                            (j.endDate >= :startDate AND j.endDate <= :endDate)
+                            OR (j.receiveDate >= :startDate AND j.receiveDate <= :endDate)
+                            OR (j.uploadDate >= :startDate AND j.uploadDate <= :endDate)
+                            OR (j.startMonth >= :startDate AND j.startMonth <= :endDate)
+                            OR (j.endMonth >= :startDate AND j.endMonth <= :endDate)
+                          )
+                        ORDER BY j.receiveDate DESC, j.jobIdCode ASC
+                        """)
+        List<Job> findActiveOrCompletedJobsByProjectInDateRange(
+                        @Param("projectId") UUID projectId,
+                        @Param("startDate") LocalDate startDate,
+                        @Param("endDate") LocalDate endDate);
+
+        /**
+         * Fetches only UPLOADED (completed) jobs for the Page Output Registry.
+         * Conditions:
+         *   - fileStatus = 'uploaded'  (book job file is uploaded/completed)
+         *   - startMonth (production commenced date) within billing cycle
+         *   - endDate    (production end date)       within billing cycle
+         */
+        @Query("""
+                        SELECT j FROM Job j
+                        WHERE j.project.id = :projectId
+                          AND LOWER(j.fileStatus) = 'uploaded'
+                          AND (
+                            (j.startMonth >= :cycleStart AND j.startMonth <= :cycleEnd)
+                            OR (j.endDate >= :cycleStart AND j.endDate <= :cycleEnd)
+                            OR (j.endMonth >= :cycleStart AND j.endMonth <= :cycleEnd)
+                            OR (j.uploadDate >= :cycleStart AND j.uploadDate <= :cycleEnd)
+                            OR (j.receiveDate >= :cycleStart AND j.receiveDate <= :cycleEnd)
+                          )
+                        ORDER BY COALESCE(j.startMonth, j.receiveDate) ASC, j.jobIdCode ASC
+                        """)
+        List<Job> findUploadedJobsByProductionDatesInRange(
+                        @Param("projectId") UUID projectId,
+                        @Param("cycleStart") LocalDate cycleStart,
+                        @Param("cycleEnd") LocalDate cycleEnd);
 }

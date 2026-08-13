@@ -105,6 +105,12 @@ const getLocalDate = () => {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
+const parseLocalDate = (dateStr) => {
+    if (!dateStr) return new Date();
+    const [year, month, day] = dateStr.split("-").map(Number);
+    return new Date(year, month - 1, day);
+};
+
 export default function HourlyGraph() {
     const currentUser = getCurrentUser();
     const isAdmin = currentUser?.roles?.includes("Admin");
@@ -168,12 +174,23 @@ export default function HourlyGraph() {
     }, []);
 
     const dateInputRef = useRef(null);
-    const monthYearLabel = new Date(periodDate).toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+    const monthYearLabel = parseLocalDate(periodDate).toLocaleDateString("en-GB", { month: "long", year: "numeric" });
     const hourLabels = Array.from({ length: hourCount }, (_, i) => ordinal(i + 1));
 
     const markDirty = () => {
         setDirty(true);
         setChangeCount(c => c + 1);
+    };
+
+    const handleDateChange = (newDate) => {
+        if (!newDate || newDate === periodDate) return;
+        if (dirty) {
+            const confirmLeave = window.confirm("You have unsaved changes. Are you sure you want to change the date? Unsaved changes will be lost.");
+            if (!confirmLeave) return;
+        }
+        setDirty(false);
+        setError("");
+        setPeriodDate(newDate);
     };
 
     // ── Fetch Setup and Daily Data ──
@@ -248,8 +265,8 @@ export default function HourlyGraph() {
                 }
                 setActiveDay(data?.activeDay || "");
 
-                // Keep check-in status updated dynamically
-                if (!isAdmin && data?.rows) {
+                // Keep check-in status updated dynamically for the current date only
+                if (!isAdmin && data?.rows && periodDate === getLocalDate()) {
                     const myRow = data.rows.find(r => r.userId === currentUserId);
                     setIsCheckedIn(!!(myRow?.inTime));
                 }
@@ -465,6 +482,7 @@ export default function HourlyGraph() {
     useEffect(() => {
         if (changeCount === 0) return;
         const timer = setTimeout(async () => {
+            if (!dirtyRef.current) return;
             try {
                 setAutoSaving(true);
                 const currentRows = rowsRef.current;
@@ -1069,13 +1087,13 @@ export default function HourlyGraph() {
                     <div className="hg-dd-col">
                         <div className="hg-dd-label">DATE</div>
                         <div className="hg-dd-value" onClick={() => dateInputRef.current?.showPicker?.() || dateInputRef.current?.focus()}>
-                            {new Date(periodDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
+                            {parseLocalDate(periodDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
                             <input
                                 ref={dateInputRef}
                                 type="date"
                                 className="hg-date-hidden"
                                 value={periodDate}
-                                onChange={(e) => e.target.value && setPeriodDate(e.target.value)}
+                                onChange={(e) => handleDateChange(e.target.value)}
                             />
                         </div>
                     </div>

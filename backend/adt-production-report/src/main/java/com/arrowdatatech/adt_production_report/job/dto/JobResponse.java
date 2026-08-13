@@ -34,6 +34,7 @@ public class JobResponse {
     private String qcStatus;
     private LocalDate endDate;
     private java.util.List<String> employees;
+    private java.util.List<String> qcEmployees;
     private LocalDate productionStartDate;
     private UUID importBatchId;
     private OffsetDateTime createdAt;
