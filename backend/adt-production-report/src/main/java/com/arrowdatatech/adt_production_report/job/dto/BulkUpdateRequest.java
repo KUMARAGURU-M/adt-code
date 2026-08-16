@@ -24,7 +24,7 @@ public class BulkUpdateRequest {
 
     /**
      * Map of field → value to apply to every selected job.
-     * Supported keys: pdfInputType, complexity, referenceType,
+     * Supported keys: receiveDate, pdfInputType, complexity, referenceType,
      *                 status, fileStatus, uploadDate, billingStatus.
      */
     @JsonProperty("updates")

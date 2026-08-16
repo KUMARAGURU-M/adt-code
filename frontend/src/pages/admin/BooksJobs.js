@@ -645,6 +645,7 @@ const BulkReconfirmDeleteModal = ({ selectedIds, selectedCount, onClose, onDelet
 
 // ── Bulk Edit Modal ───────────────────────────────────────────────
 const BULK_EDIT_FIELDS = [
+  { key: 'receiveDate', label: 'Receive Date', type: 'date' },
   { key: 'pdfType', label: 'PDF Input Type', type: 'select', options: PDF_TYPES },
   { key: 'complexity', label: 'Complexity', type: 'select', options: COMPLEXITY_OPTIONS.map(c => c.label) },
   { key: 'refType', label: 'Reference Type', type: 'select', options: REF_TYPES },
@@ -684,6 +685,7 @@ const BulkEditModal = ({ selectedIds, selectedCount, onClose, onDone }) => {
       const updates = {};
       activeFields.forEach(f => {
         const apiKey = {
+          receiveDate: 'receiveDate',
           pdfType: 'pdfInputType',
           complexity: 'complexity',
           refType: 'referenceType',
@@ -1257,7 +1259,11 @@ const BooksJobs = () => {
     clientId: '',
     project: '', projectId: '',
     workflowId: '',
-    isbn: '', startMonth: '', endMonth: '',
+    isbn: '',
+    receiveDateFrom: '',
+    receiveDateTo: '',
+    uploadDateFrom: '',
+    uploadDateTo: '',
     status: '', billing: '',
     jobId: '', complexity: '', fileStatus: '',
   });
@@ -1318,8 +1324,10 @@ const BooksJobs = () => {
         ...(filters.workflowId && { workflowId: filters.workflowId }),
         ...(filters.jobId && { jobIdCode: filters.jobId }),
         ...(filters.isbn && { xmlIsbn: filters.isbn }),
-        ...(filters.startMonth && { startMonthFrom: filters.startMonth }),
-        ...(filters.endMonth && { startMonthTo: filters.endMonth }),
+        ...(filters.receiveDateFrom && { startMonthFrom: filters.receiveDateFrom }),
+        ...(filters.receiveDateTo && { startMonthTo: filters.receiveDateTo }),
+        ...(filters.uploadDateFrom && { uploadDateFrom: filters.uploadDateFrom }),
+        ...(filters.uploadDateTo && { uploadDateTo: filters.uploadDateTo }),
         ...(filters.status && { status: filters.status }),
         ...(filters.billing && { billingStatus: filters.billing }),
         ...(filters.complexity && { complexity: filters.complexity }),
@@ -1490,8 +1498,10 @@ const BooksJobs = () => {
       project: '', projectId: '',
       workflowId: '',
       isbn: '',
-      startMonth: '',
-      endMonth: '',
+      receiveDateFrom: '',
+      receiveDateTo: '',
+      uploadDateFrom: '',
+      uploadDateTo: '',
       status: '',
       billing: '',
       jobId: '',
@@ -1726,15 +1736,27 @@ const BooksJobs = () => {
 
           {/* Remain filters */}
           <div className="bj-filter-group">
-            <label><span className="flt-icon">📅</span> Start Month From</label>
-            <input type="date" value={filters.startMonth}
-              onChange={e => setF('startMonth', e.target.value)} />
+            <label><span className="flt-icon">📅</span> Receive Date From</label>
+            <input type="date" value={filters.receiveDateFrom}
+              onChange={e => setF('receiveDateFrom', e.target.value)} />
           </div>
 
           <div className="bj-filter-group">
-            <label><span className="flt-icon">📅</span> End Month To</label>
-            <input type="date" value={filters.endMonth}
-              onChange={e => setF('endMonth', e.target.value)} />
+            <label><span className="flt-icon">📅</span> Receive Date To</label>
+            <input type="date" value={filters.receiveDateTo}
+              onChange={e => setF('receiveDateTo', e.target.value)} />
+          </div>
+
+          <div className="bj-filter-group">
+            <label><span className="flt-icon">📅</span> Upload Date From</label>
+            <input type="date" value={filters.uploadDateFrom}
+              onChange={e => setF('uploadDateFrom', e.target.value)} />
+          </div>
+
+          <div className="bj-filter-group">
+            <label><span className="flt-icon">📅</span> Upload Date To</label>
+            <input type="date" value={filters.uploadDateTo}
+              onChange={e => setF('uploadDateTo', e.target.value)} />
           </div>
 
           <div className="bj-filter-group">

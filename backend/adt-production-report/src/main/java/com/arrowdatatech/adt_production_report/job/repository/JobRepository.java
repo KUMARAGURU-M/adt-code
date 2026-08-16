@@ -34,6 +34,8 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
                             LIKE LOWER(CONCAT('%', CAST(:xmlIsbn AS string), '%')))
                         AND (CAST(:startMonthFrom AS date) IS NULL OR j.receiveDate >= :startMonthFrom)
                         AND (CAST(:startMonthTo AS date) IS NULL OR j.receiveDate <= :startMonthTo)
+                        AND (CAST(:uploadDateFrom AS date) IS NULL OR j.uploadDate >= :uploadDateFrom)
+                        AND (CAST(:uploadDateTo AS date) IS NULL OR j.uploadDate <= :uploadDateTo)
                         AND (:status IS NULL OR j.status = :status)
                         AND (:billingStatus IS NULL OR j.billingStatus = :billingStatus)
                         AND (:complexity IS NULL OR j.complexity = :complexity)
@@ -48,6 +50,8 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
                         @Param("xmlIsbn") String xmlIsbn,
                         @Param("startMonthFrom") LocalDate startMonthFrom,
                         @Param("startMonthTo") LocalDate startMonthTo,
+                        @Param("uploadDateFrom") LocalDate uploadDateFrom,
+                        @Param("uploadDateTo") LocalDate uploadDateTo,
                         @Param("status") String status,
                         @Param("billingStatus") String billingStatus,
                         @Param("complexity") String complexity,
@@ -72,8 +76,8 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
                         AND (:complexity IS NULL OR j.complexity = :complexity)
                         AND (:processStatus IS NULL OR j.processStatus = :processStatus)
                         AND (:qcStatus IS NULL OR j.qcStatus = :qcStatus)
-                        AND (CAST(:startDate AS date) IS NULL OR j.receiveDate >= :startDate)
-                        AND (CAST(:endDate AS date) IS NULL OR j.receiveDate <= :endDate)
+                        AND (CAST(:startDate AS date) IS NULL OR j.endDate >= :startDate)
+                        AND (CAST(:endDate AS date) IS NULL OR j.endDate <= :endDate)
                         ORDER BY j.jobIdCode ASC
                         """)
         Page<Job> searchProductionJobs(

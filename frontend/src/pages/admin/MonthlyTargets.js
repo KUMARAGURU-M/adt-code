@@ -73,25 +73,24 @@ const getDaysDiff = (date1, date2) => {
 };
 
 const getJobWeek = (job, cycleStartDateStr, cycleEndDateStr) => {
-  if (!cycleStartDateStr || !job.startMonth) return null;
-  const effectiveEndDate = job.endDate || job.endMonth;
-  if (!effectiveEndDate) return null;
+  if (!cycleStartDateStr) return null;
+  const effectiveUploadDate = job.uploadDate || job.endDate || job.endMonth;
+  if (!effectiveUploadDate) return null;
 
-  const startDays = getDaysDiff(cycleStartDateStr, job.startMonth);
-  const endDays = getDaysDiff(cycleStartDateStr, effectiveEndDate);
+  const uploadDays = getDaysDiff(cycleStartDateStr, effectiveUploadDate);
 
-  if (startDays >= 0 && endDays >= 0) {
-    if (startDays < 7 && endDays < 7) {
+  if (uploadDays >= 0) {
+    if (uploadDays < 7) {
       return 1;
-    } else if (startDays >= 7 && startDays < 14 && endDays >= 7 && endDays < 14) {
+    } else if (uploadDays >= 7 && uploadDays < 14) {
       return 2;
-    } else if (startDays >= 14 && startDays < 21 && endDays >= 14 && endDays < 21) {
+    } else if (uploadDays >= 14 && uploadDays < 21) {
       return 3;
-    } else if (startDays >= 21 && startDays < 28 && endDays >= 21 && endDays < 28) {
+    } else if (uploadDays >= 21 && uploadDays < 28) {
       return 4;
     } else {
       if (cycleEndDateStr) {
-        const endDiff = getDaysDiff(effectiveEndDate, cycleEndDateStr);
+        const endDiff = getDaysDiff(effectiveUploadDate, cycleEndDateStr);
         if (endDiff >= 0) {
           return 5;
         }
@@ -807,16 +806,16 @@ const MonthlyTargets = () => {
                 onClick={() => openDetailDrawer(proj.projectId)}
               >
                 {/* Card Header */}
-                <div className="card-project-header card-project-header--centered">
-                  <div className="card-header-name-block">
-                    <h4 className="project-card-name">{proj.projectName}</h4>
+                <div className="card-project-header">
+                  <div className="card-header-client-block">
                     <span className="project-client-sub">{proj.clientName}</span>
                   </div>
-                  {!proj.isProjectActive && (
-                    <div className="header-badges">
+                  <div className="card-header-project-block">
+                    <h4 className="project-card-name">{proj.projectName}</h4>
+                    {!proj.isProjectActive && (
                       <span className="badge-inactive-state">Inactive</span>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
 
                 {/* Progress Indicators */}
@@ -1426,13 +1425,13 @@ const MonthlyTargets = () => {
         <div className="drawer-overlay" onClick={() => setShowDetailDrawer(false)}>
           <div className={`drawer-container ${isMaximized ? 'maximized' : ''}`} onClick={(e) => e.stopPropagation()}>
             <div className="drawer-header">
-              <div className="drawer-title-section drawer-title-centered">
-                <h3 className="drawer-project-name">
-                  {loadingDetail ? 'Loading Details...' : selectedProjectDetail?.projectName}
-                </h3>
+              <div className="drawer-title-section">
                 {!loadingDetail && selectedProjectDetail && (
                   <span className="drawer-client-name">{selectedProjectDetail.clientName}</span>
                 )}
+                <h3 className="drawer-project-name">
+                  {loadingDetail ? 'Loading Details...' : selectedProjectDetail?.projectName}
+                </h3>
               </div>
               <div className="drawer-header-actions">
                 {!loadingDetail && selectedProjectDetail && (
@@ -1453,248 +1452,307 @@ const MonthlyTargets = () => {
                 <div className="loader-element"></div>
                 <p>Retrieving operational records...</p>
               </div>
-            ) : selectedProjectDetail ? (
-              <div className="drawer-body single-page-drawer">
-                <div className="drawer-content-scrollable">
+            ) : selectedProjectDetail ? (() => {
+              const getWeekJobsCount = (weekNum) => {
+                if (!selectedProjectDetail.jobs) return 0;
+                return selectedProjectDetail.jobs.filter(job => {
+                  const jobWeek = getJobWeek(
+                    job,
+                    selectedProjectDetail.billingCycleStartDate,
+                    selectedProjectDetail.billingCycleEndDate
+                  );
+                  if (weekNum === 4) {
+                    return jobWeek === 4 || jobWeek === 5;
+                  }
+                  return jobWeek === weekNum;
+                }).length;
+              };
 
-                  {/* Section 1: Overview & Operational Workflow */}
-                  <div className="drawer-section overview-section">
-                    <div className="highlighted-workflow-card">
-                      <div className="workflow-card-header">
-                        <Layers size={18} className="workflow-header-icon" />
-                        <h4 className="workflow-card-title">
-                          Operational Workflow: <span className="workflow-highlight">{selectedProjectDetail.workflowName}</span>
-                        </h4>
+              const getWeekTargetBooks = (weekNum) => {
+                if (weekNum === 1) return selectedProjectDetail.week1TargetBooks || 0;
+                if (weekNum === 2) return selectedProjectDetail.week2TargetBooks || 0;
+                if (weekNum === 3) return selectedProjectDetail.week3TargetBooks || 0;
+                if (weekNum === 4) return (selectedProjectDetail.week4TargetBooks || 0) + (selectedProjectDetail.week5TargetBooks || 0);
+                return 0;
+              };
+
+              return (
+                <div className="drawer-body single-page-drawer">
+                  <div className="drawer-content-scrollable">
+
+                    {/* Section 1: Overview & Operational Workflow */}
+                    <div className="drawer-section overview-section">
+                      <div className="highlighted-workflow-card">
+                        <div className="workflow-card-header center-header">
+                          <h4 className="workflow-card-title center-title">
+                            <span className="workflow-highlight">{selectedProjectDetail.workflowName}</span>
+                          </h4>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Section 2: Page Output by Complexity */}
-                  {selectedProjectDetail.targetPagesTotal > 0 && (
-                    <div className="drawer-section complexity-pages-section">
-                      <h4 className="section-title">Page Output by Complexity</h4>
-                      <div className="complexity-pages-grid">
-                        {[
-                          { label: 'Simple', target: selectedProjectDetail.targetPagesSimple, actual: getActualPagesByComplexity('simple'), key: 'simple' },
-                          { label: 'Medium', target: selectedProjectDetail.targetPagesMedium, actual: getActualPagesByComplexity('medium'), key: 'medium' },
-                          { label: 'Complex', target: selectedProjectDetail.targetPagesComplex, actual: getActualPagesByComplexity('complex'), key: 'complex' },
-                          { label: 'Heavy Complex', target: selectedProjectDetail.targetPagesHeavyComplex, actual: getActualPagesByComplexity('heavy-complex'), key: 'heavy-complex' }
-                        ].map((c, idx) => {
-                          const progress = c.target > 0 ? Math.min(100, Math.round(((c.actual || 0) / c.target) * 100)) : 0;
-                          return (
-                            <div key={idx} className={`complexity-page-node ${c.key}`}>
-                              <div className="c-text-header">
-                                <span className="c-label">{c.label}</span>
-                                <span className="c-pages-val">
-                                  <strong>{c.actual || 0}</strong> / {c.target || 0} pages
-                                </span>
-                              </div>
-                              {c.target > 0 && (
-                                <div className="c-progress-bar">
-                                  <div className="c-progress-fill" style={{ width: `${progress}%` }}></div>
+                    {/* Section 2: Page Output by Complexity */}
+                    {selectedProjectDetail.targetPagesTotal > 0 && (
+                      <div className="drawer-section complexity-pages-section">
+                        <h4 className="section-title">Page Output by Complexity</h4>
+                        <div className="complexity-pages-grid">
+                          {[
+                            { label: 'Simple', target: selectedProjectDetail.targetPagesSimple, actual: getActualPagesByComplexity('simple'), key: 'simple' },
+                            { label: 'Medium', target: selectedProjectDetail.targetPagesMedium, actual: getActualPagesByComplexity('medium'), key: 'medium' },
+                            { label: 'Complex', target: selectedProjectDetail.targetPagesComplex, actual: getActualPagesByComplexity('complex'), key: 'complex' },
+                            { label: 'Heavy Complex', target: selectedProjectDetail.targetPagesHeavyComplex, actual: getActualPagesByComplexity('heavy-complex'), key: 'heavy-complex' }
+                          ].map((c, idx) => {
+                            const progress = c.target > 0 ? Math.min(100, Math.round(((c.actual || 0) / c.target) * 100)) : 0;
+                            return (
+                              <div key={idx} className={`complexity-page-node ${c.key}`}>
+                                <div className="c-text-header">
+                                  <span className="c-label">{c.label}</span>
+                                  <span className="c-pages-val">
+                                    <strong>{c.actual || 0}</strong> / {c.target || 0} pages
+                                  </span>
                                 </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Section 3: Weekly Target Performance */}
-                  <div className="drawer-section weekly-targets-section">
-                    <h4 className="section-title">Weekly Target Performance</h4>
-                    <div className="weekly-stats-list">
-                      {(() => {
-                        const cycleStart = selectedProjectDetail.billingCycleStartDate;
-                        const cycleEnd = selectedProjectDetail.billingCycleEndDate;
-                        const weeks = cycleStart ? getWeeklyRanges(cycleStart, cycleEnd) : [];
-                        const targets = [
-                          selectedProjectDetail.targetPagesWeek1,
-                          selectedProjectDetail.targetPagesWeek2,
-                          selectedProjectDetail.targetPagesWeek3,
-                          selectedProjectDetail.targetPagesWeek4
-                        ];
-                        const actuals = [
-                          selectedProjectDetail.actualPagesWeek1,
-                          selectedProjectDetail.actualPagesWeek2,
-                          selectedProjectDetail.actualPagesWeek3,
-                          (selectedProjectDetail.actualPagesWeek4 || 0) + (selectedProjectDetail.actualPagesWeek5 || 0)
-                        ];
-                        return [0, 1, 2, 3].map((idx) => {
-                          const target = targets[idx] || 0;
-                          const actual = actuals[idx] || 0;
-                          const hasTarget = target > 0;
-                          const truePercent = hasTarget ? Math.round((actual / target) * 100) : 0;
-                          const fillPercent = Math.min(100, truePercent);
-                          const isMet = hasTarget && actual >= target;
-                          const statusClass = hasTarget ? (isMet ? 'status-met' : 'status-behind') : 'status-unset';
-                          const wk = weeks[idx];
-                          return (
-                            <div
-                              key={idx}
-                              className={`weekly-stat-row ${statusClass} ${selectedWeek === idx + 1 ? 'active-filter' : ''}`}
-                              onClick={() => setSelectedWeek(prev => prev === idx + 1 ? null : idx + 1)}
-                            >
-                              <div className="week-label-header">
-                                <span className="wk-name">
-                                  Week {idx + 1}
-                                  {wk && <span className="wk-date-range"> ({wk.range})</span>}
-                                </span>
-                                <span className="wk-vals">
-                                  Completed <strong>{actual}</strong> / {hasTarget ? target : 'Unset'} pages
-                                </span>
-                              </div>
-                              {hasTarget ? (
-                                <div className="wk-progress-bar-wrapper">
-                                  <div className="wk-progress-bar-track">
-                                    <div
-                                      className={`wk-progress-bar-fill ${getProgressColor(truePercent)}`}
-                                      style={{ width: `${fillPercent}%` }}
-                                    ></div>
+                                {c.target > 0 && (
+                                  <div className="c-progress-bar">
+                                    <div className="c-progress-fill" style={{ width: `${progress}%` }}></div>
                                   </div>
-                                  <span className="wk-progress-percent">{truePercent}%</span>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Section 3: Weekly Target Performance */}
+                    <div className="drawer-section weekly-targets-section">
+                      <h4 className="section-title">Weekly Target Performance</h4>
+                      <div className="weekly-stats-list">
+                        {(() => {
+                          const cycleStart = selectedProjectDetail.billingCycleStartDate;
+                          const cycleEnd = selectedProjectDetail.billingCycleEndDate;
+                          const weeks = cycleStart ? getWeeklyRanges(cycleStart, cycleEnd) : [];
+                          const targets = [
+                            selectedProjectDetail.targetPagesWeek1,
+                            selectedProjectDetail.targetPagesWeek2,
+                            selectedProjectDetail.targetPagesWeek3,
+                            selectedProjectDetail.targetPagesWeek4
+                          ];
+                          const actuals = [
+                            selectedProjectDetail.actualPagesWeek1,
+                            selectedProjectDetail.actualPagesWeek2,
+                            selectedProjectDetail.actualPagesWeek3,
+                            (selectedProjectDetail.actualPagesWeek4 || 0) + (selectedProjectDetail.actualPagesWeek5 || 0)
+                          ];
+                          return [0, 1, 2, 3].map((idx) => {
+                            const target = targets[idx] || 0;
+                            const actual = actuals[idx] || 0;
+                            const hasTarget = target > 0;
+                            const truePercent = hasTarget ? Math.round((actual / target) * 100) : 0;
+                            const fillPercent = Math.min(100, truePercent);
+                            const isMet = hasTarget && actual >= target;
+                            const statusClass = hasTarget ? (isMet ? 'status-met' : 'status-behind') : 'status-unset';
+                            const wk = weeks[idx];
+                            return (
+                              <div
+                                key={idx}
+                                className={`weekly-stat-row ${statusClass} ${selectedWeek === idx + 1 ? 'active-filter' : ''}`}
+                                onClick={() => setSelectedWeek(prev => prev === idx + 1 ? null : idx + 1)}
+                              >
+                                <div className="week-label-header">
+                                  <span className="wk-name">
+                                    Week {idx + 1}
+                                    {wk && <span className="wk-date-range"> ({wk.range})</span>}
+                                  </span>
+                                  <span className="wk-vals">
+                                    Completed <strong>{actual}</strong> / {hasTarget ? target : 'Unset'} pages
+                                  </span>
                                 </div>
-                              ) : (
-                                <span className="wk-no-target-hint">No target set for this week</span>
-                              )}
-                            </div>
-                          );
+                                {hasTarget ? (
+                                  <div className="wk-progress-bar-wrapper">
+                                    <div className="wk-progress-bar-track">
+                                      <div
+                                        className={`wk-progress-bar-fill ${getProgressColor(truePercent)}`}
+                                        style={{ width: `${fillPercent}%` }}
+                                      ></div>
+                                    </div>
+                                    <span className="wk-progress-percent">{truePercent}%</span>
+                                  </div>
+                                ) : (
+                                  <span className="wk-no-target-hint">No target set for this week</span>
+                                )}
+                              </div>
+                            );
+                          });
+                        })()}
+                      </div>
+                    </div>
+
+                    {/* Section 4: Page Output Registry */}
+                    <div className="drawer-section books-registry-section">
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <h4 className="section-title" style={{ margin: 0 }}>Page Output Registry</h4>
+                          <span style={{ fontSize: '0.85rem', color: '#1e3a8a', fontWeight: '700', background: 'rgba(59, 130, 246, 0.1)', padding: '4px 12px', borderRadius: '12px' }}>
+                            {selectedWeek !== null ? (
+                              <span>Week {selectedWeek} Book / Article: <strong style={{ color: '#1d4ed8' }}>{getWeekJobsCount(selectedWeek)}</strong></span>
+                            ) : (
+                              <span>Monthly Book / Article: <strong style={{ color: '#1d4ed8' }}>{selectedProjectDetail.jobs ? selectedProjectDetail.jobs.length : 0}</strong></span>
+                            )}
+                          </span>
+                        </div>
+                        {selectedWeek !== null && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span className="mini-badge badge-progress" style={{ fontSize: '0.75rem', padding: '4px 8px' }}>
+                              Week {selectedWeek} Active Filter
+                            </span>
+                            <button
+                              onClick={() => setSelectedWeek(null)}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                color: '#ef4444',
+                                fontSize: '0.72rem',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                padding: 0
+                              }}
+                            >
+                              Clear Filter
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      <div className="tab-toolbar">
+                        <div className="mini-search-wrapper">
+                          <Search size={14} className="mini-search-icon" />
+                          <input
+                            type="text"
+                            placeholder="Search by Title or Job ID..."
+                            className="mini-search-input"
+                            value={bookSearchQuery}
+                            onChange={(e) => setBookSearchQuery(e.target.value)}
+                          />
+                        </div>
+                      </div>
+
+                      {(() => {
+                        const filteredJobs = (selectedProjectDetail.jobs || []).filter(job => {
+                          const q = bookSearchQuery.toLowerCase();
+                          const matchesSearch = (job.titleName || '').toLowerCase().includes(q) ||
+                            (job.jobIdCode || '').toLowerCase().includes(q);
+                          if (!matchesSearch) return false;
+
+                          if (selectedWeek !== null) {
+                            const jobWeek = getJobWeek(
+                              job,
+                              selectedProjectDetail.billingCycleStartDate,
+                              selectedProjectDetail.billingCycleEndDate
+                            );
+                            if (selectedWeek === 4) {
+                              return jobWeek === 4 || jobWeek === 5;
+                            }
+                            return jobWeek === selectedWeek;
+                          }
+                          return true;
                         });
+
+                        return filteredJobs.length > 0 ? (
+                          <div className="drawer-table-container">
+                            <table className="drawer-jobs-table registry-table-compact">
+                              <thead>
+                                <tr>
+                                  <th>Assigned Employee</th>
+                                  <th>No. Employee</th>
+                                  <th>Receive Date</th>
+                                  <th>Job ID</th>
+                                  <th>ISBN</th>
+                                  <th>Title / Article</th>
+                                  <th>Pages</th>
+                                  <th>Complexity</th>
+                                  <th>Commenced Date</th>
+                                  <th>Uploaded Date</th>
+                                  <th>No. of Days</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {filteredJobs.map((job) => {
+                                  const fmt = (d) => d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+                                  return (
+                                    <tr key={job.id}>
+                                      <td style={{ textAlign: 'left', minWidth: '180px' }}>
+                                        <div className="employee-box-container">
+                                          {job.employeeNames && (
+                                            <div className="employee-box prod-box">
+                                              <span className="employee-icon-prod">👤</span>
+                                              <span className="employee-names-list" title={job.employeeNames}>
+                                                {job.employeeNames.split(',').map(s => s.trim()).filter(Boolean).join(' | ')}
+                                              </span>
+                                            </div>
+                                          )}
+                                          {job.qcEmployeeNames && (
+                                            <div className="employee-box qc-box">
+                                              <span className="employee-icon-qc">👤</span>
+                                              <span className="employee-names-list" title={job.qcEmployeeNames}>
+                                                {job.qcEmployeeNames.split(',').map(s => s.trim()).filter(Boolean).join(' | ')}
+                                              </span>
+                                            </div>
+                                          )}
+                                          {!job.employeeNames && !job.qcEmployeeNames && '—'}
+                                        </div>
+                                      </td>
+                                      <td style={{ fontWeight: '700', color: '#0d9488' }}>
+                                        {(() => {
+                                          const emps = new Set();
+                                          if (job.employeeNames) {
+                                            job.employeeNames.split(',').forEach(s => {
+                                              const name = s.trim();
+                                              if (name) emps.add(name.toLowerCase());
+                                            });
+                                          }
+                                          if (job.qcEmployeeNames) {
+                                            job.qcEmployeeNames.split(',').forEach(s => {
+                                              const name = s.trim();
+                                              if (name) emps.add(name.toLowerCase());
+                                            });
+                                          }
+                                          return emps.size;
+                                        })()}
+                                      </td>
+                                      <td className="job-date">{fmt(job.receiveDate)}</td>
+                                      <td className="job-id-code" style={{ fontWeight: '600' }}>{job.jobIdCode || '—'}</td>
+                                      <td className="job-isbn-code">{job.xmlIsbn || '—'}</td>
+                                      <td className="job-title" title={job.titleName}>{job.titleName}</td>
+                                      <td className="job-pages">{job.pageCount || '—'}</td>
+                                      <td>
+                                        <span className={`complexity-mini-tag ${(job.complexity || '').toLowerCase().replace(/\s+/g, '-')}`}>
+                                          {job.complexity || '—'}
+                                        </span>
+                                      </td>
+                                      <td className="job-date">{fmt(job.startMonth)}</td>
+                                      <td className="job-date">{fmt(job.uploadDate)}</td>
+                                      <td className="job-days">{job.noOfDays > 0 ? `${job.noOfDays}d` : '—'}</td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        ) : (
+                          <div className="empty-tab-state">
+                            <p>
+                              {selectedWeek !== null
+                                ? `No uploaded jobs with production dates in Week ${selectedWeek} of this billing cycle.`
+                                : "No uploaded jobs with production dates in this billing cycle."}
+                            </p>
+                          </div>
+                        );
                       })()}
                     </div>
+
                   </div>
-
-                  {/* Section 4: Page Output Registry */}
-                  <div className="drawer-section books-registry-section">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                      <h4 className="section-title" style={{ margin: 0 }}>Page Output Registry</h4>
-                      {selectedWeek !== null && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span className="mini-badge badge-progress" style={{ fontSize: '0.75rem', padding: '4px 8px' }}>
-                            Week {selectedWeek} Active Filter
-                          </span>
-                          <button
-                            onClick={() => setSelectedWeek(null)}
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              color: '#ef4444',
-                              fontSize: '0.72rem',
-                              fontWeight: 700,
-                              cursor: 'pointer',
-                              padding: 0
-                            }}
-                          >
-                            Clear Filter
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                    <div className="tab-toolbar">
-                      <div className="mini-search-wrapper">
-                        <Search size={14} className="mini-search-icon" />
-                        <input
-                          type="text"
-                          placeholder="Search by Title or Job ID..."
-                          className="mini-search-input"
-                          value={bookSearchQuery}
-                          onChange={(e) => setBookSearchQuery(e.target.value)}
-                        />
-                      </div>
-                    </div>
-
-                    {(() => {
-                      const filteredJobs = (selectedProjectDetail.jobs || []).filter(job => {
-                        const q = bookSearchQuery.toLowerCase();
-                        const matchesSearch = (job.titleName || '').toLowerCase().includes(q) ||
-                          (job.jobIdCode || '').toLowerCase().includes(q);
-                        if (!matchesSearch) return false;
-
-                        if (selectedWeek !== null) {
-                          const jobWeek = getJobWeek(
-                            job,
-                            selectedProjectDetail.billingCycleStartDate,
-                            selectedProjectDetail.billingCycleEndDate
-                          );
-                          if (selectedWeek === 4) {
-                            return jobWeek === 4 || jobWeek === 5;
-                          }
-                          return jobWeek === selectedWeek;
-                        }
-                        return true;
-                      });
-
-                      return filteredJobs.length > 0 ? (
-                        <div className="drawer-table-container">
-                          <table className="drawer-jobs-table registry-table-compact">
-                            <thead>
-                              <tr>
-                                <th>Assigned Employee</th>
-                                <th>Receive Date</th>
-                                <th>Title / Article</th>
-                                <th>Pages</th>
-                                <th>Complexity</th>
-                                <th>Commenced Date</th>
-                                <th>End Date</th>
-                                <th>Uploaded Date</th>
-                                <th>No. of Days</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {filteredJobs.map((job) => {
-                                const fmt = (d) => d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
-                                return (
-                                  <tr key={job.id}>
-                                    <td style={{ textAlign: 'left', minWidth: '150px' }}>
-                                      {job.employeeNames && (
-                                        <div style={{ marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                          <span className="complexity-mini-tag simple" style={{ fontSize: '0.65rem', padding: '2px 6px', fontWeight: '800' }}>Prod👤</span>
-                                          <span className="job-isbn" title={job.employeeNames}>{job.employeeNames}</span>
-                                        </div>
-                                      )}
-                                      {job.qcEmployeeNames && (
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                          <span className="complexity-mini-tag complex" style={{ fontSize: '0.65rem', padding: '2px 6px', fontWeight: '800' }}>QC👤</span>
-                                          <span className="job-isbn" title={job.qcEmployeeNames}>{job.qcEmployeeNames}</span>
-                                        </div>
-                                      )}
-                                      {!job.employeeNames && !job.qcEmployeeNames && '—'}
-                                    </td>
-                                    <td className="job-date">{fmt(job.receiveDate)}</td>
-                                    <td className="job-title" title={job.titleName}>{job.titleName}</td>
-                                    <td className="job-pages">{job.pageCount || '—'}</td>
-                                    <td>
-                                      <span className={`complexity-mini-tag ${(job.complexity || '').toLowerCase().replace(/\s+/g, '-')}`}>
-                                        {job.complexity || '—'}
-                                      </span>
-                                    </td>
-                                    <td className="job-date">{fmt(job.startMonth)}</td>
-                                    <td className="job-date">{fmt(job.endDate)}</td>
-                                    <td className="job-date">{fmt(job.uploadDate)}</td>
-                                    <td className="job-days">{job.noOfDays > 0 ? `${job.noOfDays}d` : '—'}</td>
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </table>
-                        </div>
-                      ) : (
-                        <div className="empty-tab-state">
-                          <p>
-                            {selectedWeek !== null
-                              ? `No uploaded jobs with production dates in Week ${selectedWeek} of this billing cycle.`
-                              : "No uploaded jobs with production dates in this billing cycle."}
-                          </p>
-                        </div>
-                      );
-                    })()}
-                  </div>
-
                 </div>
-              </div>
-
-            ) : (
+              );
+            })() : (
               <div className="drawer-error">
                 <AlertCircle size={28} />
                 <p>Failed to retrieve project detail.</p>

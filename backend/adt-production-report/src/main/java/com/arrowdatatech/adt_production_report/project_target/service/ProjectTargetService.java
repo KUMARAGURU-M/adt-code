@@ -117,45 +117,11 @@ public class ProjectTargetService {
                         if (isCompleted) {
                             LocalDate effectiveEndDate = j.getEndDate() != null ? j.getEndDate() : j.getEndMonth();
                             LocalDate effectiveUploadDate = j.getUploadDate() != null ? j.getUploadDate() : effectiveEndDate;
-                            LocalDate effectiveStartDate = j.getStartMonth() != null ? j.getStartMonth() : (j.getReceiveDate() != null ? j.getReceiveDate() : effectiveEndDate);
 
-                            // Rule 1: uploadDate falls between billing cycle start and end dates
-                            boolean rule1 = effectiveUploadDate != null
+                            // Rule: uploadDate falls between billing cycle start and end dates
+                            return effectiveUploadDate != null
                                     && !effectiveUploadDate.isBefore(finalCycleStart)
                                     && !effectiveUploadDate.isAfter(finalCycleEnd);
-
-                            // Rule 2: commenced date (startMonth) AND end date (endDate) in billing cycle
-                            boolean rule2 = effectiveStartDate != null
-                                    && !effectiveStartDate.isBefore(finalCycleStart)
-                                    && !effectiveStartDate.isAfter(finalCycleEnd)
-                                    && effectiveEndDate != null
-                                    && !effectiveEndDate.isBefore(finalCycleStart)
-                                    && !effectiveEndDate.isAfter(finalCycleEnd);
-
-                            // Weekly target range check:
-                            boolean inWeeklyRange = false;
-                            if (effectiveStartDate != null && effectiveEndDate != null) {
-                                long startDays = java.time.temporal.ChronoUnit.DAYS.between(finalCycleStart, effectiveStartDate);
-                                long endDays = java.time.temporal.ChronoUnit.DAYS.between(finalCycleStart, effectiveEndDate);
-                                if (startDays >= 0 && endDays >= 0) {
-                                    if (startDays < 7 && endDays < 7) {
-                                        inWeeklyRange = true; // Week 1
-                                    } else if (startDays >= 7 && startDays < 14 && endDays >= 7 && endDays < 14) {
-                                        inWeeklyRange = true; // Week 2
-                                    } else if (startDays >= 14 && startDays < 21 && endDays >= 14 && endDays < 21) {
-                                        inWeeklyRange = true; // Week 3
-                                    } else if (startDays >= 21 && startDays < 28 && endDays >= 21 && endDays < 28) {
-                                        inWeeklyRange = true; // Week 4
-                                    } else {
-                                        // Week 5 (ensure it is within cycleEnd)
-                                        if (!effectiveEndDate.isAfter(finalCycleEnd)) {
-                                            inWeeklyRange = true;
-                                        }
-                                    }
-                                }
-                            }
-
-                            return (rule1 && rule2) || inWeeklyRange;
                         } else {
                             LocalDate receive = j.getReceiveDate();
                             LocalDate upload = j.getUploadDate();
@@ -211,29 +177,27 @@ public class ProjectTargetService {
                         pagesComplex += pages;
                     }
 
-                    // Determine week if both commenced date and end date fall within the same week range
                     LocalDate effectiveEndDate = job.getEndDate() != null ? job.getEndDate() : job.getEndMonth();
-                    LocalDate effectiveStartDate = job.getStartMonth() != null ? job.getStartMonth() : (job.getReceiveDate() != null ? job.getReceiveDate() : effectiveEndDate);
-                    if (effectiveStartDate != null && effectiveEndDate != null) {
-                        long startDays = java.time.temporal.ChronoUnit.DAYS.between(finalCycleStart, effectiveStartDate);
-                        long endDays = java.time.temporal.ChronoUnit.DAYS.between(finalCycleStart, effectiveEndDate);
+                    LocalDate effectiveUploadDate = job.getUploadDate() != null ? job.getUploadDate() : effectiveEndDate;
+                    if (effectiveUploadDate != null) {
+                        long uploadDays = java.time.temporal.ChronoUnit.DAYS.between(finalCycleStart, effectiveUploadDate);
                         
-                        if (startDays >= 0 && endDays >= 0) {
-                            if (startDays < 7 && endDays < 7) {
+                        if (uploadDays >= 0) {
+                            if (uploadDays < 7) {
                                 completedW1++;
                                 pagesW1 += pages;
-                            } else if (startDays >= 7 && startDays < 14 && endDays >= 7 && endDays < 14) {
+                            } else if (uploadDays >= 7 && uploadDays < 14) {
                                 completedW2++;
                                 pagesW2 += pages;
-                            } else if (startDays >= 14 && startDays < 21 && endDays >= 14 && endDays < 21) {
+                            } else if (uploadDays >= 14 && uploadDays < 21) {
                                 completedW3++;
                                 pagesW3 += pages;
-                            } else if (startDays >= 21 && startDays < 28 && endDays >= 21 && endDays < 28) {
+                            } else if (uploadDays >= 21 && uploadDays < 28) {
                                 completedW4++;
                                 pagesW4 += pages;
                             } else {
                                 // Week 5 (ensure it is within cycleEnd)
-                                if (!effectiveEndDate.isAfter(finalCycleEnd)) {
+                                if (!effectiveUploadDate.isAfter(finalCycleEnd)) {
                                     completedW5++;
                                     pagesW5 += pages;
                                 }
@@ -440,45 +404,10 @@ public class ProjectTargetService {
 
                     LocalDate effectiveEndDate = j.getEndDate() != null ? j.getEndDate() : j.getEndMonth();
                     LocalDate effectiveUploadDate = j.getUploadDate() != null ? j.getUploadDate() : effectiveEndDate;
-                    LocalDate effectiveStartDate = j.getStartMonth() != null ? j.getStartMonth() : (j.getReceiveDate() != null ? j.getReceiveDate() : effectiveEndDate);
 
-                    // Rule 1: uploadDate falls between cycleStart and cycleEnd
-                    boolean rule1 = effectiveUploadDate != null
+                    return effectiveUploadDate != null
                             && !effectiveUploadDate.isBefore(finalCycleStart)
                             && !effectiveUploadDate.isAfter(finalCycleEnd);
-
-                    // Rule 2: startMonth AND endDate in cycleStart and cycleEnd
-                    boolean rule2 = effectiveStartDate != null
-                            && !effectiveStartDate.isBefore(finalCycleStart)
-                            && !effectiveStartDate.isAfter(finalCycleEnd)
-                            && effectiveEndDate != null
-                            && !effectiveEndDate.isBefore(finalCycleStart)
-                            && !effectiveEndDate.isAfter(finalCycleEnd);
-
-                    // Weekly target range check:
-                    boolean inWeeklyRange = false;
-                    if (effectiveStartDate != null && effectiveEndDate != null) {
-                        long startDays = java.time.temporal.ChronoUnit.DAYS.between(finalCycleStart, effectiveStartDate);
-                        long endDays = java.time.temporal.ChronoUnit.DAYS.between(finalCycleStart, effectiveEndDate);
-                        if (startDays >= 0 && endDays >= 0) {
-                            if (startDays < 7 && endDays < 7) {
-                                inWeeklyRange = true; // Week 1
-                            } else if (startDays >= 7 && startDays < 14 && endDays >= 7 && endDays < 14) {
-                                inWeeklyRange = true; // Week 2
-                            } else if (startDays >= 14 && startDays < 21 && endDays >= 14 && endDays < 21) {
-                                inWeeklyRange = true; // Week 3
-                            } else if (startDays >= 21 && startDays < 28 && endDays >= 21 && endDays < 28) {
-                                inWeeklyRange = true; // Week 4
-                            } else {
-                                // Week 5 (ensure it is within cycleEnd)
-                                if (!effectiveEndDate.isAfter(finalCycleEnd)) {
-                                    inWeeklyRange = true;
-                                }
-                            }
-                        }
-                    }
-
-                    return (rule1 && rule2) || inWeeklyRange;
                 })
                 .collect(Collectors.toList());
 
@@ -501,24 +430,23 @@ public class ProjectTargetService {
                 pagesComplex += pages;
             }
 
-            // Assign to week if both commenced date and end date fall within the same week range
+            // Assign to week based on upload date
             LocalDate effectiveEndDate = job.getEndDate() != null ? job.getEndDate() : job.getEndMonth();
-            LocalDate effectiveStartDate = job.getStartMonth() != null ? job.getStartMonth() : (job.getReceiveDate() != null ? job.getReceiveDate() : effectiveEndDate);
-            if (effectiveStartDate != null && effectiveEndDate != null) {
-                long startDays = java.time.temporal.ChronoUnit.DAYS.between(finalCycleStart, effectiveStartDate);
-                long endDays = java.time.temporal.ChronoUnit.DAYS.between(finalCycleStart, effectiveEndDate);
-                if (startDays >= 0 && endDays >= 0) {
-                    if (startDays < 7 && endDays < 7) {
+            LocalDate effectiveUploadDate = job.getUploadDate() != null ? job.getUploadDate() : effectiveEndDate;
+            if (effectiveUploadDate != null) {
+                long uploadDays = java.time.temporal.ChronoUnit.DAYS.between(finalCycleStart, effectiveUploadDate);
+                if (uploadDays >= 0) {
+                    if (uploadDays < 7) {
                         pagesW1 += pages;
-                    } else if (startDays >= 7 && startDays < 14 && endDays >= 7 && endDays < 14) {
+                    } else if (uploadDays >= 7 && uploadDays < 14) {
                         pagesW2 += pages;
-                    } else if (startDays >= 14 && startDays < 21 && endDays >= 14 && endDays < 21) {
+                    } else if (uploadDays >= 14 && uploadDays < 21) {
                         pagesW3 += pages;
-                    } else if (startDays >= 21 && startDays < 28 && endDays >= 21 && endDays < 28) {
+                    } else if (uploadDays >= 21 && uploadDays < 28) {
                         pagesW4 += pages;
                     } else {
                         // Week 5 (ensure it is within cycleEnd)
-                        if (!effectiveEndDate.isAfter(finalCycleEnd)) {
+                        if (!effectiveUploadDate.isAfter(finalCycleEnd)) {
                             pagesW5 += pages;
                         }
                     }

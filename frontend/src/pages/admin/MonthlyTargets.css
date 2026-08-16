@@ -292,46 +292,68 @@
 .card-project-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   margin-bottom: 20px;
 }
 
-.card-project-header--centered {
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 2px;
+.card-header-client-block {
+  text-align: left;
 }
 
-.card-header-name-block {
+.card-header-project-block {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 3px;
+  gap: 8px;
+  text-align: right;
 }
 
 .project-card-name {
-  font-size: 1rem;
-  font-weight: 800;
-  color: #0f172a;
-  margin: 0 0 2px;
+  font-size: 1.05rem;
+  /* Increased size */
+  font-weight: 900;
+  color: #ffffff;
+  /* White text */
+  background-color: #475569;
+  /* Slate background */
+  padding: 6px 12px;
+  /* Increased padding */
+  border-radius: 6px;
+  border: none;
+  display: inline-block;
+  margin: 0;
+  text-align: right;
+  transition: all 0.2s;
 }
 
-.card-project-header--centered .project-card-name {
-  font-size: 1.05rem;
-  font-weight: 900;
-  letter-spacing: -0.2px;
+.glowing-card-emerald .project-card-name {
+  color: #ffffff;
+  background-color: #047857;
+  /* Dark emerald background */
 }
 
 .project-client-sub {
-  font-size: 0.78rem;
-  color: #64748b;
-  font-weight: 500;
+  font-size: 0.88rem;
+  /* Increased size */
+  color: #ffffff;
+  /* White text */
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background-color: #0d9488;
+  /* Teal background */
+  padding: 6px 12px;
+  /* Increased padding */
+  border-radius: 6px;
+  border: none;
+  display: inline-block;
+  text-align: left;
+  transition: all 0.2s;
 }
 
-.card-project-header--centered .project-client-sub {
-  font-size: 0.76rem;
-  color: #94a3b8;
+.glowing-card-emerald .project-client-sub {
+  color: #ffffff;
+  background-color: #059669;
+  /* Green background */
 }
 
 .header-badges {
@@ -1109,9 +1131,11 @@
 .drawer-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.45);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  background: rgba(15, 23, 42, 0.3);
+  /* Lighter clear overlay */
+  backdrop-filter: blur(8px);
+  /* Clear backdrop blur */
+  -webkit-backdrop-filter: blur(8px);
   z-index: 2200;
   display: flex;
   justify-content: flex-end;
@@ -1132,7 +1156,8 @@
   width: 100%;
   max-width: 580px;
   height: 100vh;
-  background: #f8fafc;
+  background: linear-gradient(180deg, #f8fafc 0%, #e0f2fe 100%);
+  /* Gorgeous soft colorful gradient */
   box-shadow: -10px 0 40px rgba(15, 23, 42, 0.12);
   display: flex;
   flex-direction: column;
@@ -1152,60 +1177,56 @@
 
 /* Drawer Header */
 .drawer-header {
-  padding: 24px 28px;
-  background: #ffffff;
-  border-bottom: 1px solid #e2e8f0;
+  padding: 12px 28px;
+  /* Reduced vertical padding */
+  background: linear-gradient(135deg, #0a0a0a 0%, #0d9488 100%);
+  /* Vibrant teal gradient background */
+  border-bottom: 1px solid #0d9488;
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
   position: relative;
 }
 
 .drawer-title-section {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.drawer-title-centered {
+  flex-direction: row;
+  /* Horizontal flex layout */
+  justify-content: space-between;
   align-items: center;
-  text-align: center;
   flex: 1;
+  padding-right: 100px;
+  padding-left: 100px;
+  /* Space to avoid actions button overlap */
 }
 
 .drawer-project-name {
-  font-size: 1.15rem;
-  font-weight: 800;
-  color: #0f172a;
-  margin: 0;
-}
-
-.drawer-title-centered .drawer-project-name {
-  font-size: 1.25rem;
+  font-size: 1.45rem;
+  /* Increased size */
   font-weight: 900;
-  letter-spacing: -0.3px;
-  background: linear-gradient(135deg, #0f172a 0%, #0d9488 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #ffffff;
+  /* White text */
+  margin: 0;
+  text-align: right;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  text-transform: uppercase;
 }
 
 .drawer-client-name {
-  font-size: 0.8rem;
-  color: #64748b;
-  font-weight: 600;
-}
-
-.drawer-title-centered .drawer-client-name {
-  font-size: 0.76rem;
-  color: #94a3b8;
+  font-size: 1.1rem;
+  /* Increased size */
+  color: #ccfbf1;
+  /* Soft clear contrast */
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.6px;
+  letter-spacing: 0.8px;
+  text-align: left;
 }
 
 .wk-date-range {
   font-size: 0.73rem;
   font-weight: 400;
-  color: #94a3b8;
+  color: rgba(255, 255, 255, 0.7);
   margin-left: 2px;
 }
 
@@ -1219,11 +1240,12 @@
   gap: 8px;
 }
 
-.drawer-maximize-btn,
-.drawer-close-btn {
-  background: #f1f5f9;
+.drawer-maximize-btn {
+  background: rgb(207, 174, 28);
+  /* Translucent teal background */
   border: none;
-  color: #64748b;
+  color: #ffffff;
+  /* White icon */
   cursor: pointer;
   width: 32px;
   height: 32px;
@@ -1236,10 +1258,34 @@
   font-weight: 300;
 }
 
-.drawer-maximize-btn:hover,
+.drawer-maximize-btn:hover {
+  background: rgb(250, 250, 8);
+  /* Teal hover */
+  color: #ff0000;
+}
+
+.drawer-close-btn {
+  background: rgb(205, 102, 102);
+  /* Translucent red background */
+  border: none;
+  color: #ffffff;
+  /* White icon */
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  font-size: 1.5rem;
+  font-weight: 300;
+}
+
 .drawer-close-btn:hover {
-  background: #ccfbf1;
-  color: #0d9488;
+  background: #ef4444;
+  /* Red hover */
+  color: #ffffff;
 }
 
 .drawer-container.maximized {
@@ -1288,7 +1334,27 @@
   border: 1px solid #e2e8f0;
   border-radius: 14px;
   padding: 22px 24px;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.04);
+}
+
+.overview-section {
+  border-left: 4px solid #3b82f6 !important;
+  /* Blue accent border */
+}
+
+.complexity-pages-section {
+  border-left: 4px solid #10b981 !important;
+  /* Green accent border */
+}
+
+.weekly-targets-section {
+  border-left: 4px solid #f59e0b !important;
+  /* Amber/Orange accent border */
+}
+
+.books-registry-section {
+  border-left: 4px solid #8b5cf6 !important;
+  /* Purple accent border */
 }
 
 .section-title {
@@ -1313,10 +1379,12 @@
 
 /* Operational Workflow Highlighting */
 .highlighted-workflow-card {
-  background: linear-gradient(135deg, #f0fdfa 0%, #ecfeff 100%);
-  border: 1px solid #99f6e4;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  /* Vibrant blue gradient background */
+  border: 1px solid #bfdbfe;
   border-radius: 12px;
   padding: 18px 20px;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.04);
 }
 
 .workflow-card-header {
@@ -1326,19 +1394,36 @@
 }
 
 .workflow-header-icon {
-  color: #0d9488;
+  color: #3b82f6;
+}
+
+.workflow-card-header.center-header {
+  justify-content: center;
+  text-align: center;
+  width: 100%;
 }
 
 .workflow-card-title {
   font-size: 0.88rem;
   font-weight: 800;
-  color: #134e4a;
+  color: #1e3a8a;
   margin: 0;
 }
 
+.workflow-card-title.center-title {
+  font-size: 1.25rem;
+  /* Increased size for taskname */
+  font-weight: 900;
+  color: #1e40af;
+  margin: 0;
+  text-align: center;
+  width: 100%;
+}
+
 .workflow-highlight {
-  color: #0d9488;
-  font-weight: 800;
+  color: #1d4ed8;
+  /* Vibrant colorful text color */
+  font-weight: 900;
 }
 
 /* --- Complexity Page Progress (Drawer) --- */
@@ -1625,7 +1710,8 @@
 .drawer-jobs-table,
 .registry-table-compact {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   text-align: left;
   font-size: 0.78rem;
 }
@@ -1654,12 +1740,82 @@
   font-weight: 600;
 }
 
+/* Assigned Employee Box Styling */
+.employee-box-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 180px;
+}
+
+.employee-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 5px;
+  padding: 4px 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.employee-box.prod-box {
+  background: #f0fdf4;
+  /* Soft green background for Prod */
+  border: 1px solid #dcfce7;
+  /* Light green border */
+  border-left: 3px solid #10b981;
+  /* Accent green left border */
+}
+
+.employee-box.qc-box {
+  background: #fff7ed;
+  /* Soft orange background for QC */
+  border: 1px solid #ffedd5;
+  /* Light orange border */
+  border-left: 3px solid #f97316;
+  /* Accent orange left border */
+}
+
+.employee-icon-prod {
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.employee-icon-qc {
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.employee-names-list {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #334155;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .drawer-jobs-table th,
 .registry-table-compact th {
-  background: #f0fdfa;
-  color: #0f766e;
+  background: #0d9488;
+  /* Solid teal header background */
+  color: #ffffff;
+  /* White text for contrast */
   font-weight: 700;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: none;
+  padding: 12px 14px;
+}
+
+/* Round table header corners */
+.drawer-jobs-table th:first-child,
+.registry-table-compact th:first-child {
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+}
+
+.drawer-jobs-table th:last-child,
+.registry-table-compact th:last-child {
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
 }
 
 .drawer-jobs-table td,
@@ -1667,6 +1823,12 @@
   color: #0f172a;
   border-bottom: 1px solid #f1f5f9;
   vertical-align: middle;
+}
+
+/* Alternating rows background color for better design and readability */
+.drawer-jobs-table tbody tr:nth-child(even) td,
+.registry-table-compact tbody tr:nth-child(even) td {
+  background-color: #f8fafc;
 }
 
 .drawer-jobs-table tr:last-child td {
@@ -2310,15 +2472,24 @@
   }
 
   .drawer-container.maximized .drawer-header {
-    min-height: 86px;
-    padding: 28px 44px;
+    min-height: 50px;
+    /* Reduced min-height */
+    padding: 22px 44px;
+    /* Reduced vertical padding */
     box-sizing: border-box;
-    background: #ffffff;
+    background: linear-gradient(135deg, #9f5d5d 0%, #0d9488 100%);
+    /* Maintain colorful gradient */
+    border-bottom: 1px solid #0d9488;
   }
 
   .drawer-container.maximized .drawer-header-actions {
     right: 44px;
     gap: 10px;
+  }
+
+  .drawer-container.maximized .drawer-title-section {
+    padding-right: 150px;
+    /* Space to avoid actions button overlap when maximized */
   }
 
   .drawer-container.maximized .drawer-maximize-btn,
@@ -2327,21 +2498,30 @@
     height: 38px;
   }
 
-  .drawer-container.maximized .drawer-title-centered .drawer-project-name {
-    font-size: 1.55rem;
+  .drawer-container.maximized .drawer-project-name {
+    font-size: 2.25rem;
+    /* Increased size */
+    font-weight: 800;
+    color: #ffffff;
+    /* White text */
     line-height: 1.25;
-    letter-spacing: -0.45px;
+    text-transform: uppercase;
   }
 
-  .drawer-container.maximized .drawer-title-centered .drawer-client-name {
-    margin-top: 4px;
-    font-size: 0.9rem;
+  .drawer-container.maximized .drawer-client-name {
+    font-size: 2.25rem;
+    /* Increased size */
+    font-weight: 800;
+    color: #ffffff;
+    /* Light teal */
+    text-transform: uppercase;
   }
 
   .drawer-container.maximized .drawer-content-scrollable {
     width: 100%;
-    max-width: 1600px;
-    margin: 0 auto;
+    max-width: 100%;
+    /* Stretch fully to fill the screen */
+    margin: 0;
     padding: 36px 48px 52px;
     gap: 32px;
     box-sizing: border-box;
@@ -2367,7 +2547,18 @@
   }
 
   .drawer-container.maximized .workflow-card-title {
-    font-size: 1rem;
+    font-size: 0.88rem;
+  }
+
+  .drawer-container.maximized .workflow-card-title.center-title {
+    font-size: 2.25rem;
+    /* Increased size for taskname */
+    font-weight: 800;
+    color: #1b818c;
+    margin: 0;
+    text-align: center;
+    width: 100%;
+    text-transform: uppercase;
   }
 
   .drawer-container.maximized .complexity-pages-grid {

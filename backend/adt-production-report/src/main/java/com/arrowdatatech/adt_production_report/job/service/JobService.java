@@ -65,6 +65,8 @@ public class JobService {
             String xmlIsbn,
             LocalDate startMonthFrom,
             LocalDate startMonthTo,
+            LocalDate uploadDateFrom,
+            LocalDate uploadDateTo,
             String status,
             String billingStatus,
             String complexity,
@@ -79,6 +81,8 @@ public class JobService {
                 emptyToNull(xmlIsbn),
                 startMonthFrom,
                 startMonthTo,
+                uploadDateFrom,
+                uploadDateTo,
                 emptyToNull(status),
                 emptyToNull(billingStatus),
                 emptyToNull(complexity),
@@ -399,6 +403,8 @@ public class JobService {
                 String status = emptyToNull(upd.get("status"));
                 job.setStatus(status != null ? status : "PENDING");
             }
+            if (upd.containsKey("receiveDate"))
+                job.setReceiveDate(parseDateOrNull(upd.get("receiveDate")));
             if (upd.containsKey("fileStatus"))
                 job.setFileStatus(emptyToNull(upd.get("fileStatus")));
             if (upd.containsKey("uploadDate"))

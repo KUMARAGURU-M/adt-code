@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.NotFound;
+import org.hibernate.annotations.NotFoundAction;
 import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDate;
@@ -31,6 +33,7 @@ public class HourlyProductionLog {
     private LocalDate date;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @NotFound(action = NotFoundAction.IGNORE)
     @JoinColumn(name = "user_id", nullable = false,
             foreignKey = @ForeignKey(name = "fk_hourly_prod_logs_user"))
     private User user;

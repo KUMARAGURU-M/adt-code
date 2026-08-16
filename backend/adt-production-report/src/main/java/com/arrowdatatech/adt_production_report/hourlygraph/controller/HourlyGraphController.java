@@ -39,8 +39,17 @@ public class HourlyGraphController {
     // GET /hourly-graph/logs - Get employee logs for a given date (defaults to today)
     @GetMapping("/logs")
     public ResponseEntity<ApiResponse<HourlyGraphResponse>> getDailyLogs(
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        LocalDate targetDate = date != null ? date : LocalDate.now(java.time.ZoneId.of("Asia/Kolkata"));
+            @RequestParam(required = false) String date) {
+        LocalDate targetDate;
+        if (date == null || date.trim().isEmpty() || "null".equalsIgnoreCase(date) || "undefined".equalsIgnoreCase(date)) {
+            targetDate = LocalDate.now(java.time.ZoneId.of("Asia/Kolkata"));
+        } else {
+            try {
+                targetDate = LocalDate.parse(date.trim());
+            } catch (Exception e) {
+                targetDate = LocalDate.now(java.time.ZoneId.of("Asia/Kolkata"));
+            }
+        }
         HourlyGraphResponse logs = hourlyGraphService.getDailyLogs(targetDate);
         return ResponseEntity.ok(ApiResponse.success("Hourly logs retrieved", logs));
     }

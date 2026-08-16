@@ -14,8 +14,8 @@ import java.util.UUID;
 public interface HourlyProductionLogRepository extends JpaRepository<HourlyProductionLog, UUID> {
 
     @Query("""
-            SELECT h FROM HourlyProductionLog h
-            LEFT JOIN FETCH h.user u
+            SELECT DISTINCT h FROM HourlyProductionLog h
+            JOIN FETCH h.user u
             LEFT JOIN FETCH u.employeeProfile ep
             WHERE h.date = :date
             """)

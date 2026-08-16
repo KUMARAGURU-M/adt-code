@@ -35,6 +35,8 @@ public class JobController {
                         @RequestParam(required = false) String xmlIsbn,
                         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startMonthFrom,
                         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startMonthTo,
+                        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate uploadDateFrom,
+                        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate uploadDateTo,
                         @RequestParam(required = false) String status,
                         @RequestParam(required = false) String billingStatus,
                         @RequestParam(required = false) String complexity,
@@ -44,7 +46,7 @@ public class JobController {
 
                 Page<JobResponse> result = jobService.searchJobs(
                                 projectId, clientId, workflowId, jobIdCode, xmlIsbn,
-                                startMonthFrom, startMonthTo,
+                                startMonthFrom, startMonthTo, uploadDateFrom, uploadDateTo,
                                 status, billingStatus, complexity, fileStatus,
                                 page, size);
 

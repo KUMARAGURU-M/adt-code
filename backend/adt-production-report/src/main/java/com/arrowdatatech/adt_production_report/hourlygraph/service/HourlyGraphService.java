@@ -100,7 +100,7 @@ public class HourlyGraphService {
         List<HourlyProductionLog> savedLogs = logRepository.findByDateWithProfile(date);
         Map<UUID, HourlyProductionLog> savedLogsMap = savedLogs.stream()
                 .filter(log -> log != null && log.getUser() != null)
-                .collect(Collectors.toMap(log -> log.getUser().getId(), log -> log));
+                .collect(Collectors.toMap(log -> log.getUser().getId(), log -> log, (existing, replacement) -> existing));
 
         // 2. Fetch all active users who are not Admin and have excludeFromHourlyGraph = false
         boolean requestingUserIsAdmin = SecurityUtils.isAdmin();
