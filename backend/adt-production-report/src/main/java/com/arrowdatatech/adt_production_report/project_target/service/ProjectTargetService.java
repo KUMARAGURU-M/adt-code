@@ -43,25 +43,26 @@ public class ProjectTargetService {
         // Case 1: If current target has explicitly configured dates, use them
         if (currentTarget != null && currentTarget.getBillingCycleStartDate() != null
                 && currentTarget.getBillingCycleEndDate() != null) {
-            return new LocalDate[]{currentTarget.getBillingCycleStartDate(), currentTarget.getBillingCycleEndDate()};
+            return new LocalDate[] { currentTarget.getBillingCycleStartDate(), currentTarget.getBillingCycleEndDate() };
         }
 
-        // Case 2: Inherit billing cycle dates from the project's most recently configured target
+        // Case 2: Inherit billing cycle dates from the project's most recently
+        // configured target
         List<ProjectTarget> historicalTargets = targetRepository.findByProjectIdOrderByYearDescMonthDesc(projectId);
         for (ProjectTarget historical : historicalTargets) {
             if (historical.getBillingCycleStartDate() != null && historical.getBillingCycleEndDate() != null) {
                 int histYear = historical.getYear();
                 int histMonth = historical.getMonth();
                 long monthsDiff = (year - histYear) * 12L + (month - histMonth);
-                
+
                 LocalDate inheritedStart = historical.getBillingCycleStartDate().plusMonths(monthsDiff);
                 LocalDate inheritedEnd = historical.getBillingCycleEndDate().plusMonths(monthsDiff);
-                return new LocalDate[]{inheritedStart, inheritedEnd};
+                return new LocalDate[] { inheritedStart, inheritedEnd };
             }
         }
 
         // Case 3: Fallback to calendar month boundaries
-        return new LocalDate[]{startOfMonth, endOfMonth};
+        return new LocalDate[] { startOfMonth, endOfMonth };
     }
 
     @Transactional(readOnly = true)
@@ -116,7 +117,8 @@ public class ProjectTargetService {
 
                         if (isCompleted) {
                             LocalDate effectiveEndDate = j.getEndDate() != null ? j.getEndDate() : j.getEndMonth();
-                            LocalDate effectiveUploadDate = j.getUploadDate() != null ? j.getUploadDate() : effectiveEndDate;
+                            LocalDate effectiveUploadDate = j.getUploadDate() != null ? j.getUploadDate()
+                                    : effectiveEndDate;
 
                             // Rule: uploadDate falls between billing cycle start and end dates
                             return effectiveUploadDate != null
@@ -178,10 +180,12 @@ public class ProjectTargetService {
                     }
 
                     LocalDate effectiveEndDate = job.getEndDate() != null ? job.getEndDate() : job.getEndMonth();
-                    LocalDate effectiveUploadDate = job.getUploadDate() != null ? job.getUploadDate() : effectiveEndDate;
+                    LocalDate effectiveUploadDate = job.getUploadDate() != null ? job.getUploadDate()
+                            : effectiveEndDate;
                     if (effectiveUploadDate != null) {
-                        long uploadDays = java.time.temporal.ChronoUnit.DAYS.between(finalCycleStart, effectiveUploadDate);
-                        
+                        long uploadDays = java.time.temporal.ChronoUnit.DAYS.between(finalCycleStart,
+                                effectiveUploadDate);
+
                         if (uploadDays >= 0) {
                             if (uploadDays < 7) {
                                 completedW1++;
@@ -400,7 +404,8 @@ public class ProjectTargetService {
                 .filter(j -> {
                     String fileStatusStr = j.getFileStatus() != null ? j.getFileStatus().trim().toLowerCase() : "";
                     boolean isUploaded = fileStatusStr.equals("uploaded");
-                    if (!isUploaded) return false;
+                    if (!isUploaded)
+                        return false;
 
                     LocalDate effectiveEndDate = j.getEndDate() != null ? j.getEndDate() : j.getEndMonth();
                     LocalDate effectiveUploadDate = j.getUploadDate() != null ? j.getUploadDate() : effectiveEndDate;
@@ -411,7 +416,8 @@ public class ProjectTargetService {
                 })
                 .collect(Collectors.toList());
 
-        // 7. Compute page output by complexity and weekly actuals from qualifiedRegistryJobs
+        // 7. Compute page output by complexity and weekly actuals from
+        // qualifiedRegistryJobs
         int pagesSimple = 0, pagesMedium = 0, pagesComplex = 0, pagesHeavyComplex = 0, pagesTotal = 0;
         int pagesW1 = 0, pagesW2 = 0, pagesW3 = 0, pagesW4 = 0, pagesW5 = 0;
 
@@ -458,9 +464,12 @@ public class ProjectTargetService {
         List<ProjectTargetDetailResponse.JobDetailResponse> jobResponses = qualifiedRegistryJobs.stream()
                 .map(j -> {
                     LocalDate effectiveEndDate = j.getEndDate() != null ? j.getEndDate() : j.getEndMonth();
-                    LocalDate effectiveStartDate = j.getStartMonth() != null ? j.getStartMonth() : (j.getReceiveDate() != null ? j.getReceiveDate() : effectiveEndDate);
-                    int nDays = (effectiveStartDate != null && effectiveEndDate != null)
-                            ? (int) java.time.temporal.ChronoUnit.DAYS.between(effectiveStartDate, effectiveEndDate) + 1
+                    LocalDate effectiveStartDate = j.getStartMonth() != null ? j.getStartMonth()
+                            : (j.getReceiveDate() != null ? j.getReceiveDate() : effectiveEndDate);
+                    LocalDate effectiveUploadDate = j.getUploadDate() != null ? j.getUploadDate() : effectiveEndDate;
+                    int nDays = (effectiveStartDate != null && effectiveUploadDate != null)
+                            ? (int) java.time.temporal.ChronoUnit.DAYS.between(effectiveStartDate, effectiveUploadDate)
+                                    + 1
                             : 0;
                     return ProjectTargetDetailResponse.JobDetailResponse.builder()
                             .id(j.getId())
