@@ -4,11 +4,11 @@ import './Production.css';
 import { apiCall, getCurrentUser } from '../../utils/api';
 import productionIcon from '../../img/production.png';
 const STATUS_OPTIONS = [
-  'FINISH', 'WIP', 'YTS', 'RTU', 'PENDING', 'HOLD', 'QUERY'
+  'FINISH', 'WIP', 'YTS', 'RTU', 'PENDING', 'HOLD', 'QUERY', 'REVERT'
 ];
 
 const QC_STATUS_OPTIONS = [
-  'FINISH', 'WIP', 'YTS', 'RTU', 'UPLOADED', 'PENDING', 'HOLD', 'QUERY'
+  'FINISH', 'WIP', 'YTS', 'RTU', 'UPLOADED', 'PENDING', 'HOLD', 'QUERY', 'REVERT'
 ];
 
 const REF_TYPES = ['BK-REF', 'CH-REF', 'BK/CH-REF', 'FN-REF', 'BK/FN-REF', 'CH/FN-REF', 'PG/FN-REF'];

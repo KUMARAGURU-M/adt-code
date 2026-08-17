@@ -747,7 +747,8 @@ public class JobService {
                     job.getProject() != null ? job.getProject().getId() : null,
                     List.of());
 
-            return toResponse(job, getCombinedEmployees(job, employees), getCombinedQcEmployees(job, qcTaskEmployees), productionStartDate, processes);
+            return toResponse(job, getCombinedEmployees(job, employees), getCombinedQcEmployees(job, qcTaskEmployees),
+                    productionStartDate, processes);
         });
     }
 
@@ -776,9 +777,13 @@ public class JobService {
             } else if (job.getUploadDate() == null) {
                 job.setUploadDate(LocalDate.now());
             }
+        } else if ("REVERT".equalsIgnoreCase(job.getQcStatus())) {
+            job.setFileStatus("REVERT");
+            job.setEndDate(null);
+            job.setUploadDate(null);
         } else {
             job.setEndDate(null);
-            if ("UPLOADED".equalsIgnoreCase(job.getFileStatus())) {
+            if ("UPLOADED".equalsIgnoreCase(job.getFileStatus()) || "REVERT".equalsIgnoreCase(job.getFileStatus())) {
                 job.setFileStatus(null);
                 job.setUploadDate(null);
             }
@@ -845,7 +850,8 @@ public class JobService {
             processes = taskRepository.findProcessNamesByProjectId(job.getProject().getId());
         }
 
-        return toResponse(job, getCombinedEmployees(job, employees), getCombinedQcEmployees(job, qcTaskEmployees), productionStartDate, processes);
+        return toResponse(job, getCombinedEmployees(job, employees), getCombinedQcEmployees(job, qcTaskEmployees),
+                productionStartDate, processes);
     }
 
     // ─────────────────────────────────────────────
@@ -1017,8 +1023,6 @@ public class JobService {
         }
         return new ArrayList<>(allQcEmps);
     }
-
-
 
     private JobResponse toResponse(Job job, List<String> employees, List<String> qcEmployees,
             LocalDate productionStartDate, List<String> processes) {

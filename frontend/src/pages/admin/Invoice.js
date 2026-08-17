@@ -23,7 +23,7 @@ const YEARS = Array.from({ length: 10 }, (_, i) => 2024 + i);
 
 const PROCESS_OPTIONS = ["All Processes", "EPUB - QC Process", "EPUB - Tagging", "FIG - Croping", "INDEX - Process", "MATH - Keying", "OCR - Process", "Proof Reading - Process", "REF - Process", "TABLE - Process", "VALID - Process", "WORD - QC Process", "WORD - Styling", "XML - QC Process", "XML - Tagging"];
 const COMPLEXITY_OPTIONS = ["All", "Simple", "Medium", "Complex", "Heavy Complex"];
-const FILE_STATUS_OPTIONS = ["All", "Uploaded", "RTU", "Hold", "Query"];
+const FILE_STATUS_OPTIONS = ["All", "Uploaded", "RTU", "Hold", "Query", "Revert"];
 const BILLING_STATUS_OPTIONS = ["All", "CREDITED", "PENDING", "INVOICED"];
 
 const PROCESS_RATES = {

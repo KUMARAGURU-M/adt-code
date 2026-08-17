@@ -847,6 +847,7 @@ const MonthlyTargets = () => {
 
                 {/* Weekly Targets Breakdown */}
                 {(() => {
+                  const weekRanges = proj.billingCycleStartDate ? getWeeklyRanges(proj.billingCycleStartDate, proj.billingCycleEndDate) : [];
                   return (
                     <div className="weekly-visual-breakdown">
                       <h5 className="breakdown-title">Weekly Completed Pages</h5>
@@ -859,10 +860,16 @@ const MonthlyTargets = () => {
                         ].map((wk) => {
                           const weekHasTarget = wk.target > 0;
                           const weekMet = weekHasTarget && wk.actual >= wk.target;
+                          const range = weekRanges[wk.num - 1]?.range || '';
 
                           return (
-                            <div key={wk.num} className={`week-track-node ${weekMet ? 'week-node-met' : ''} ${weekHasTarget ? 'has-target' : 'no-target'}`}>
+                            <div
+                              key={wk.num}
+                              className={`week-track-node ${weekMet ? 'week-node-met' : ''} ${weekHasTarget ? 'has-target' : 'no-target'}`}
+                              title={range ? `Week ${wk.num}: ${range}` : undefined}
+                            >
                               <span className="week-label">W{wk.num}</span>
+                              {range && <span className="week-range-text">{range}</span>}
                               <span className="week-actual">{wk.actual}</span>
                               <span className="week-target-divider"></span>
                               <span className="week-target-val">{weekHasTarget ? wk.target : '—'}</span>
@@ -1453,6 +1460,10 @@ const MonthlyTargets = () => {
                 <p>Retrieving operational records...</p>
               </div>
             ) : selectedProjectDetail ? (() => {
+              const fmt = (d) => d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+              const cycleStart = selectedProjectDetail.billingCycleStartDate;
+              const cycleEnd = selectedProjectDetail.billingCycleEndDate;
+              const weeks = cycleStart ? getWeeklyRanges(cycleStart, cycleEnd) : [];
               const getWeekJobsCount = (weekNum) => {
                 if (!selectedProjectDetail.jobs) return 0;
                 return selectedProjectDetail.jobs.filter(job => {
@@ -1528,9 +1539,6 @@ const MonthlyTargets = () => {
                       <h4 className="section-title">Weekly Target Performance</h4>
                       <div className="weekly-stats-list">
                         {(() => {
-                          const cycleStart = selectedProjectDetail.billingCycleStartDate;
-                          const cycleEnd = selectedProjectDetail.billingCycleEndDate;
-                          const weeks = cycleStart ? getWeeklyRanges(cycleStart, cycleEnd) : [];
                           const targets = [
                             selectedProjectDetail.targetPagesWeek1,
                             selectedProjectDetail.targetPagesWeek2,
@@ -1589,7 +1597,7 @@ const MonthlyTargets = () => {
 
                     {/* Section 4: Page Output Registry */}
                     <div className="drawer-section books-registry-section">
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', position: 'relative' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                           <h4 className="section-title" style={{ margin: 0 }}>Page Output Registry</h4>
                           <span style={{ fontSize: '0.85rem', color: '#1e3a8a', fontWeight: '700', background: 'rgba(59, 130, 246, 0.1)', padding: '4px 12px', borderRadius: '12px' }}>
@@ -1600,6 +1608,19 @@ const MonthlyTargets = () => {
                             )}
                           </span>
                         </div>
+
+                        {/* Center Date Badge */}
+                        <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center' }}>
+                          <span style={{ fontSize: '0.82rem', color: '#475569', fontWeight: '600', background: '#f1f5f9', padding: '4px 12px', borderRadius: '12px', display: 'inline-flex', alignItems: 'center', gap: '6px', border: '1px solid #cbd5e1' }}>
+                            <span style={{ color: '#0d9488', fontWeight: '800' }}>📅</span>
+                            {selectedWeek !== null ? (
+                              <span>Week {selectedWeek} Dates: <strong style={{ color: '#0d9488' }}>{weeks[selectedWeek - 1]?.range || '—'}</strong></span>
+                            ) : (
+                              <span> <strong style={{ color: '#0d9488' }}>{fmt(cycleStart)} - {fmt(cycleEnd)}</strong></span>
+                            )}
+                          </span>
+                        </div>
+
                         {selectedWeek !== null && (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span className="mini-badge badge-progress" style={{ fontSize: '0.75rem', padding: '4px 8px' }}>

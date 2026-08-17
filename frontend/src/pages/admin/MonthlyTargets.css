@@ -499,7 +499,7 @@
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 10px;
-  padding: 8px 2px;
+  padding: 8px 4px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -564,6 +564,25 @@
 
 .week-track-node.has-target:not(.week-node-met) .week-label {
   color: #9f1239;
+}
+
+.week-range-text {
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 4px;
+  text-align: center;
+  display: block;
+}
+
+.week-node-met .week-range-text {
+  color: #166534;
+  opacity: 0.8;
+}
+
+.week-track-node.has-target:not(.week-node-met) .week-range-text {
+  color: #9f1239;
+  opacity: 0.8;
 }
 
 .week-actual {
@@ -1225,9 +1244,24 @@
 
 .wk-date-range {
   font-size: 0.73rem;
-  font-weight: 400;
-  color: rgba(255, 255, 255, 0.7);
-  margin-left: 2px;
+  font-weight: 500;
+  color: #64748b;
+  margin-left: 4px;
+}
+
+.weekly-stat-row.status-met .wk-date-range {
+  color: #0f766e;
+  opacity: 0.85;
+}
+
+.weekly-stat-row.status-behind .wk-date-range {
+  color: #be123c;
+  opacity: 0.85;
+}
+
+.weekly-stat-row.status-unset .wk-date-range {
+  color: #64748b;
+  opacity: 0.8;
 }
 
 .drawer-header-actions {
@@ -2659,4 +2693,9 @@
   .drawer-container.maximized .complexity-pages-grid {
     grid-template-columns: repeat(2, minmax(220px, 1fr));
   }
+
+
+
+
+
 }

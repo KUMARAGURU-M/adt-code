@@ -219,6 +219,19 @@ option.complexity-complex {
   border-color: #fbcfe8 !important;
 }
 
+/* 9. BLACK (Revert) */
+.status-revert,
+.bj-sp-revert,
+.prod-sp-revert,
+.qc-sp-revert,
+.file-sp-revert,
+.bb-revert,
+.inv-fstatus--revert {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border-color: #000000 !important;
+}
+
 /* ── 4. Project brand badges ── */
 .proj-badge {
   display: inline-block;
