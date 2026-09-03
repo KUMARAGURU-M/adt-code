@@ -208,29 +208,42 @@ function Login() {
   useEffect(() => {
     refreshCaptcha();
 
+    const fetchThirukkural = () => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+      fetch("https://tamil-kural-api.vercel.app/api/daily", { signal: controller.signal })
+        .then(res => {
+          clearTimeout(timeoutId);
+          if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+          return res.json();
+        })
+        .then(kuralData => {
+          if (kuralData && kuralData.number) {
+            setThirukkural(kuralData);
+          } else {
+            throw new Error("Invalid kural data");
+          }
+        })
+        .catch(err => {
+          console.warn("Failed to load daily Thirukkural, using fallback:", err);
+          const today = new Date();
+          const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / 86400000);
+          const fallbackIndex = dayOfYear % FALLBACK_KURALS.length;
+          setThirukkural(FALLBACK_KURALS[fallbackIndex]);
+        });
+    };
+
     fetch(`${API_BASE}/settings/public`)
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        return res.json();
+      })
       .then(json => {
         if (json.success && json.data) {
           setPortalSettings(json.data);
-
           if (json.data.enableThirukkural) {
-            fetch("https://tamil-kural-api.vercel.app/api/daily")
-              .then(res => res.json())
-              .then(kuralData => {
-                if (kuralData && kuralData.number) {
-                  setThirukkural(kuralData);
-                } else {
-                  throw new Error("Invalid kural data");
-                }
-              })
-              .catch(err => {
-                console.warn("Failed to load daily Thirukkural, using fallback:", err);
-                const today = new Date();
-                const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / 86400000);
-                const fallbackIndex = dayOfYear % FALLBACK_KURALS.length;
-                setThirukkural(FALLBACK_KURALS[fallbackIndex]);
-              });
+            fetchThirukkural();
           } else {
             const quotes = json.data.loginQuotes;
             if (quotes && quotes.length > 0) {
@@ -238,9 +251,15 @@ function Login() {
               setQuote(randomQuote);
             }
           }
+        } else {
+          throw new Error("Invalid settings data");
         }
       })
-      .catch(err => console.warn("Failed to load settings from server:", err));
+      .catch(err => {
+        console.warn("Failed to load settings from server, using defaults:", err);
+        setPortalSettings({ enableThirukkural: true });
+        fetchThirukkural();
+      });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -409,12 +428,16 @@ function Login() {
           {portalSettings?.enableThirukkural && thirukkural ? (
             <div className="login-kural-box">
               <div className="login-kural-header">
-                <span className="login-kural-number">குறள் / Kural {thirukkural.number}</span>
-                <span className="login-kural-chapter">{thirukkural.chapter} • {thirukkural.section}</span>
+                <span className="login-kural-number">குறள் / Kural {thirukkural.number || ""}</span>
+                <span className="login-kural-chapter">
+                  {typeof thirukkural.chapter === 'object' ? thirukkural.chapter?.names?.ta || "" : (thirukkural.chapter || "")}
+                  {' • '}
+                  {typeof thirukkural.section === 'object' ? thirukkural.section?.names?.ta || "" : (thirukkural.section || "")}
+                </span>
               </div>
               <div className="login-kural-lines">
-                <p className="login-kural-line">{thirukkural.kural[0]}</p>
-                <p className="login-kural-line">{thirukkural.kural[1]}</p>
+                <p className="login-kural-line">{thirukkural.kural?.[0] || ""}</p>
+                <p className="login-kural-line">{thirukkural.kural?.[1] || ""}</p>
               </div>
               <div className="login-kural-meaning">
                 {renderKuralMeaning(thirukkural, portalSettings.thirukkuralTranslation)}
@@ -436,3 +459,5 @@ function Login() {
 }
 
 export default Login;
+
+
