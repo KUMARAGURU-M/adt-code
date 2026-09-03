@@ -249,8 +249,15 @@ const Setting = () => {
   useEffect(() => {
     // Load daily Kural preview when enabled
     if (form.enableThirukkural) {
-      fetch('https://tamil-kural-api.vercel.app/api/daily')
-        .then(res => res.json())
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+      fetch("https://tamil-kural-api.vercel.app/api/daily", { signal: controller.signal })
+        .then(res => {
+          clearTimeout(timeoutId);
+          if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+          return res.json();
+        })
         .then(data => {
           if (data && data.number) {
             setThirukkuralPreview(data);
@@ -382,7 +389,7 @@ const Setting = () => {
                   {thirukkuralPreview ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       <div style={{ fontSize: '11px', color: '#10b981', fontWeight: '700', letterSpacing: '1px', textTransform: 'uppercase' }}>
-                        குறள் {thirukkuralPreview.number} - {thirukkuralPreview.chapter} ({thirukkuralPreview.section})
+                        குறள் {thirukkuralPreview.number} - {typeof thirukkuralPreview.chapter === 'object' ? thirukkuralPreview.chapter?.names?.ta || "" : (thirukkuralPreview.chapter || "")} ({typeof thirukkuralPreview.section === 'object' ? thirukkuralPreview.section?.names?.ta || "" : (thirukkuralPreview.section || "")})
                       </div>
                       <blockquote className="st-quote-preview-text" style={{ borderLeftColor: '#10b981', margin: 0, paddingLeft: '12px', fontStyle: 'normal' }}>
                         <p style={{ margin: '0 0 6px 0', fontWeight: '700', color: '#10b981', fontSize: '14.5px', fontFamily: 'inherit', textAlign: 'center', textShadow: '0 0 8px rgba(16, 185, 129, 0.7), 0 0 16px rgba(16, 185, 129, 0.35)' }}>{thirukkuralPreview.kural?.[0]}</p>
