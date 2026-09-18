@@ -5,11 +5,13 @@ import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import './Header.css';
 import { getCurrentUser, clearSession, apiCall } from '../../utils/api';
+import { getProfilePhotoUrl } from '../../utils/profilePhoto';
 
 const Header = ({ onToggleMobileMenu }) => {
   const navigate = useNavigate();
   const user = getCurrentUser();
   const displayUserName = user?.fullName || 'User';
+  const profilePhotoUrl = getProfilePhotoUrl(user?.profilePhotoUrl);
 
   const [showResetModal, setShowResetModal] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
@@ -99,6 +101,35 @@ const Header = ({ onToggleMobileMenu }) => {
 
       <div className="header-user">
         <div className="user-details" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          {profilePhotoUrl ? (
+            <img
+              src={profilePhotoUrl}
+              alt="User profile"
+              style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                objectFit: 'cover',
+                border: '2px solid #e2e8f0',
+                backgroundColor: '#f8fafc'
+              }}
+            />
+          ) : (
+            <div style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #7c3aed, #06b6d4)',
+              color: '#fff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 700,
+              fontSize: '0.9rem'
+            }}>
+              {(displayUserName || 'U').charAt(0).toUpperCase()}
+            </div>
+          )}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
             <span className="logged-label">Logged in as</span>
             <strong className="user-name">{displayUserName}</strong>
@@ -130,14 +161,14 @@ const Header = ({ onToggleMobileMenu }) => {
             <h3>Reset Password</h3>
             {errorMsg && <p className="modal-error">{errorMsg}</p>}
             {successMsg && <p className="modal-success">{successMsg}</p>}
-            
+
             <div className="modal-form-group">
               <label>Current Password</label>
               <div className="pwd-input-wrap">
-                <input 
-                  type={showCurrent ? 'text' : 'password'} 
-                  value={currentPassword} 
-                  onChange={e => setCurrentPassword(e.target.value)} 
+                <input
+                  type={showCurrent ? 'text' : 'password'}
+                  value={currentPassword}
+                  onChange={e => setCurrentPassword(e.target.value)}
                   placeholder="Enter current password"
                 />
                 <button type="button" className="pwd-toggle-btn" onClick={() => setShowCurrent(v => !v)} tabIndex={-1}>
@@ -145,14 +176,14 @@ const Header = ({ onToggleMobileMenu }) => {
                 </button>
               </div>
             </div>
-            
+
             <div className="modal-form-group">
               <label>New Password</label>
               <div className="pwd-input-wrap">
-                <input 
-                  type={showNew ? 'text' : 'password'} 
-                  value={newPassword} 
-                  onChange={e => setNewPassword(e.target.value)} 
+                <input
+                  type={showNew ? 'text' : 'password'}
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
                   placeholder="At least 6 characters"
                 />
                 <button type="button" className="pwd-toggle-btn" onClick={() => setShowNew(v => !v)} tabIndex={-1}>
@@ -160,14 +191,14 @@ const Header = ({ onToggleMobileMenu }) => {
                 </button>
               </div>
             </div>
-            
+
             <div className="modal-form-group">
               <label>Confirm New Password</label>
               <div className="pwd-input-wrap">
-                <input 
-                  type={showConfirm ? 'text' : 'password'} 
-                  value={confirmPassword} 
-                  onChange={e => setConfirmPassword(e.target.value)} 
+                <input
+                  type={showConfirm ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
                   placeholder="Re-enter new password"
                 />
                 <button type="button" className="pwd-toggle-btn" onClick={() => setShowConfirm(v => !v)} tabIndex={-1}>
@@ -175,7 +206,7 @@ const Header = ({ onToggleMobileMenu }) => {
                 </button>
               </div>
             </div>
-            
+
             <div className="modal-actions">
               <button className="btn-cancel" onClick={closeResetModal}>Cancel</button>
               <button className="btn-submit" onClick={handleResetSubmit} disabled={loading}>
@@ -191,3 +222,6 @@ const Header = ({ onToggleMobileMenu }) => {
 };
 
 export default Header;
+
+
+

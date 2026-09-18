@@ -44,6 +44,10 @@ public class ProjectTargetResponse {
     private Integer actualOnHold;
     private Integer actualOther;
 
+    // Incomplete Jobs (Total for project regardless of date)
+    private Integer actualIncompleteBooks;
+    private Integer actualIncompletePages;
+
     // Billing Cycle dates
     private java.time.LocalDate billingCycleStartDate;
     private java.time.LocalDate billingCycleEndDate;

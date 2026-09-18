@@ -152,6 +152,14 @@ const DeveloperDashboard = ({ hideToggle }) => {
     text: '',
     photoUrl: ''
   });
+  const [topPerformer, setTopPerformer] = useState({
+    enableTopPerformerBanner: true,
+    name: '',
+    criteria: 'Monthly',
+    purpose: '',
+    photoUrl: '',
+    gifUrl: ''
+  });
 
   // Modals state
   const [showWorkLogModal, setShowWorkLogModal] = useState(false);
@@ -274,6 +282,14 @@ const DeveloperDashboard = ({ hideToggle }) => {
           isCelebration: publicSettings.isCelebration || false,
           text: publicSettings.celebrationText || '',
           photoUrl: publicSettings.celebrationPhotoUrl || '',
+        });
+        setTopPerformer({
+          enableTopPerformerBanner: publicSettings.enableTopPerformerBanner ?? true,
+          name: publicSettings.topPerformerName || '',
+          criteria: publicSettings.topPerformerCriteria || 'Monthly',
+          purpose: publicSettings.topPerformerPurpose || '',
+          photoUrl: publicSettings.topPerformerPhotoUrl || '',
+          gifUrl: publicSettings.topPerformerGifUrl || ''
         });
       }
     } catch (e) {
@@ -563,6 +579,48 @@ const DeveloperDashboard = ({ hideToggle }) => {
 
           {/* CELEBRATION & ANNOUNCEMENTS ROW (LIKE ADMIN DASHBOARD) */}
           <div className="dashboard-flex-row">
+            {topPerformer.enableTopPerformerBanner && topPerformer.name && (
+              <div className="top-performer-card">
+                <div className="top-performer-header">
+                  <div className="top-performer-tag">
+                    <span className="trophy-icon">🏆</span>
+                    <span>Top Performer — {topPerformer.criteria || 'Monthly'}</span>
+                  </div>
+                  {topPerformer.gifUrl && (
+                    <img
+                      src={topPerformer.gifUrl.startsWith('http') ? topPerformer.gifUrl : `https://media.giphy.com/media/26tOZbfHHHJB92VU4/giphy.gif`}
+                      alt="Celebration GIF"
+                      className="top-performer-gif"
+                    />
+                  )}
+                </div>
+
+                <div className="top-performer-body">
+                  <div className="top-performer-avatar-wrapper">
+                    <img
+                      src={topPerformer.photoUrl ? (topPerformer.photoUrl.startsWith('http') ? topPerformer.photoUrl : `${API_BASE}${topPerformer.photoUrl.split('#')[0]}`) : 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'}
+                      alt={topPerformer.name}
+                      className="top-performer-avatar"
+                      onClick={() => {
+                        if (topPerformer.photoUrl) {
+                          const cleanUrl = topPerformer.photoUrl.split('#')[0];
+                          window.open(cleanUrl.startsWith('http') ? cleanUrl : `${API_BASE}${cleanUrl}`, '_blank');
+                        }
+                      }}
+                    />
+                    <span className="star-badge">⭐</span>
+                  </div>
+
+                  <div className="top-performer-info">
+                    <h4 className="top-performer-name">{topPerformer.name}</h4>
+                    {topPerformer.purpose && (
+                      <p className="top-performer-purpose">{topPerformer.purpose}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {celebration.isCelebration && (
               <div className="celebration-card">
                 <h4 className="card-label">🎉 Celebration</h4>

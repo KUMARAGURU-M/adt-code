@@ -88,6 +88,13 @@ public class ProjectTargetService {
         // Sort projects to display by name
         projectsToDisplay.sort(Comparator.comparing(Project::getName, String.CASE_INSENSITIVE_ORDER));
 
+        // Fetch ALL incomplete jobs for the displayed projects regardless of date
+        List<UUID> displayProjectIds = projectsToDisplay.stream().map(Project::getId).collect(Collectors.toList());
+        List<Job> allIncompleteJobs = displayProjectIds.isEmpty() ? List.of() : jobRepository.findIncompleteJobsByProjectIds(displayProjectIds);
+        Map<UUID, List<Job>> incompleteJobsByProject = allIncompleteJobs.stream()
+                .filter(j -> j.getProject() != null)
+                .collect(Collectors.groupingBy(j -> j.getProject().getId()));
+
         // 2. Fetch jobs active/completed in this month (widened by 1 month to handle
         // custom billing cycles)
         LocalDate startOfMonth = LocalDate.of(year, month, 1);
@@ -260,6 +267,16 @@ public class ProjectTargetService {
                     .actualOnHold(onHold)
                     .actualOther(other);
 
+            // Incomplete books & pages
+            List<Job> incompleteForProject = incompleteJobsByProject.getOrDefault(project.getId(), List.of());
+            int incompleteBooksCount = incompleteForProject.size();
+            int incompletePagesCount = incompleteForProject.stream()
+                    .mapToInt(j -> j.getPageCount() != null ? j.getPageCount() : 0)
+                    .sum();
+            
+            builder.actualIncompleteBooks(incompleteBooksCount)
+                   .actualIncompletePages(incompletePagesCount);
+
             if (target != null) {
                 builder.targetId(target.getId())
                         .year(target.getYear())
@@ -383,6 +400,9 @@ public class ProjectTargetService {
         List<Job> registryJobs = jobRepository.findUploadedJobsByProductionDatesInRange(
                 projectId, cycleStart, cycleEnd);
 
+        // Fetch all incomplete jobs regardless of date
+        List<Job> incompleteJobs = jobRepository.findIncompleteJobsByProjectId(projectId);
+
         // 5. Also fetch all jobs in the billing period for worked-employee tracking
         List<Job> allProjectJobs = jobRepository.findActiveOrCompletedJobsByProjectInDateRange(
                 projectId, cycleStart, cycleEnd);
@@ -415,6 +435,15 @@ public class ProjectTargetService {
                             && !effectiveUploadDate.isAfter(finalCycleEnd);
                 })
                 .collect(Collectors.toList());
+
+        // Incomplete books & pages calculations
+        int incompleteBooksCount = incompleteJobs.size();
+        int incompletePagesCount = incompleteJobs.stream()
+                .mapToInt(j -> j.getPageCount() != null ? j.getPageCount() : 0)
+                .sum();
+        
+        // Append incomplete jobs to qualified registry jobs so they are displayed
+        qualifiedRegistryJobs.addAll(incompleteJobs);
 
         // 7. Compute page output by complexity and weekly actuals from
         // qualifiedRegistryJobs
@@ -541,6 +570,8 @@ public class ProjectTargetService {
                 .actualPagesWeek3(pagesW3)
                 .actualPagesWeek4(pagesW4)
                 .actualPagesWeek5(pagesW5)
+                .actualIncompleteBooks(incompleteBooksCount)
+                .actualIncompletePages(incompletePagesCount)
                 .workedEmployees(workedEmployees)
                 .jobs(jobResponses);
 

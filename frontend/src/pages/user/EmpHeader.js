@@ -1,9 +1,10 @@
 // src/pages/employee/EmpHeader.js
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import './EmpHeader.css';
-import { apiCall, clearSession } from '../../utils/api';
+import { apiCall, clearSession, getCurrentUser } from '../../utils/api';
+import { getProfilePhotoUrl } from '../../utils/profilePhoto';
 
 const EmpHeader = ({ userName = 'Executive' }) => {
   const navigate = useNavigate();
@@ -18,6 +19,20 @@ const EmpHeader = ({ userName = 'Executive' }) => {
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [currentUser, setCurrentUser] = useState(() => getCurrentUser());
+
+  useEffect(() => {
+    const refreshUser = () => setCurrentUser(getCurrentUser());
+    window.addEventListener('user_profile_updated', refreshUser);
+    window.addEventListener('storage', refreshUser);
+    return () => {
+      window.removeEventListener('user_profile_updated', refreshUser);
+      window.removeEventListener('storage', refreshUser);
+    };
+  }, []);
+
+  const profilePhotoUrl = getProfilePhotoUrl(currentUser?.profilePhotoUrl);
+  const profileInitial = (currentUser?.fullName || userName || 'U').charAt(0).toUpperCase();
 
   const closeResetModal = () => {
     setShowResetModal(false);
@@ -100,6 +115,17 @@ const EmpHeader = ({ userName = 'Executive' }) => {
 
         {/* RIGHT: Welcome + Logout */}
         <div className="emp-header-right">
+          {profilePhotoUrl ? (
+            <img
+              src={profilePhotoUrl}
+              alt={`${userName} profile`}
+              className="emp-profile-photo"
+            />
+          ) : (
+            <div className="emp-profile-photo emp-profile-photo-fallback" aria-label={`${userName} profile`}>
+              {profileInitial}
+            </div>
+          )}
           <div className="emp-welcome-text">
             <span className="emp-welcome-label">Welcome,</span>
             <span className="emp-welcome-name">{userName}</span>

@@ -1536,7 +1536,17 @@ const MonthlyTargets = () => {
 
                     {/* Section 3: Weekly Target Performance */}
                     <div className="drawer-section weekly-targets-section">
-                      <h4 className="section-title">Weekly Target Performance</h4>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '16px' }}>
+                        <h4 className="section-title" style={{ margin: 0 }}>Weekly Target Performance</h4>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto', flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: '0.88rem', color: '#ef4444', fontWeight: '700', background: 'rgba(239, 68, 68, 0.1)', padding: '4px 12px' }}>
+                            Incomplete Book: <strong style={{ color: '#dc2626' }}>{selectedProjectDetail.actualIncompleteBooks || 0}</strong>
+                          </span>
+                          <span style={{ fontSize: '0.88rem', color: '#ef4444', fontWeight: '700', background: 'rgba(239, 68, 68, 0.1)', padding: '4px 12px' }}>
+                            Incomplete page: <strong style={{ color: '#dc2626' }}>{selectedProjectDetail.actualIncompletePages || 0}</strong>
+                          </span>
+                        </div>
+                      </div>
                       <div className="weekly-stats-list">
                         {(() => {
                           const targets = [
@@ -1609,8 +1619,8 @@ const MonthlyTargets = () => {
                           </span>
                         </div>
 
-                        {/* Center Date Badge */}
-                        <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center' }}>
+                        {/* Right Date Badge (Removed absolute centering to avoid overlaps) */}
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
                           <span style={{ fontSize: '0.82rem', color: '#475569', fontWeight: '600', background: '#f1f5f9', padding: '4px 12px', borderRadius: '12px', display: 'inline-flex', alignItems: 'center', gap: '6px', border: '1px solid #cbd5e1' }}>
                             <span style={{ color: '#0d9488', fontWeight: '800' }}>📅</span>
                             {selectedWeek !== null ? (

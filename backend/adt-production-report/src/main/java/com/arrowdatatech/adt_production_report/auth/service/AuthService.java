@@ -143,6 +143,10 @@ public class AuthService {
                     user.getEmployeeProfile() != null
                             ? user.getEmployeeProfile().getFullName()
                             : user.getEmail();
+            String profilePhotoUrl = user.getEmployeeProfile() != null
+                    && user.getEmployeeProfile().getProfilePhoto() != null
+                    ? "/media/" + user.getEmployeeProfile().getProfilePhoto().getId()
+                    : null;
 
             log.info("STEP 11 SUCCESS - Building response");
 
@@ -151,6 +155,7 @@ public class AuthService {
                     .userCode(user.getUserCode())
                     .email(user.getEmail())
                     .fullName(fullName)
+                    .profilePhotoUrl(profilePhotoUrl)
                     .roles(roles)
                     .permissions(permissions)
                     .accessToken(accessToken)
@@ -219,12 +224,17 @@ public class AuthService {
         String fullName = user.getEmployeeProfile() != null
                 ? user.getEmployeeProfile().getFullName()
                 : user.getEmail();
+        String profilePhotoUrl = user.getEmployeeProfile() != null
+                && user.getEmployeeProfile().getProfilePhoto() != null
+                ? "/media/" + user.getEmployeeProfile().getProfilePhoto().getId()
+                : null;
 
         return LoginResponse.builder()
                 .userId(user.getId())
                 .userCode(user.getUserCode())
                 .email(user.getEmail())
                 .fullName(fullName)
+                .profilePhotoUrl(profilePhotoUrl)
                 .roles(roles)
                 .permissions(permissions)
                 .accessToken(newAccessToken)
@@ -273,6 +283,10 @@ public class AuthService {
         String fullName = targetUser.getEmployeeProfile() != null
                 ? targetUser.getEmployeeProfile().getFullName()
                 : targetUser.getEmail();
+        String profilePhotoUrl = targetUser.getEmployeeProfile() != null
+                && targetUser.getEmployeeProfile().getProfilePhoto() != null
+                ? "/media/" + targetUser.getEmployeeProfile().getProfilePhoto().getId()
+                : null;
 
         boolean targetIsAdminOrManagerOrTl = roles.contains("Admin") 
                 || roles.contains("Manager") 
@@ -284,6 +298,7 @@ public class AuthService {
                 .userCode(targetUser.getUserCode())
                 .email(targetUser.getEmail())
                 .fullName(fullName)
+                .profilePhotoUrl(profilePhotoUrl)
                 .roles(roles)
                 .permissions(permissions)
                 .accessToken(accessToken)
@@ -313,12 +328,17 @@ public class AuthService {
         String fullName = user.getEmployeeProfile() != null
                 ? user.getEmployeeProfile().getFullName()
                 : user.getEmail();
+        String profilePhotoUrl = user.getEmployeeProfile() != null
+                && user.getEmployeeProfile().getProfilePhoto() != null
+                ? "/media/" + user.getEmployeeProfile().getProfilePhoto().getId()
+                : null;
 
         return LoginResponse.builder()
                 .userId(user.getId())
                 .userCode(user.getUserCode())
                 .email(user.getEmail())
                 .fullName(fullName)
+                .profilePhotoUrl(profilePhotoUrl)
                 .roles(roles)
                 .permissions(permissions)
                 .dashboardType(dashboardType)

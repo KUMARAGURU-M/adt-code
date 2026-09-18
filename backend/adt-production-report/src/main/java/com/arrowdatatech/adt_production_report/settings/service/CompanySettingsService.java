@@ -62,6 +62,17 @@ public class CompanySettingsService {
         if (request.getCelebrationText() != null) settings.setCelebrationText(request.getCelebrationText().trim());
         if (request.getCelebrationPhotoUrl() != null) settings.setCelebrationPhotoUrl(request.getCelebrationPhotoUrl().trim());
 
+        if (request.getTopPerformerUserId() != null) settings.setTopPerformerUserId(request.getTopPerformerUserId());
+        if (request.getTopPerformerName() != null) settings.setTopPerformerName(request.getTopPerformerName().trim());
+        if (request.getTopPerformerCriteria() != null) settings.setTopPerformerCriteria(request.getTopPerformerCriteria().trim());
+        if (request.getTopPerformerPurpose() != null) settings.setTopPerformerPurpose(request.getTopPerformerPurpose().trim());
+        if (request.getTopPerformerPhotoUrl() != null) settings.setTopPerformerPhotoUrl(request.getTopPerformerPhotoUrl().trim());
+        if (request.getTopPerformerGifUrl() != null) settings.setTopPerformerGifUrl(request.getTopPerformerGifUrl().trim());
+        if (request.getTopPerformerCriteriaOptions() != null) {
+            String optionsStr = String.join(",", request.getTopPerformerCriteriaOptions());
+            settings.setTopPerformerCriteriaOptions(optionsStr);
+        }
+
         if (request.getLetterPadImageId() != null) {
             MediaFile letterPad = mediaFileRepository.findById(request.getLetterPadImageId())
                     .orElseThrow(() -> new ResourceNotFoundException("MediaFile", "id", request.getLetterPadImageId()));
@@ -140,6 +151,15 @@ public class CompanySettingsService {
             );
         }
 
+        java.util.List<String> criteriaOptsList = java.util.Arrays.asList("Monthly", "Weekly", "Hardworker");
+        if (s.getTopPerformerCriteriaOptions() != null && !s.getTopPerformerCriteriaOptions().trim().isEmpty()) {
+            criteriaOptsList = java.util.Arrays.stream(s.getTopPerformerCriteriaOptions().split(","))
+                    .map(String::trim)
+                    .filter(str -> !str.isEmpty())
+                    .distinct()
+                    .collect(Collectors.toList());
+        }
+
         return CompanySettingsResponse.builder()
                 .companyName(s.getCompanyName())
                 .streetAddress(s.getStreetAddress())
@@ -168,6 +188,13 @@ public class CompanySettingsService {
                 .isCelebration(s.getIsCelebration())
                 .celebrationText(s.getCelebrationText())
                 .celebrationPhotoUrl(s.getCelebrationPhotoUrl())
+                .topPerformerUserId(s.getTopPerformerUserId())
+                .topPerformerName(s.getTopPerformerName())
+                .topPerformerCriteria(s.getTopPerformerCriteria())
+                .topPerformerPurpose(s.getTopPerformerPurpose())
+                .topPerformerPhotoUrl(s.getTopPerformerPhotoUrl())
+                .topPerformerGifUrl(s.getTopPerformerGifUrl())
+                .topPerformerCriteriaOptions(criteriaOptsList)
                 .loginQuotes(quotes)
                 .build();
     }

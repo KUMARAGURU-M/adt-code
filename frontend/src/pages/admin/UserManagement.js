@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import './UserManagement.css';
-import { apiCall, getRolePrefix, getCurrentUser } from '../../utils/api';
+import { apiCall, getRolePrefix, getCurrentUser, API_BASE, getAccessToken } from '../../utils/api';
 
 const mapRoleName = (roleVal) => roleVal || 'Executive';
 
@@ -28,7 +28,7 @@ const AddUserModal = ({ onClose, onAdd, shifts, roles }) => {
     password: '',
     role: roles && roles.length > 0 ? roles[0] : 'Executive',
     shiftId: '',
-    timezone: 'Asia/Kolkata',
+    timezone: user.timezone || 'Asia/Kolkata',
     top: false,
     calendar: false,
     employeeStatus: 'Active',
@@ -487,6 +487,8 @@ const ResetPasswordModal = ({ user, onClose }) => {
    6. EDIT USER
 ══════════════════════════════════════════════════════════════════ */
 const EditUserModal = ({ user, onClose, onUpdate, shifts, roles }) => {
+  const [profilePhoto, setProfilePhoto] = useState(null);
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     name: user.name,
     email: user.email,
@@ -495,25 +497,53 @@ const EditUserModal = ({ user, onClose, onUpdate, shifts, roles }) => {
     shiftId: user.shiftId || '',
     timezone: 'Asia/Kolkata',
     top: user.top,
-    calendar: true,
+    calendar: user.calendar ?? true,
     employeeStatus: user.employeeStatus || (user.status === 'Active' ? 'Active' : 'Inactive'),
   });
 
   const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
 
-  const handleUpdate = () => {
-    onUpdate({
-      ...user,
-      name: form.name,
-      email: form.email,
-      phone: form.phone || '-',
-      role: form.role,
-      shiftId: form.shiftId || null,
-      top: form.top,
-      employeeStatus: form.employeeStatus,
-      status: form.employeeStatus,
-      initial: form.name.charAt(0).toUpperCase(),
-    });
+  const handleUpdate = async () => {
+    setSaving(true);
+    try {
+      let profilePhotoUrl = user.profilePhotoUrl || null;
+
+      if (profilePhoto) {
+        const uploadData = new FormData();
+        uploadData.append('file', profilePhoto);
+        uploadData.append('entityType', 'profile');
+        uploadData.append('entityId', user.id);
+
+        const response = await fetch(`${API_BASE}/media/upload`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${getAccessToken()}` },
+          body: uploadData,
+        });
+        const result = await response.json();
+        if (!response.ok || !result.success || !result.data?.url) {
+          throw new Error(result.message || 'Profile photo upload failed');
+        }
+        profilePhotoUrl = result.data.url;
+      }
+
+      await onUpdate({
+        ...user,
+        name: form.name,
+        email: form.email,
+        phone: form.phone || '-',
+        role: form.role,
+        shiftId: form.shiftId || null,
+        top: form.top,
+        employeeStatus: form.employeeStatus,
+        status: form.employeeStatus,
+        initial: form.name.charAt(0).toUpperCase(),
+        profilePhotoUrl,
+      });
+    } catch (err) {
+      alert('Error updating user: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -542,7 +572,13 @@ const EditUserModal = ({ user, onClose, onUpdate, shifts, roles }) => {
 
       <div className="form-group">
         <label className="form-label">Profile Photo</label>
-        <input type="file" className="form-input file-input" accept="image/*" />
+        <input
+          type="file"
+          className="form-input file-input"
+          accept="image/*"
+          onChange={e => setProfilePhoto(e.target.files[0] || null)}
+        />
+        {user.profilePhotoUrl && <p className="form-hint">A photo is already uploaded. Choose a new image to replace it.</p>}
       </div>
 
       <div className="form-group">
@@ -606,7 +642,9 @@ const EditUserModal = ({ user, onClose, onUpdate, shifts, roles }) => {
 
       <div className="modal-actions">
         <button className="btn-cancel" onClick={onClose}>Cancel</button>
-        <button className="btn-primary-modal" onClick={handleUpdate}>Update</button>
+        <button className="btn-primary-modal" onClick={handleUpdate} disabled={saving}>
+          {saving ? 'Uploading...' : 'Update'}
+        </button>
       </div>
     </Modal>
   );
@@ -670,8 +708,11 @@ const UserManagement = () => {
         userCode: u.userCode,
         initial: u.fullName ? u.fullName.charAt(0).toUpperCase() : '?',
         name: u.fullName,
+        profilePhotoUrl: u.profilePhotoUrl || null,
         email: u.email,
         phone: u.phone || '-',
+        timezone: u.timezone || 'Asia/Kolkata',
+        calendar: u.showCalendarStats ?? true,
         role: u.role || 'Executive',
         shiftId: u.shiftId || null,
         shift: u.shift || '-',
@@ -768,7 +809,9 @@ const UserManagement = () => {
         phone: updatedUser.phone !== '-' ? updatedUser.phone : null,
         roleName: mapRoleName(updatedUser.role),
         shiftId: updatedUser.shiftId || null,
+        timezone: updatedUser.timezone || null,
         isTopPerformer: updatedUser.top,
+        showCalendarStats: updatedUser.calendar,
         isActive: updatedUser.employeeStatus === 'Active',
         employeeStatus: updatedUser.employeeStatus,
       });
@@ -827,6 +870,7 @@ const UserManagement = () => {
   };
 
   const handleImpersonate = async (userId) => {
+    const impersonationWindow = window.open('', '_blank');
     try {
       const data = await apiCall(`/auth/impersonate/${userId}`, 'POST');
       localStorage.setItem('impersonateToken', data.accessToken);
@@ -836,12 +880,18 @@ const UserManagement = () => {
         fullName: data.fullName,
         email: data.email,
         roles: data.roles,
-        permissions: data.permissions
+        permissions: data.permissions,
+        profilePhotoUrl: data.profilePhotoUrl || null
       }));
       const prefix = getRolePrefix(data.roles);
-      window.open(`/workwise/${prefix}/dashboard`, '_blank');
+      if (impersonationWindow) {
+        impersonationWindow.location.href = `/workwise/${prefix}/dashboard`;
+      } else {
+        throw new Error('The browser blocked the impersonation window. Please allow pop-ups and try again.');
+      }
       close();
     } catch (err) {
+      if (impersonationWindow && !impersonationWindow.closed) impersonationWindow.close();
       alert('Error impersonating user: ' + err.message);
     }
   };
@@ -1028,7 +1078,16 @@ const UserManagement = () => {
             ) : paginatedUsers.map(user => (
               <tr key={user.id}>
                 <td>
-                  <div className="avatar-circle">{user.initial}</div>
+                  {user.profilePhotoUrl ? (
+                    <img
+                      src={user.profilePhotoUrl.startsWith('http') ? user.profilePhotoUrl : `${process.env.REACT_APP_API_URL || 'https://arrowdatatech.com/api'}${user.profilePhotoUrl}`}
+                      alt={user.name}
+                      className="avatar-circle"
+                      style={{ width: '38px', height: '38px', borderRadius: '50%', objectFit: 'cover', display: 'block' }}
+                    />
+                  ) : (
+                    <div className="avatar-circle">{user.initial}</div>
+                  )}
                 </td>
                 <td className="user-code-col">
                   <strong>{user.userCode}</strong>

@@ -3,12 +3,15 @@ package com.arrowdatatech.adt_production_report.common.exception;
 
 import com.arrowdatatech.adt_production_report.common.response.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.catalina.connector.ClientAbortException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotWritableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.HashMap;
@@ -69,6 +72,19 @@ public class GlobalExceptionHandler {
                         .error("Validation failed")
                         .data(errors)
                         .build());
+    }
+
+    @ExceptionHandler({ClientAbortException.class, AsyncRequestNotUsableException.class, HttpMessageNotWritableException.class})
+    public ResponseEntity<Void> handleClientDisconnect(Exception ex) {
+        String message = ex.getMessage();
+        if (message != null && message.contains("connection was aborted")) {
+            log.warn("Client disconnected while streaming the response: {}", message);
+        } else if (message != null && message.contains("No converter for") && message.contains("preset Content-Type")) {
+            log.warn("Response stream was interrupted after the client disconnected: {}", message);
+        } else {
+            log.debug("Response write aborted by the client: {}", message);
+        }
+        return ResponseEntity.noContent().build();
     }
 
     /**

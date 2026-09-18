@@ -34,5 +34,12 @@ public class UpdateCompanySettingsRequest {
     private Boolean isCelebration;
     private String celebrationText;
     private String celebrationPhotoUrl;
+    private java.util.UUID topPerformerUserId;
+    private String topPerformerName;
+    private String topPerformerCriteria;
+    private String topPerformerPurpose;
+    private String topPerformerPhotoUrl;
+    private String topPerformerGifUrl;
+    private java.util.List<String> topPerformerCriteriaOptions;
     private java.util.List<String> loginQuotes;
 }

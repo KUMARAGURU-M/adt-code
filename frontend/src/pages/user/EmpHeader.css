@@ -187,6 +187,25 @@
   gap: 14px;
 }
 
+.emp-profile-photo {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.75);
+  background: #f1f5f9;
+  flex: 0 0 42px;
+}
+
+.emp-profile-photo-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: linear-gradient(135deg, #7c3aed, #06b6d4);
+  font-weight: 700;
+}
+
 .emp-welcome-text {
   display: flex;
   flex-direction: column;

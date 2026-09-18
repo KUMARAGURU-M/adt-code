@@ -15,10 +15,13 @@ public class UserListResponse {
     private String fullName;
     private String email;
     private String phone;
+    private String timezone;
     private String role;        // Primary role display
     private String shift;       // Current shift name
+    private UUID shiftId;
     private Boolean isActive;
     private String employeeStatus;
     private Boolean isTopPerformer;
+    private Boolean showCalendarStats;
     private String profilePhotoUrl;
 }

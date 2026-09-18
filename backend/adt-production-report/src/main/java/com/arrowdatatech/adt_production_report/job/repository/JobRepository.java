@@ -145,4 +145,26 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
                         @Param("projectId") UUID projectId,
                         @Param("cycleStart") LocalDate cycleStart,
                         @Param("cycleEnd") LocalDate cycleEnd);
+
+        /**
+         * Fetches all incomplete jobs (fileStatus != 'uploaded' or is null) for a list of projects.
+         */
+        @Query("""
+                        SELECT j FROM Job j
+                        WHERE j.project.id IN :projectIds
+                          AND (j.fileStatus IS NULL OR LOWER(j.fileStatus) != 'uploaded')
+                        ORDER BY j.receiveDate DESC, j.jobIdCode ASC
+                        """)
+        List<Job> findIncompleteJobsByProjectIds(@Param("projectIds") List<UUID> projectIds);
+
+        /**
+         * Fetches all incomplete jobs (fileStatus != 'uploaded' or is null) for a specific project.
+         */
+        @Query("""
+                        SELECT j FROM Job j
+                        WHERE j.project.id = :projectId
+                          AND (j.fileStatus IS NULL OR LOWER(j.fileStatus) != 'uploaded')
+                        ORDER BY j.receiveDate DESC, j.jobIdCode ASC
+                        """)
+        List<Job> findIncompleteJobsByProjectId(@Param("projectId") UUID projectId);
 }

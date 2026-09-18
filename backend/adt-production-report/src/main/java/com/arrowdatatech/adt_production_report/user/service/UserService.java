@@ -780,6 +780,10 @@ public class UserService {
                 .findByUserIdAndEffectiveToIsNull(user.getId())
                 .map(s -> s.getShift().getName())
                 .orElse("-");
+        UUID currentShiftId = shiftAssignmentRepository
+            .findByUserIdAndEffectiveToIsNull(user.getId())
+            .map(s -> s.getShift().getId())
+            .orElse(null);
 
         return UserListResponse.builder()
                 .id(user.getId())
@@ -787,14 +791,18 @@ public class UserService {
                 .fullName(profile != null ? profile.getFullName() : "")
                 .email(user.getEmail())
                 .phone(profile != null ? profile.getPhone() : null)
+                .timezone(profile != null ? profile.getTimezone() : "Asia/Kolkata")
                 .role(primaryRole)
                 .shift(currentShift)
+                .shiftId(currentShiftId)
                 .isActive(user.getIsActive())
                 .employeeStatus(profile != null
                         ? profile.getEmployeeStatus() : "Active")
                 .isTopPerformer(profile != null
                         ? profile.getIsTopPerformer() : false)
-                .profilePhotoUrl(null)
+                .showCalendarStats(profile != null
+                    ? profile.getShowCalendarStats() : true)
+                .profilePhotoUrl(resolveProfilePhotoUrl(profile))
                 .build();
     }
 
@@ -836,8 +844,15 @@ public class UserService {
                 .roles(roles)
                 .currentShift(currentShift)
                 .currentShiftId(currentShiftId)
-                .profilePhotoUrl(null)
+                .profilePhotoUrl(resolveProfilePhotoUrl(profile))
                 .build();
+    }
+
+    private String resolveProfilePhotoUrl(EmployeeProfile profile) {
+        if (profile == null || profile.getProfilePhoto() == null) {
+            return null;
+        }
+        return "/media/" + profile.getProfilePhoto().getId();
     }
 
     // ─────────────────────────────────────────────

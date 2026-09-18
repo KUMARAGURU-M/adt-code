@@ -5,7 +5,9 @@ import com.arrowdatatech.adt_production_report.common.exception.ResourceNotFound
 import com.arrowdatatech.adt_production_report.common.util.SecurityUtils;
 import com.arrowdatatech.adt_production_report.media.entity.MediaFile;
 import com.arrowdatatech.adt_production_report.media.repository.MediaFileRepository;
+import com.arrowdatatech.adt_production_report.user.entity.EmployeeProfile;
 import com.arrowdatatech.adt_production_report.user.entity.User;
+import com.arrowdatatech.adt_production_report.user.repository.EmployeeProfileRepository;
 import com.arrowdatatech.adt_production_report.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +29,7 @@ public class MediaService {
 
     private final MediaFileRepository mediaFileRepository;
     private final UserRepository userRepository;
+    private final EmployeeProfileRepository employeeProfileRepository;
 
     private final Path rootDir = Paths.get("uploads").toAbsolutePath().normalize();
 
@@ -88,7 +91,28 @@ public class MediaService {
                     .isActive(true)
                     .build();
 
-            return mediaFileRepository.save(mediaFile);
+            MediaFile savedMediaFile = mediaFileRepository.save(mediaFile);
+
+                if (currentUser != null && isProfilePhotoEntity(entityType)) {
+                User profileOwner = entityId != null
+                    ? userRepository.findById(entityId).orElseThrow(() -> new ResourceNotFoundException("User", "id", entityId))
+                    : currentUser;
+                EmployeeProfile profile = employeeProfileRepository.findByUserId(profileOwner.getId())
+                        .orElseGet(() -> {
+                            EmployeeProfile newProfile = EmployeeProfile.builder()
+                            .user(profileOwner)
+                            .fullName(profileOwner.getEmail())
+                                    .timezone("Asia/Kolkata")
+                                    .updatedAt(java.time.OffsetDateTime.now())
+                                    .build();
+                            return employeeProfileRepository.save(newProfile);
+                        });
+                profile.setProfilePhoto(savedMediaFile);
+                profile.setUpdatedAt(java.time.OffsetDateTime.now());
+                employeeProfileRepository.save(profile);
+            }
+
+            return savedMediaFile;
 
         } catch (IOException e) {
             log.error("Failed to store file", e);
@@ -115,6 +139,17 @@ public class MediaService {
         } catch (MalformedURLException e) {
             throw new ResourceNotFoundException("File", "id", id);
         }
+    }
+
+    private boolean isProfilePhotoEntity(String entityType) {
+        if (entityType == null) return false;
+        String normalized = entityType.trim().toLowerCase();
+        return normalized.equals("profile")
+                || normalized.equals("user_profile")
+                || normalized.equals("profilephoto")
+                || normalized.equals("profile_photo")
+                || normalized.equals("user-profile")
+                || normalized.equals("avatar");
     }
 
     private User getCurrentUserOrNull() {

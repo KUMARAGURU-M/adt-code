@@ -62,6 +62,10 @@ public class ProjectTargetDetailResponse {
     private Integer actualPagesWeek4;
     private Integer actualPagesWeek5;
 
+    // Incomplete Jobs (Total for project regardless of date)
+    private Integer actualIncompleteBooks;
+    private Integer actualIncompletePages;
+
     // Worked Employees (kept for compatibility, not rendered in UI)
     private List<WorkedEmployeeResponse> workedEmployees;
 

@@ -123,6 +123,29 @@ public class CompanySettings {
     @Column(name = "celebration_photo_url", columnDefinition = "TEXT")
     private String celebrationPhotoUrl;
 
+    @Column(name = "top_performer_user_id")
+    private UUID topPerformerUserId;
+
+    @Column(name = "top_performer_name", length = 200)
+    private String topPerformerName;
+
+    @Column(name = "top_performer_criteria", length = 100)
+    @Builder.Default
+    private String topPerformerCriteria = "Monthly";
+
+    @Column(name = "top_performer_purpose", columnDefinition = "TEXT")
+    private String topPerformerPurpose;
+
+    @Column(name = "top_performer_photo_url", columnDefinition = "TEXT")
+    private String topPerformerPhotoUrl;
+
+    @Column(name = "top_performer_gif_url", columnDefinition = "TEXT")
+    private String topPerformerGifUrl;
+
+    @Column(name = "top_performer_criteria_options", columnDefinition = "TEXT")
+    @Builder.Default
+    private String topPerformerCriteriaOptions = "Monthly,Weekly,Hardworker";
+
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
 }

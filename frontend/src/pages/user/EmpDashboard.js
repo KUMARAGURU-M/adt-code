@@ -1,6 +1,6 @@
 // src/pages/employee/EmpDashboard.js
 import React, { useState, useEffect } from 'react';
-import { apiCall } from '../../utils/api';
+import { apiCall, API_BASE } from '../../utils/api';
 import EmpWorkwise from './EmpWorkwise';
 import './EmpDashboard.css';
 
@@ -21,6 +21,41 @@ export default function EmpDashboard() {
   const [checkingInOut, setCheckingInOut] = useState(false);
   const [attendanceError, setAttendanceError] = useState('');
   const [loadingAttendance, setLoadingAttendance] = useState(true);
+
+  const [announcement, setAnnouncement] = useState('');
+  const [celebration, setCelebration] = useState({ isCelebration: false, text: '', photoUrl: '' });
+  const [topPerformer, setTopPerformer] = useState({
+    enableTopPerformerBanner: true,
+    name: '',
+    criteria: 'Monthly',
+    purpose: '',
+    photoUrl: '',
+    gifUrl: ''
+  });
+
+  const fetchPublicSettings = async () => {
+    try {
+      const data = await apiCall('/settings/public');
+      if (data) {
+        if (data.announcement) setAnnouncement(data.announcement);
+        setCelebration({
+          isCelebration: data.isCelebration || false,
+          text: data.celebrationText || '',
+          photoUrl: data.celebrationPhotoUrl || '',
+        });
+        setTopPerformer({
+          enableTopPerformerBanner: data.enableTopPerformerBanner ?? true,
+          name: data.topPerformerName || '',
+          criteria: data.topPerformerCriteria || 'Monthly',
+          purpose: data.topPerformerPurpose || '',
+          photoUrl: data.topPerformerPhotoUrl || '',
+          gifUrl: data.topPerformerGifUrl || ''
+        });
+      }
+    } catch (e) {
+      console.warn('Failed to load public settings:', e);
+    }
+  };
 
   const fetchTodayAttendance = async () => {
     try {
@@ -78,6 +113,7 @@ export default function EmpDashboard() {
 
   useEffect(() => {
     fetchTodayAttendance();
+    fetchPublicSettings();
   }, []);
 
   const [summary] = useState({
@@ -165,6 +201,123 @@ export default function EmpDashboard() {
             </div>
           </div>
           {attendanceError && <p className="checkin-error-msg">⚠️ {attendanceError}</p>}
+        </div>
+
+        {/* CELEBRATION, TOP PERFORMER & ANNOUNCEMENTS ROW */}
+        <div className="dashboard-flex-row" style={{ marginBottom: '24px' }}>
+          {topPerformer.enableTopPerformerBanner && topPerformer.name && (
+            <div className="top-performer-card">
+              <div className="top-performer-header">
+                <div className="top-performer-tag">
+                  <span className="trophy-icon">🏆</span>
+                  <span>Top Performer — {topPerformer.criteria || 'Monthly'}</span>
+                </div>
+                {topPerformer.gifUrl && (
+                  <img
+                    src={topPerformer.gifUrl.startsWith('http') ? topPerformer.gifUrl : `https://media.giphy.com/media/26tOZbfHHHJB92VU4/giphy.gif`}
+                    alt="Celebration GIF"
+                    className="top-performer-gif"
+                  />
+                )}
+              </div>
+
+              <div className="top-performer-body">
+                <div className="top-performer-avatar-wrapper">
+                  <img
+                    src={topPerformer.photoUrl ? (topPerformer.photoUrl.startsWith('http') ? topPerformer.photoUrl : `${API_BASE}${topPerformer.photoUrl.split('#')[0]}`) : 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'}
+                    alt={topPerformer.name}
+                    className="top-performer-avatar"
+                    onClick={() => {
+                      if (topPerformer.photoUrl) {
+                        const cleanUrl = topPerformer.photoUrl.split('#')[0];
+                        window.open(cleanUrl.startsWith('http') ? cleanUrl : `${API_BASE}${cleanUrl}`, '_blank');
+                      }
+                    }}
+                  />
+                  <span className="star-badge">⭐</span>
+                </div>
+
+                <div className="top-performer-info">
+                  <h4 className="top-performer-name">{topPerformer.name}</h4>
+                  {topPerformer.purpose && (
+                    <p className="top-performer-purpose">{topPerformer.purpose}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {celebration.isCelebration && (
+            <div className="celebration-card">
+              <h4 className="card-label">🎉 Celebration</h4>
+              <div className="celebration-content-wrapper">
+                <div className="celebration-content">
+                  {celebration.photoUrl && (() => {
+                    const rawUrl = celebration.photoUrl || '';
+                    const hash = rawUrl.split('#')[1] || '';
+                    const hashParts = hash.split(':');
+                    const fitMode = hashParts[0] === 'cover' ? 'cover' : 'contain';
+                    const zoom = (() => {
+                      const z = parseFloat(hashParts[1]);
+                      return (!isNaN(z) && z >= 100 && z <= 300) ? z / 100 : 1;
+                    })();
+                    const cleanUrl = rawUrl.split('#')[0];
+                    return (
+                      <div
+                        className="celebration-photo-container"
+                        title="Click to view full screen"
+                        style={{ overflow: 'hidden' }}
+                      >
+                        <img
+                          src={`${API_BASE}${cleanUrl}`}
+                          alt="Celebration"
+                          className="celebration-img"
+                          style={{
+                            objectFit: fitMode,
+                            width: fitMode === 'cover' ? '100%' : 'auto',
+                            height: '180px',
+                            transform: `scale(${zoom})`,
+                            transformOrigin: 'center center',
+                            transition: 'transform 0.2s ease',
+                            cursor: 'pointer'
+                          }}
+                          onClick={() => window.open(`${API_BASE}${cleanUrl}`, '_blank')}
+                        />
+                      </div>
+                    );
+                  })()}
+                  {celebration.text && (
+                    <div className="celebration-text-box">
+                      {celebration.text}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="announcement-card">
+            <h4 className="card-label">📢 Announcement</h4>
+            <div className="announcement-content-wrapper">
+              <div className="announcement-content" style={{
+                fontSize: '0.9rem',
+                color: '#2d3748',
+                lineHeight: '1.6',
+                background: 'linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 100%)',
+                padding: '16px 20px',
+                borderRadius: '10px',
+                borderLeft: '4px solid #00a3ff',
+                whiteSpace: 'pre-wrap',
+                minHeight: '100%',
+                boxSizing: 'border-box',
+                boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.02)'
+              }}>
+                <div style={{ whiteSpace: 'pre-wrap' }}>
+                  {announcement || "Welcome to the production portal! No new announcements today. Have a productive shift! 😊"}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Today's Work Summary */}

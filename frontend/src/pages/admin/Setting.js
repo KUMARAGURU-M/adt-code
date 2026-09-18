@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import './Setting.css';
 import { apiCall, API_BASE, getAccessToken } from '../../utils/api';
+import congratulationsGif from '../../assets/images/congratulations.gif';
+import performerImage from '../../assets/images/performer.jpg';
 
 /* ─── Default state ─────────────────────── */
 const DEFAULT = {
@@ -34,6 +36,13 @@ const DEFAULT = {
 
   /* Feature Toggles */
   topPerformerBanner: true,
+  topPerformerUserId: '',
+  topPerformerName: '',
+  topPerformerCriteria: 'Monthly',
+  topPerformerPurpose: '',
+  topPerformerPhotoUrl: '',
+  topPerformerGifUrl: 'https://media.giphy.com/media/26tOZbfHHHJB92VU4/giphy.gif',
+  topPerformerCriteriaOptions: ['Monthly', 'Weekly', 'Hardworker'],
 
   /* System */
   sessionTimeout: 479,
@@ -161,6 +170,9 @@ const Setting = () => {
   const [showQuotes, setShowQuotes] = useState(false);
   const [loading, setLoading] = useState(true);
   const [thirukkuralPreview, setThirukkuralPreview] = useState(null);
+  const [usersList, setUsersList] = useState([]);
+  const [showAddCriteriaModal, setShowAddCriteriaModal] = useState(false);
+  const [newCriteriaInput, setNewCriteriaInput] = useState('');
 
   // Lightbox States
   const [lightboxImg, setLightboxImg] = useState(null);
@@ -206,9 +218,15 @@ const Setting = () => {
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
 
   useEffect(() => {
-    const fetchSettings = async () => {
+    const fetchSettingsAndUsers = async () => {
       try {
-        const data = await apiCall('/settings');
+        const [data, usersData] = await Promise.all([
+          apiCall('/settings').catch(() => null),
+          apiCall('/users').catch(() => [])
+        ]);
+        if (usersData && Array.isArray(usersData)) {
+          setUsersList(usersData);
+        }
         if (data) {
           setForm({
             portalName: data.portalName || '',
@@ -235,6 +253,13 @@ const Setting = () => {
             isCelebration: data.isCelebration ?? false,
             celebrationText: data.celebrationText || '',
             celebrationPhotoUrl: data.celebrationPhotoUrl || '',
+            topPerformerUserId: data.topPerformerUserId || '',
+            topPerformerName: data.topPerformerName || '',
+            topPerformerCriteria: data.topPerformerCriteria || 'Monthly',
+            topPerformerPurpose: data.topPerformerPurpose || '',
+            topPerformerPhotoUrl: data.topPerformerPhotoUrl || '',
+            topPerformerGifUrl: data.topPerformerGifUrl || '',
+            topPerformerCriteriaOptions: data.topPerformerCriteriaOptions || ['Monthly', 'Weekly', 'Hardworker'],
           });
         }
       } catch (err) {
@@ -243,7 +268,7 @@ const Setting = () => {
         setLoading(false);
       }
     };
-    fetchSettings();
+    fetchSettingsAndUsers();
   }, []);
 
   useEffect(() => {
@@ -302,6 +327,13 @@ const Setting = () => {
         isCelebration: form.isCelebration ?? false,
         celebrationText: form.celebrationText || '',
         celebrationPhotoUrl: form.celebrationPhotoUrl || '',
+        topPerformerUserId: form.topPerformerUserId || null,
+        topPerformerName: form.topPerformerName || '',
+        topPerformerCriteria: form.topPerformerCriteria || 'Monthly',
+        topPerformerPurpose: form.topPerformerPurpose || '',
+        topPerformerPhotoUrl: form.topPerformerPhotoUrl || '',
+        topPerformerGifUrl: form.topPerformerGifUrl || '',
+        topPerformerCriteriaOptions: form.topPerformerCriteriaOptions || ['Monthly', 'Weekly', 'Hardworker'],
       };
 
       await apiCall('/settings', 'PUT', payload);
@@ -672,6 +704,268 @@ const Setting = () => {
                 </div>
               )}
             </div>
+
+            {/* ── Top Performer Banner Settings ── */}
+            <div className="st-form-group" style={{ marginTop: '16px', background: 'linear-gradient(135deg, #fffbebf5 0%, #fef3c7f5 100%)', padding: '18px', borderRadius: '12px', border: '1.5px solid #f59e0b', boxShadow: '0 4px 14px rgba(245, 158, 11, 0.12)' }}>
+              <label className="st-label" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 700, color: '#92400e', fontSize: '1rem' }}>
+                <input
+                  type="checkbox"
+                  checked={form.topPerformerBanner ?? true}
+                  onChange={e => set('topPerformerBanner', e.target.checked)}
+                  style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#d97706' }}
+                />
+                🏆 Enable Top Performer Banner
+              </label>
+              <p style={{ fontSize: '0.8rem', color: '#b45309', margin: '4px 0 14px 26px', lineHeight: '1.4' }}>
+                Show an interactive Top Performer card with user details, recognition criteria, photo, purpose message, and celebration GIF on all dashboards.
+              </p>
+
+              {form.topPerformerBanner && (
+                <div style={{ paddingLeft: '8px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+                  {/* Recognition Criteria Dropdown with + button */}
+                  <div className="st-sub-group">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                      <label className="st-label" style={{ fontSize: '0.85rem', color: '#78350f', margin: 0, fontWeight: '600' }}>Recognition Criteria / Category</label>
+                      <button
+                        type="button"
+                        onClick={() => setShowAddCriteriaModal(true)}
+                        style={{ background: '#d97706', color: 'white', border: 'none', borderRadius: '6px', padding: '4px 10px', fontSize: '0.78rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', boxShadow: '0 2px 6px rgba(217, 119, 6, 0.3)' }}
+                        title="Add New Criteria Field (+)"
+                      >
+                        ➕ Add New Field
+                      </button>
+                    </div>
+                    <select
+                      className="st-input"
+                      value={form.topPerformerCriteria || 'Monthly'}
+                      onChange={e => set('topPerformerCriteria', e.target.value)}
+                      style={{ fontSize: '0.88rem', fontWeight: '600', borderColor: '#fcd34d', cursor: 'pointer' }}
+                    >
+                      {(form.topPerformerCriteriaOptions || ['Monthly', 'Weekly', 'Hardworker']).map(opt => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Select Employee Dropdown */}
+                  <div className="st-sub-group">
+                    <label className="st-label" style={{ fontSize: '0.85rem', color: '#78350f', marginBottom: '6px', fontWeight: '600' }}>Select Employee / User</label>
+                    <select
+                      className="st-input"
+                      value={form.topPerformerUserId || ''}
+                      onChange={e => {
+                        const uid = e.target.value;
+                        set('topPerformerUserId', uid);
+                        const found = usersList.find(u => String(u.id) === String(uid));
+                        if (found) {
+                          set('topPerformerName', found.fullName || found.userCode || '');
+                          set('topPerformerPhotoUrl', found.profilePhotoUrl || '');
+                        } else {
+                          set('topPerformerName', '');
+                          set('topPerformerPhotoUrl', '');
+                        }
+                      }}
+                      style={{ fontSize: '0.88rem', borderColor: '#fcd34d', cursor: 'pointer' }}
+                    >
+                      <option value="">-- Choose User / Employee --</option>
+                      {usersList.map(u => (
+                        <option key={u.id} value={u.id}>
+                          {u.fullName} ({u.userCode || u.role || 'User'})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Top Performer Name Input */}
+                  <div className="st-sub-group">
+                    <label className="st-label" style={{ fontSize: '0.85rem', color: '#78350f', marginBottom: '6px', fontWeight: '600' }}>Top Performer Display Name</label>
+                    <input
+                      className="st-input"
+                      value={form.topPerformerName || ''}
+                      onChange={e => set('topPerformerName', e.target.value)}
+                      placeholder="e.g. Jane Doe"
+                      style={{ fontSize: '0.88rem', borderColor: '#fcd34d' }}
+                    />
+                  </div>
+
+                  {/* Purpose / Achievement Reason */}
+                  <div className="st-sub-group">
+                    <label className="st-label" style={{ fontSize: '0.85rem', color: '#78350f', marginBottom: '6px', fontWeight: '600' }}>Purpose / Achievement Dedication</label>
+                    <textarea
+                      className="st-input"
+                      value={form.topPerformerPurpose || ''}
+                      onChange={e => set('topPerformerPurpose', e.target.value)}
+                      rows={2}
+                      placeholder="e.g. Exceptional hard work, zero defect deliverables, and stellar team collaboration!"
+                      style={{ fontSize: '0.85rem', resize: 'vertical', fontFamily: 'inherit', borderColor: '#fcd34d' }}
+                    />
+                  </div>
+
+                  {/* Upload Photo */}
+                  <div className="st-sub-group">
+                    <label className="st-label" style={{ fontSize: '0.85rem', color: '#78350f', marginBottom: '6px', fontWeight: '600' }}>Upload Photo Option</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={async e => {
+                          const file = e.target.files[0];
+                          if (!file) return;
+
+                          const formData = new FormData();
+                          formData.append('file', file);
+                          formData.append('entityType', 'TopPerformer');
+
+                          try {
+                            setLoading(true);
+                            const token = getAccessToken();
+                            const response = await fetch(`${API_BASE}/media/upload`, {
+                              method: 'POST',
+                              headers: {
+                                'Authorization': token ? `Bearer ${token}` : ''
+                              },
+                              body: formData
+                            });
+                            const result = await response.json();
+                            if (result.success && result.data && result.data.url) {
+                              set('topPerformerPhotoUrl', result.data.url);
+                            } else {
+                              alert('Upload failed: ' + (result.message || 'Unknown error'));
+                            }
+                          } catch (err) {
+                            alert('Upload failed: ' + err.message);
+                          } finally {
+                            setLoading(false);
+                          }
+                        }}
+                        style={{ fontSize: '0.8rem' }}
+                      />
+                      {form.topPerformerPhotoUrl && (
+                        <button
+                          type="button"
+                          onClick={() => set('topPerformerPhotoUrl', '')}
+                          style={{ background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '4px', padding: '6px 12px', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer' }}
+                        >
+                          ✕ Remove Photo
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Celebration GIF Selection */}
+                  <div className="st-sub-group">
+                    <label className="st-label" style={{ fontSize: '0.85rem', color: '#78350f', marginBottom: '6px', fontWeight: '600' }}>Professional Award Animation</label>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <select
+                        className="st-input"
+                        value={form.topPerformerGifUrl || ''}
+                        onChange={e => set('topPerformerGifUrl', e.target.value)}
+                        style={{ fontSize: '0.88rem', borderColor: '#fcd34d', cursor: 'pointer' }}
+                      >
+                        <option value="">No Animation</option>
+                        <option value="https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExd2dsbW12YWczbWV1cTR0YnR3Zjc5b3J6eWZ4N3k4bWo5bXNrMzNlbSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/KY5niCDWQnZg7cD1oK/giphy.gif">Professional Achievement Celebration</option>
+                        <option value="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExaDdrZTZwNmFsZWk2b3E4aGFjNXM0OXZjM2k2ZTBvNDY3bGwzYTRyaCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/SSELvbsJ8ok34MSTYq/giphy.gif">Professional Recognition Award</option>
+                        <option value={congratulationsGif}>Congratulations Award Animation</option>
+                        <option value={performerImage}>Professional Top Performer Award</option><option value="custom">Custom GIF URL...</option>
+                      </select>
+
+                      {form.topPerformerGifUrl === 'custom' && (
+                        <input
+                          className="st-input"
+                          placeholder="Enter custom GIF URL (https://...)"
+                          onChange={e => set('topPerformerGifUrl', e.target.value)}
+                          style={{ fontSize: '0.85rem' }}
+                        />
+                      )}
+                      {form.topPerformerGifUrl && form.topPerformerGifUrl !== 'custom' && (
+                        <div style={{ fontSize: '0.72rem', color: '#92400e', wordBreak: 'break-all' }}>
+                          URL: {form.topPerformerGifUrl}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Live Top Performer Preview Box */}
+                  <div style={{ marginTop: '10px' }}>
+                    <label className="st-label" style={{ fontSize: '0.82rem', marginBottom: '6px', color: '#78350f' }}>Live Card Preview</label>
+                    <div className="top-performer-card-preview" style={{
+                      background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)',
+                      borderRadius: '14px',
+                      padding: '16px',
+                      color: 'white',
+                      boxShadow: '0 8px 24px rgba(49, 46, 129, 0.25)',
+                      border: '2px solid #38bdf8',
+                      position: 'relative',
+                      overflow: 'hidden',
+                    }}>
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justify: 'space-between',
+                        borderBottom: '1px solid rgba(255,255,255,0.15)',
+                        paddingBottom: '10px',
+                        marginBottom: '12px'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '1.4rem' }}>🏆</span>
+                          <span style={{
+                            background: 'linear-gradient(90deg, #38bdf8, #818cf8)',
+                            color: '#0f172a',
+                            fontWeight: '800',
+                            fontSize: '0.75rem',
+                            padding: '3px 10px',
+                            borderRadius: '20px',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px'
+                          }}>
+                            Top Performer — {form.topPerformerCriteria || 'Monthly'}
+                          </span>
+                        </div>
+                        {form.topPerformerGifUrl && form.topPerformerGifUrl !== 'custom' && (
+                          <img
+                            src={form.topPerformerGifUrl}
+                            alt="GIF animation"
+                            style={{ height: '75px', maxWidth: '140px', borderRadius: '10px', objectFit: 'cover', border: '1.5px solid rgba(245, 158, 11, 0.6)' }}
+                            onError={e => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        )}
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+                        <div style={{ position: 'relative', flexShrink: 0 }}>
+                          <img
+                            src={form.topPerformerPhotoUrl ? (form.topPerformerPhotoUrl.startsWith('http') ? form.topPerformerPhotoUrl : `${API_BASE}${form.topPerformerPhotoUrl.split('#')[0]}`) : 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'}
+                            alt="Top Performer Avatar"
+                            style={{
+                              width: '110px',
+                              height: '110px',
+                              borderRadius: '50%',
+                              objectFit: 'cover',
+                              border: '4px solid #38bdf8',
+                              boxShadow: '0 0 20px rgba(245, 158, 11, 0.7)'
+                            }}
+                          />
+                          <span style={{ position: 'absolute', bottom: '0px', right: '0px', fontSize: '1.6rem' }}>⭐</span>
+                        </div>
+
+                        <div style={{ flex: 1 }}>
+                          <h4 style={{ margin: '0 0 6px 0', fontSize: '1.45rem', fontWeight: '800', color: '#fef08a' }}>
+                            {form.topPerformerName || 'Employee Name'}
+                          </h4>
+                          <p style={{ margin: 0, fontSize: '0.95rem', color: '#e0e7ff', lineHeight: '1.5', fontStyle: form.topPerformerPurpose ? 'normal' : 'italic' }}>
+                            {form.topPerformerPurpose || 'Purpose / achievement message will appear here.'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              )}
+            </div>
           </div>
 
           {/* ── Theme Colors ── */}
@@ -854,6 +1148,47 @@ const Setting = () => {
           onClose={() => setShowQuotes(false)}
           onSave={(updated) => set('loginQuotes', updated)}
         />
+      )}
+
+      {/* ── Add Criteria Modal (+) ── */}
+      {showAddCriteriaModal && (
+        <Modal onClose={() => setShowAddCriteriaModal(false)}>
+          <h2 className="st-modal-title">➕ Add New Criteria Field</h2>
+          <p className="st-modal-sub">Create a custom recognition category for top performers (e.g. Quarterly MVP, Star Developer).</p>
+
+          <div className="st-form-group" style={{ marginTop: '14px' }}>
+            <label className="st-label">Criteria Name</label>
+            <input
+              className="st-input"
+              placeholder="e.g. Quarterly MVP, Star Developer, Best Team Player..."
+              value={newCriteriaInput}
+              onChange={e => setNewCriteriaInput(e.target.value)}
+              autoFocus
+            />
+          </div>
+
+          <div className="st-modal-actions" style={{ marginTop: '20px' }}>
+            <button className="st-btn-cancel" onClick={() => setShowAddCriteriaModal(false)}>Cancel</button>
+            <button
+              className="st-btn-primary"
+              onClick={() => {
+                if (newCriteriaInput.trim()) {
+                  const newOpt = newCriteriaInput.trim();
+                  const currentOpts = form.topPerformerCriteriaOptions || ['Monthly', 'Weekly', 'Hardworker'];
+                  if (!currentOpts.includes(newOpt)) {
+                    const updatedOpts = [...currentOpts, newOpt];
+                    set('topPerformerCriteriaOptions', updatedOpts);
+                  }
+                  set('topPerformerCriteria', newOpt);
+                  setNewCriteriaInput('');
+                  setShowAddCriteriaModal(false);
+                }
+              }}
+            >
+              Save & Select Field
+            </button>
+          </div>
+        </Modal>
       )}
 
       {/* Lightbox Modal Overlay */}

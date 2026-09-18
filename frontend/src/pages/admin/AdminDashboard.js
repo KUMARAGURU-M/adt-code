@@ -37,6 +37,14 @@ const AdminDashboard = () => {
   const [loadingStats, setLoadingStats] = useState(true);
   const [announcement, setAnnouncement] = useState('');
   const [celebration, setCelebration] = useState({ isCelebration: false, text: '', photoUrl: '' });
+  const [topPerformer, setTopPerformer] = useState({
+    enableTopPerformerBanner: true,
+    name: '',
+    criteria: 'Monthly',
+    purpose: '',
+    photoUrl: '',
+    gifUrl: ''
+  });
 
   // Lightbox States
   const [lightboxImg, setLightboxImg] = useState(null);
@@ -174,6 +182,14 @@ const AdminDashboard = () => {
           text: data.celebrationText || '',
           photoUrl: data.celebrationPhotoUrl || '',
         });
+        setTopPerformer({
+          enableTopPerformerBanner: data.enableTopPerformerBanner ?? true,
+          name: data.topPerformerName || '',
+          criteria: data.topPerformerCriteria || 'Monthly',
+          purpose: data.topPerformerPurpose || '',
+          photoUrl: data.topPerformerPhotoUrl || '',
+          gifUrl: data.topPerformerGifUrl || ''
+        });
       }
     } catch (err) {
       console.warn('Failed to fetch public settings/announcement:', err.message);
@@ -310,6 +326,48 @@ const AdminDashboard = () => {
           </div>
 
           <div className="dashboard-flex-row">
+            {topPerformer.enableTopPerformerBanner && topPerformer.name && (
+              <div className="top-performer-card">
+                <div className="top-performer-header">
+                  <div className="top-performer-tag">
+                    <span className="trophy-icon">🏆🎖️</span>
+                    <span>Top Performer — {topPerformer.criteria || 'Monthly'}</span>
+                  </div>
+                  {topPerformer.gifUrl && (
+                    <img
+                      src={topPerformer.gifUrl.startsWith('http') ? topPerformer.gifUrl : `https://media.giphy.com/media/26tOZbfHHHJB92VU4/giphy.gif`}
+                      alt="Celebration GIF"
+                      className="top-performer-gif"
+                    />
+                  )}
+                </div>
+
+                <div className="top-performer-body">
+                  <div className="top-performer-avatar-wrapper">
+                    <img
+                      src={topPerformer.photoUrl ? (topPerformer.photoUrl.startsWith('http') ? topPerformer.photoUrl : `${API_BASE}${topPerformer.photoUrl.split('#')[0]}`) : 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'}
+                      alt={topPerformer.name}
+                      className="top-performer-avatar"
+                      onClick={() => {
+                        if (topPerformer.photoUrl) {
+                          const cleanUrl = topPerformer.photoUrl.split('#')[0];
+                          openLightbox(cleanUrl.startsWith('http') ? cleanUrl : `${API_BASE}${cleanUrl}`);
+                        }
+                      }}
+                    />
+                    <span className="star-badge">⭐</span>
+                  </div>
+
+                  <div className="top-performer-info">
+                    <h4 className="top-performer-name">{topPerformer.name}</h4>
+                    {topPerformer.purpose && (
+                      <p className="top-performer-purpose">{topPerformer.purpose}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {celebration.isCelebration && (
               <div className="celebration-card">
                 <h4 className="card-label">🎉 Celebration</h4>
