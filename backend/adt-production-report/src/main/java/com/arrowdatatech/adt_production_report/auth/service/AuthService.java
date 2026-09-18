@@ -10,8 +10,10 @@ import com.arrowdatatech.adt_production_report.auth.repository.UserSessionReposi
 import com.arrowdatatech.adt_production_report.common.audit.service.ActivityLogService;
 import com.arrowdatatech.adt_production_report.common.exception.ResourceNotFoundException;
 import com.arrowdatatech.adt_production_report.common.exception.UnauthorizedException;
+import com.arrowdatatech.adt_production_report.media.service.MediaService;
 import com.arrowdatatech.adt_production_report.role.repository.PermissionRepository;
 import com.arrowdatatech.adt_production_report.role.repository.UserRoleAssignmentRepository;
+import com.arrowdatatech.adt_production_report.user.entity.EmployeeProfile;
 import com.arrowdatatech.adt_production_report.user.entity.User;
 import com.arrowdatatech.adt_production_report.user.repository.UserRepository;
 import java.util.List;
@@ -44,6 +46,7 @@ public class AuthService {
     private final AttendanceEmployeeRepository attendanceEmployeeRepository;
     private final ActivityLogService activityLogService;
     private final ImpersonationLogRepository impersonationLogRepository;
+    private final MediaService mediaService;
 
     @Transactional
     public LoginResponse login(LoginRequest request,
@@ -144,10 +147,7 @@ public class AuthService {
                     user.getEmployeeProfile() != null
                             ? user.getEmployeeProfile().getFullName()
                             : user.getEmail();
-            String profilePhotoUrl = user.getEmployeeProfile() != null
-                    && user.getEmployeeProfile().getProfilePhoto() != null
-                    ? "/media/" + user.getEmployeeProfile().getProfilePhoto().getId()
-                    : null;
+            String profilePhotoUrl = resolveProfilePhotoUrl(user.getEmployeeProfile());
 
             log.info("STEP 11 SUCCESS - Building response");
 
@@ -226,10 +226,7 @@ public class AuthService {
         String fullName = user.getEmployeeProfile() != null
                 ? user.getEmployeeProfile().getFullName()
                 : user.getEmail();
-        String profilePhotoUrl = user.getEmployeeProfile() != null
-                && user.getEmployeeProfile().getProfilePhoto() != null
-                ? "/media/" + user.getEmployeeProfile().getProfilePhoto().getId()
-                : null;
+        String profilePhotoUrl = resolveProfilePhotoUrl(user.getEmployeeProfile());
 
         return LoginResponse.builder()
                 .userId(user.getId())
@@ -285,10 +282,7 @@ public class AuthService {
         String fullName = targetUser.getEmployeeProfile() != null
                 ? targetUser.getEmployeeProfile().getFullName()
                 : targetUser.getEmail();
-        String profilePhotoUrl = targetUser.getEmployeeProfile() != null
-                && targetUser.getEmployeeProfile().getProfilePhoto() != null
-                ? "/media/" + targetUser.getEmployeeProfile().getProfilePhoto().getId()
-                : null;
+        String profilePhotoUrl = resolveProfilePhotoUrl(targetUser.getEmployeeProfile());
 
         boolean targetIsAdminOrManagerOrTl = roles.contains("Admin") 
                 || roles.contains("Manager") 
@@ -330,10 +324,7 @@ public class AuthService {
         String fullName = user.getEmployeeProfile() != null
                 ? user.getEmployeeProfile().getFullName()
                 : user.getEmail();
-        String profilePhotoUrl = user.getEmployeeProfile() != null
-                && user.getEmployeeProfile().getProfilePhoto() != null
-                ? "/media/" + user.getEmployeeProfile().getProfilePhoto().getId()
-                : null;
+        String profilePhotoUrl = resolveProfilePhotoUrl(user.getEmployeeProfile());
 
         return LoginResponse.builder()
                 .userId(user.getId())
@@ -438,5 +429,12 @@ public class AuthService {
         } catch (Exception e) {
             throw new RuntimeException("Failed to hash token", e);
         }
+    }
+
+    private String resolveProfilePhotoUrl(EmployeeProfile profile) {
+        if (profile == null || !mediaService.isAvailable(profile.getProfilePhoto())) {
+            return null;
+        }
+        return "/media/" + profile.getProfilePhoto().getId();
     }
 }

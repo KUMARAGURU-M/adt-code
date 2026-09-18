@@ -442,9 +442,6 @@ public class ProjectTargetService {
                 .mapToInt(j -> j.getPageCount() != null ? j.getPageCount() : 0)
                 .sum();
         
-        // Append incomplete jobs to qualified registry jobs so they are displayed
-        qualifiedRegistryJobs.addAll(incompleteJobs);
-
         // 7. Compute page output by complexity and weekly actuals from
         // qualifiedRegistryJobs
         int pagesSimple = 0, pagesMedium = 0, pagesComplex = 0, pagesHeavyComplex = 0, pagesTotal = 0;
@@ -488,6 +485,9 @@ public class ProjectTargetService {
                 }
             }
         }
+
+        // Include the all-date backlog in the registry only after completed output is calculated.
+        qualifiedRegistryJobs.addAll(incompleteJobs);
 
         // 8. Build JobDetailResponse list from registry jobs
         List<ProjectTargetDetailResponse.JobDetailResponse> jobResponses = qualifiedRegistryJobs.stream()

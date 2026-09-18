@@ -126,6 +126,7 @@ public class MediaService {
                 .orElseThrow(() -> new ResourceNotFoundException("MediaFile", "id", id));
     }
 
+    @Transactional
     public Resource loadFileAsResource(UUID id) {
         MediaFile mediaFile = getMetadata(id);
         try {
@@ -134,10 +135,25 @@ public class MediaService {
             if (resource.exists() || resource.isReadable()) {
                 return resource;
             } else {
+                mediaFile.setIsActive(false);
+                mediaFileRepository.save(mediaFile);
                 throw new ResourceNotFoundException("File", "path", mediaFile.getStoragePath());
             }
         } catch (MalformedURLException e) {
             throw new ResourceNotFoundException("File", "id", id);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isAvailable(MediaFile mediaFile) {
+        if (mediaFile == null || !Boolean.TRUE.equals(mediaFile.getIsActive())) {
+            return false;
+        }
+        try {
+            Path filePath = Paths.get(mediaFile.getStoragePath()).normalize();
+            return Files.isRegularFile(filePath) && Files.isReadable(filePath);
+        } catch (Exception e) {
+            return false;
         }
     }
 

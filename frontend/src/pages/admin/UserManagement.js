@@ -359,8 +359,15 @@ const AssignRoleModal = ({ user, onClose, onAssign, roles }) => {
    3. IMPERSONATE USER
 ══════════════════════════════════════════════════════════════════ */
 const ImpersonateModal = ({ user, onClose, onContinue }) => {
-  const handleContinue = () => {
-    onContinue(user.id);
+  const [starting, setStarting] = useState(false);
+  const handleContinue = async () => {
+    if (starting) return;
+    setStarting(true);
+    try {
+      await onContinue(user.id);
+    } finally {
+      setStarting(false);
+    }
   };
 
   return (
@@ -380,7 +387,7 @@ const ImpersonateModal = ({ user, onClose, onContinue }) => {
 
       <div className="modal-actions">
         <button className="btn-cancel" onClick={onClose}>Cancel</button>
-        <button className="btn-primary-modal" onClick={handleContinue}>Continue</button>
+        <button className="btn-primary-modal" onClick={handleContinue} disabled={starting}>{starting ? 'Starting session...' : 'Continue'}</button>
       </div>
     </Modal>
   );
@@ -489,6 +496,7 @@ const ResetPasswordModal = ({ user, onClose }) => {
 const EditUserModal = ({ user, onClose, onUpdate, shifts, roles }) => {
   const [profilePhoto, setProfilePhoto] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [saveStage, setSaveStage] = useState('');
   const [form, setForm] = useState({
     name: user.name,
     email: user.email,
@@ -504,11 +512,14 @@ const EditUserModal = ({ user, onClose, onUpdate, shifts, roles }) => {
   const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
 
   const handleUpdate = async () => {
+    if (saving) return;
     setSaving(true);
+    setSaveStage('Updating user...');
     try {
       let profilePhotoUrl = user.profilePhotoUrl || null;
 
       if (profilePhoto) {
+        setSaveStage('Uploading photo...');
         const uploadData = new FormData();
         uploadData.append('file', profilePhoto);
         uploadData.append('entityType', 'profile');
@@ -518,6 +529,7 @@ const EditUserModal = ({ user, onClose, onUpdate, shifts, roles }) => {
         profilePhotoUrl = uploaded.url;
       }
 
+      setSaveStage('Updating user...');
       await onUpdate({
         ...user,
         name: form.name,
@@ -537,6 +549,7 @@ const EditUserModal = ({ user, onClose, onUpdate, shifts, roles }) => {
       alert('Error updating user: ' + err.message);
     } finally {
       setSaving(false);
+      setSaveStage('');
     }
   };
 
@@ -637,7 +650,7 @@ const EditUserModal = ({ user, onClose, onUpdate, shifts, roles }) => {
       <div className="modal-actions">
         <button className="btn-cancel" onClick={onClose}>Cancel</button>
         <button className="btn-primary-modal" onClick={handleUpdate} disabled={saving}>
-          {saving ? 'Uploading...' : 'Update'}
+          {saving ? saveStage : 'Update'}
         </button>
       </div>
     </Modal>

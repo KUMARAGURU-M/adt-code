@@ -16,6 +16,15 @@
 
 export const API_BASE = process.env.REACT_APP_API_URL || 'https://arrowdatatech.com/api';
 
+function checkGatewayError(res) {
+  if (res.status === 524 || res.status === 504) {
+    throw new Error(`The server took too long to respond (HTTP ${res.status}). The operation may still finish; check its result before retrying.`);
+  }
+  if (res.status === 413) {
+    throw new Error('The selected file is too large for the server (HTTP 413). Choose a smaller file.');
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Session Storage Helpers (per-tab isolation)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -78,6 +87,7 @@ async function doRefresh() {
     throw new Error('Network error. Failed to refresh session.');
   }
 
+  checkGatewayError(res);
   if (!res.ok) {
     if (res.status === 400 || res.status === 401 || res.status === 403) {
       clearSession();
@@ -122,6 +132,8 @@ export const apiCall = async (endpoint, method = 'GET', body = null) => {
     });
 
     if (res.status === 401) return { __status: 401 };
+
+    checkGatewayError(res);
 
     // Handle empty / non-JSON responses (e.g. 401/403 HTML error pages)
     const text = await res.text();

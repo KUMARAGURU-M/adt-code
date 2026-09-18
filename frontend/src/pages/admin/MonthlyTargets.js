@@ -177,6 +177,7 @@ const MonthlyTargets = () => {
 
     let sum = 0;
     (selectedProjectDetail.jobs || []).forEach(job => {
+      if ((job.fileStatus || '').trim().toLowerCase() !== 'uploaded') return;
       const jobWeek = getJobWeek(job, selectedProjectDetail.billingCycleStartDate, selectedProjectDetail.billingCycleEndDate);
       const matchesWeek = (selectedWeek === 4) ? (jobWeek === 4 || jobWeek === 5) : (jobWeek === selectedWeek);
 
@@ -1467,6 +1468,7 @@ const MonthlyTargets = () => {
               const getWeekJobsCount = (weekNum) => {
                 if (!selectedProjectDetail.jobs) return 0;
                 return selectedProjectDetail.jobs.filter(job => {
+                  if ((job.fileStatus || '').trim().toLowerCase() !== 'uploaded') return false;
                   const jobWeek = getJobWeek(
                     job,
                     selectedProjectDetail.billingCycleStartDate,
@@ -1540,10 +1542,10 @@ const MonthlyTargets = () => {
                         <h4 className="section-title" style={{ margin: 0 }}>Weekly Target Performance</h4>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto', flexWrap: 'wrap' }}>
                           <span style={{ fontSize: '0.88rem', color: '#ef4444', fontWeight: '700', background: 'rgba(239, 68, 68, 0.1)', padding: '4px 12px' }}>
-                            Incomplete Book: <strong style={{ color: '#dc2626' }}>{selectedProjectDetail.actualIncompleteBooks || 0}</strong>
+                            Incomplete Books (All Dates): <strong style={{ color: '#dc2626' }}>{selectedProjectDetail.actualIncompleteBooks || 0}</strong>
                           </span>
                           <span style={{ fontSize: '0.88rem', color: '#ef4444', fontWeight: '700', background: 'rgba(239, 68, 68, 0.1)', padding: '4px 12px' }}>
-                            Incomplete page: <strong style={{ color: '#dc2626' }}>{selectedProjectDetail.actualIncompletePages || 0}</strong>
+                            Incomplete Pages (All Dates): <strong style={{ color: '#dc2626' }}>{selectedProjectDetail.actualIncompletePages || 0}</strong>
                           </span>
                         </div>
                       </div>
@@ -1614,7 +1616,7 @@ const MonthlyTargets = () => {
                             {selectedWeek !== null ? (
                               <span>Week {selectedWeek} Book / Article: <strong style={{ color: '#1d4ed8' }}>{getWeekJobsCount(selectedWeek)}</strong></span>
                             ) : (
-                              <span>Monthly Book / Article: <strong style={{ color: '#1d4ed8' }}>{selectedProjectDetail.jobs ? selectedProjectDetail.jobs.length : 0}</strong></span>
+                              <span>Monthly Completed Book / Article: <strong style={{ color: '#1d4ed8' }}>{(selectedProjectDetail.jobs || []).filter(job => (job.fileStatus || '').trim().toLowerCase() === 'uploaded').length}</strong></span>
                             )}
                           </span>
                         </div>
@@ -1674,6 +1676,7 @@ const MonthlyTargets = () => {
                           if (!matchesSearch) return false;
 
                           if (selectedWeek !== null) {
+                            if ((job.fileStatus || '').trim().toLowerCase() !== 'uploaded') return false;
                             const jobWeek = getJobWeek(
                               job,
                               selectedProjectDetail.billingCycleStartDate,
@@ -1797,8 +1800,6 @@ const MonthlyTargets = () => {
 };
 
 export default MonthlyTargets;
-
-
 
 
 

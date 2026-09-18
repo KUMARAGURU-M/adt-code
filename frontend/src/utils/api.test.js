@@ -5,6 +5,21 @@ const response = (data) => ({ ok: true, status: 200, text: async () => JSON.stri
 beforeEach(() => { sessionStorage.clear(); global.fetch = jest.fn(); });
 afterEach(() => jest.restoreAllMocks());
 
+test.each([524, 504])('reports gateway timeout %s without trying to parse HTML or retrying a mutation', async (status) => {
+  const text = jest.fn().mockResolvedValue('<html>Gateway timeout</html>');
+  fetch.mockResolvedValue({ ok: false, status, text });
+  await expect(apiCall('/auth/impersonate/target', 'POST'))
+    .rejects.toThrow(`The server took too long to respond (HTTP ${status})`);
+  expect(text).not.toHaveBeenCalled();
+  expect(fetch).toHaveBeenCalledTimes(1);
+});
+
+test('reports oversized uploads clearly', async () => {
+  fetch.mockResolvedValue({ ok: false, status: 413 });
+  await expect(apiCall('/media/upload', 'POST', new FormData()))
+    .rejects.toThrow('The selected file is too large');
+});
+
 test('retains profile photo on login and profile refresh', async () => {
   saveSession(login);
   expect(getCurrentUser().profilePhotoUrl).toBe('/media/photo');

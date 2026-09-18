@@ -131,7 +131,7 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
         @Query("""
                         SELECT j FROM Job j
                         WHERE j.project.id = :projectId
-                          AND LOWER(j.fileStatus) = 'uploaded'
+                          AND LOWER(TRIM(j.fileStatus)) = 'uploaded'
                           AND (
                             (j.startMonth >= :cycleStart AND j.startMonth <= :cycleEnd)
                             OR (j.endDate >= :cycleStart AND j.endDate <= :cycleEnd)
@@ -152,7 +152,7 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
         @Query("""
                         SELECT j FROM Job j
                         WHERE j.project.id IN :projectIds
-                          AND (j.fileStatus IS NULL OR LOWER(j.fileStatus) != 'uploaded')
+                          AND (j.fileStatus IS NULL OR LOWER(TRIM(j.fileStatus)) != 'uploaded')
                         ORDER BY j.receiveDate DESC, j.jobIdCode ASC
                         """)
         List<Job> findIncompleteJobsByProjectIds(@Param("projectIds") List<UUID> projectIds);
@@ -163,7 +163,7 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
         @Query("""
                         SELECT j FROM Job j
                         WHERE j.project.id = :projectId
-                          AND (j.fileStatus IS NULL OR LOWER(j.fileStatus) != 'uploaded')
+                          AND (j.fileStatus IS NULL OR LOWER(TRIM(j.fileStatus)) != 'uploaded')
                         ORDER BY j.receiveDate DESC, j.jobIdCode ASC
                         """)
         List<Job> findIncompleteJobsByProjectId(@Param("projectId") UUID projectId);
