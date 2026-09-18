@@ -24,6 +24,8 @@ public class UpdateUserRequest {
 
     private UUID shiftId;
 
+    private Boolean clearShift;
+
     private String timezone;
 
     private Boolean isTopPerformer;

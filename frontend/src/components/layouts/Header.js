@@ -4,19 +4,42 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import './Header.css';
-import { getCurrentUser, clearSession, apiCall } from '../../utils/api';
+import { getCurrentUser, clearSession, apiCall, refreshCurrentUser } from '../../utils/api';
 import { getProfilePhotoUrl } from '../../utils/profilePhoto';
 
 const Header = ({ onToggleMobileMenu }) => {
   const navigate = useNavigate();
   const [user, setUser] = useState(getCurrentUser);
+  const [photoLoadFailed, setPhotoLoadFailed] = useState(false);
   useEffect(() => {
-    const refreshUser = () => setUser(getCurrentUser());
+    let cancelled = false;
+    const refreshUser = () => {
+      setPhotoLoadFailed(false);
+      setUser(getCurrentUser());
+    };
     window.addEventListener('user_profile_updated', refreshUser);
-    return () => window.removeEventListener('user_profile_updated', refreshUser);
+    refreshCurrentUser()
+      .then(() => {
+        if (!cancelled) refreshUser();
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+      window.removeEventListener('user_profile_updated', refreshUser);
+    };
   }, []);
   const displayUserName = user?.fullName || 'User';
-  const profilePhotoUrl = getProfilePhotoUrl(user?.profilePhotoUrl);
+  const profilePhotoUrl = photoLoadFailed ? null : getProfilePhotoUrl(user?.profilePhotoUrl);
+  const handlePhotoError = () => {
+    setPhotoLoadFailed(true);
+    const current = getCurrentUser();
+    if (!current) return;
+    sessionStorage.setItem('user', JSON.stringify({
+      ...current,
+      profilePhotoUrl: null,
+    }));
+    window.dispatchEvent(new Event('user_profile_updated'));
+  };
 
   const [showResetModal, setShowResetModal] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
@@ -110,6 +133,7 @@ const Header = ({ onToggleMobileMenu }) => {
             <img
               src={profilePhotoUrl}
               alt="User profile"
+              onError={handlePhotoError}
               style={{
                 width: '40px',
                 height: '40px',

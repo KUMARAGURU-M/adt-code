@@ -536,7 +536,9 @@ const EditUserModal = ({ user, onClose, onUpdate, shifts, roles }) => {
         email: form.email,
         phone: form.phone || '-',
         role: form.role,
+        originalRole: user.role,
         shiftId: form.shiftId || null,
+        originalShiftId: user.shiftId || null,
         top: form.top,
         calendar: form.calendar,
         timezone: form.timezone,
@@ -809,33 +811,43 @@ const UserManagement = () => {
   };
 
   const handleUpdate = async (updatedUser) => {
-    try {
-      const savedUser = await apiCall(`/users/${updatedUser.id}`, 'PUT', {
-        fullName: updatedUser.name,
-        email: updatedUser.email,
-        phone: updatedUser.phone !== '-' ? updatedUser.phone : null,
-        roleName: mapRoleName(updatedUser.role),
-        shiftId: updatedUser.shiftId || null,
-        timezone: updatedUser.timezone || null,
-        isTopPerformer: updatedUser.top,
-        showCalendarStats: updatedUser.calendar,
-        isActive: updatedUser.employeeStatus === 'Active',
-        employeeStatus: updatedUser.employeeStatus,
-      });
-      if (getCurrentUser()?.userId === updatedUser.id) {
-        sessionStorage.setItem('user', JSON.stringify({
-          ...getCurrentUser(),
-          fullName: savedUser.fullName,
-          email: savedUser.email,
-          profilePhotoUrl: savedUser.profilePhotoUrl || null,
-        }));
-        window.dispatchEvent(new Event('user_profile_updated'));
-      }
-      await loadUsers();
-      close();
-    } catch (err) {
-      alert('Error updating user: ' + err.message);
+    const payload = {
+      fullName: updatedUser.name,
+      email: updatedUser.email,
+      phone: updatedUser.phone !== '-' ? updatedUser.phone : null,
+      timezone: updatedUser.timezone || null,
+      isTopPerformer: updatedUser.top,
+      showCalendarStats: updatedUser.calendar,
+      isActive: updatedUser.employeeStatus === 'Active',
+      employeeStatus: updatedUser.employeeStatus,
+    };
+
+    if (mapRoleName(updatedUser.role) !== mapRoleName(updatedUser.originalRole || updatedUser.role)) {
+      payload.roleName = mapRoleName(updatedUser.role);
     }
+
+    const previousShiftId = updatedUser.originalShiftId || null;
+    const nextShiftId = updatedUser.shiftId || null;
+    if (previousShiftId !== nextShiftId) {
+      if (nextShiftId) {
+        payload.shiftId = nextShiftId;
+      } else {
+        payload.clearShift = true;
+      }
+    }
+
+    const savedUser = await apiCall(`/users/${updatedUser.id}`, 'PUT', payload);
+    if (getCurrentUser()?.userId === updatedUser.id) {
+      sessionStorage.setItem('user', JSON.stringify({
+        ...getCurrentUser(),
+        fullName: savedUser.fullName,
+        email: savedUser.email,
+        profilePhotoUrl: savedUser.profilePhotoUrl || null,
+      }));
+      window.dispatchEvent(new Event('user_profile_updated'));
+    }
+    await loadUsers();
+    close();
   };
 
   const handleDelete = async (userId) => {

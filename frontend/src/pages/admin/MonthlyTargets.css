@@ -1386,6 +1386,81 @@
   /* Amber/Orange accent border */
 }
 
+.incomplete-metric {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 7px 14px 7px 16px;
+  border: 1px solid;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 1000;
+  line-height: 1.2;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+}
+
+.incomplete-metric-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 0;
+  background: transparent;
+  border: none;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.incomplete-metric-icon svg {
+  display: block;
+  width: 28px;
+  height: 28px;
+  color: currentColor;
+}
+
+.incomplete-books-metric {
+  color: #b45309;
+  background: #fff7ed;
+  border-color: #fdba74;
+}
+
+.incomplete-books-metric .incomplete-metric-icon {
+  color: #ea580c;
+}
+
+.incomplete-pages-metric {
+  color: #1d4ed8;
+  background: #eff6ff;
+  border-color: #93c5fd;
+}
+
+.incomplete-pages-metric .incomplete-metric-icon {
+  color: #2563eb;
+}
+
+.incomplete-metric-count {
+  min-width: 34px;
+  padding: 6px 10px;
+  border-radius: 5px;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 900;
+  line-height: 1.1;
+  text-align: center;
+  box-shadow: inset 0 -1px 0 rgba(255,255,255,0.18);
+}
+
+.incomplete-books-metric .incomplete-metric-count {
+  background: #ea580c;
+}
+
+.incomplete-pages-metric .incomplete-metric-count {
+  background: #2563eb;
+}
+
 .books-registry-section {
   border-left: 4px solid #8b5cf6 !important;
   /* Purple accent border */
@@ -2693,6 +2768,7 @@
   .drawer-container.maximized .complexity-pages-grid {
     grid-template-columns: repeat(2, minmax(220px, 1fr));
   }
+
 
 
 

@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import './EmpHeader.css';
-import { apiCall, clearSession, getCurrentUser } from '../../utils/api';
+import { apiCall, clearSession, getCurrentUser, refreshCurrentUser } from '../../utils/api';
 import { getProfilePhotoUrl } from '../../utils/profilePhoto';
 
 const EmpHeader = ({ userName = 'Executive' }) => {
@@ -20,19 +20,40 @@ const EmpHeader = ({ userName = 'Executive' }) => {
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [currentUser, setCurrentUser] = useState(() => getCurrentUser());
+  const [photoLoadFailed, setPhotoLoadFailed] = useState(false);
 
   useEffect(() => {
-    const refreshUser = () => setCurrentUser(getCurrentUser());
+    let cancelled = false;
+    const refreshUser = () => {
+      setPhotoLoadFailed(false);
+      setCurrentUser(getCurrentUser());
+    };
     window.addEventListener('user_profile_updated', refreshUser);
     window.addEventListener('storage', refreshUser);
+    refreshCurrentUser()
+      .then(() => {
+        if (!cancelled) refreshUser();
+      })
+      .catch(() => {});
     return () => {
+      cancelled = true;
       window.removeEventListener('user_profile_updated', refreshUser);
       window.removeEventListener('storage', refreshUser);
     };
   }, []);
 
-  const profilePhotoUrl = getProfilePhotoUrl(currentUser?.profilePhotoUrl);
+  const profilePhotoUrl = photoLoadFailed ? null : getProfilePhotoUrl(currentUser?.profilePhotoUrl);
   const profileInitial = (currentUser?.fullName || userName || 'U').charAt(0).toUpperCase();
+  const handlePhotoError = () => {
+    setPhotoLoadFailed(true);
+    const current = getCurrentUser();
+    if (!current) return;
+    sessionStorage.setItem('user', JSON.stringify({
+      ...current,
+      profilePhotoUrl: null,
+    }));
+    window.dispatchEvent(new Event('user_profile_updated'));
+  };
 
   const closeResetModal = () => {
     setShowResetModal(false);
@@ -120,6 +141,7 @@ const EmpHeader = ({ userName = 'Executive' }) => {
               src={profilePhotoUrl}
               alt={`${userName} profile`}
               className="emp-profile-photo"
+              onError={handlePhotoError}
             />
           ) : (
             <div className="emp-profile-photo emp-profile-photo-fallback" aria-label={`${userName} profile`}>

@@ -9,10 +9,12 @@ import {
   TrendingUp,
   Layers,
   Activity,
+  BookOpen,
   ChevronLeft,
   ChevronRight,
   Percent,
   Clock,
+  FileText,
   PauseCircle,
   Sparkles,
   Settings,
@@ -1541,11 +1543,15 @@ const MonthlyTargets = () => {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '16px' }}>
                         <h4 className="section-title" style={{ margin: 0 }}>Weekly Target Performance</h4>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto', flexWrap: 'wrap' }}>
-                          <span style={{ fontSize: '0.88rem', color: '#ef4444', fontWeight: '700', background: 'rgba(239, 68, 68, 0.1)', padding: '4px 12px' }}>
-                            Incomplete Books (All Dates): <strong style={{ color: '#dc2626' }}>{selectedProjectDetail.actualIncompleteBooks || 0}</strong>
+                          <span className="incomplete-metric incomplete-books-metric">
+                            <span className="incomplete-metric-icon" aria-hidden="true"><BookOpen size={28} strokeWidth={2.8} /></span>
+                            <span>Incomplete Book:</span>
+                            <strong className="incomplete-metric-count">{selectedProjectDetail.actualIncompleteBooks || 0}</strong>
                           </span>
-                          <span style={{ fontSize: '0.88rem', color: '#ef4444', fontWeight: '700', background: 'rgba(239, 68, 68, 0.1)', padding: '4px 12px' }}>
-                            Incomplete Pages (All Dates): <strong style={{ color: '#dc2626' }}>{selectedProjectDetail.actualIncompletePages || 0}</strong>
+                          <span className="incomplete-metric incomplete-pages-metric">
+                            <span className="incomplete-metric-icon" aria-hidden="true"><FileText size={28} strokeWidth={2.8} /></span>
+                            <span>Incomplete Page:</span>
+                            <strong className="incomplete-metric-count">{selectedProjectDetail.actualIncompletePages || 0}</strong>
                           </span>
                         </div>
                       </div>

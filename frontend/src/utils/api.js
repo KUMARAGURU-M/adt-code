@@ -15,6 +15,7 @@
  */
 
 export const API_BASE = process.env.REACT_APP_API_URL || 'https://arrowdatatech.com/api';
+const REQUEST_TIMEOUT_MS = 45000;
 
 function checkGatewayError(res) {
   if (res.status === 524 || res.status === 504) {
@@ -122,14 +123,28 @@ export const apiCall = async (endpoint, method = 'GET', body = null) => {
   const token = getAccessToken();
 
   const makeRequest = async (tok) => {
-    const res = await fetch(`${API_BASE}${endpoint}`, {
-      method,
-      headers: {
-        ...(!(body instanceof FormData) && { 'Content-Type': 'application/json' }),
-        ...(tok && { Authorization: `Bearer ${tok}` }),
-      },
-      ...(body && { body: body instanceof FormData ? body : JSON.stringify(body) }),
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    let res;
+
+    try {
+      res = await fetch(`${API_BASE}${endpoint}`, {
+        method,
+        headers: {
+          ...(!(body instanceof FormData) && { 'Content-Type': 'application/json' }),
+          ...(tok && { Authorization: `Bearer ${tok}` }),
+        },
+        ...(body && { body: body instanceof FormData ? body : JSON.stringify(body) }),
+        signal: controller.signal,
+      });
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        throw new Error(`The server did not respond within ${REQUEST_TIMEOUT_MS / 1000} seconds. Check whether the change was saved before trying again.`);
+      }
+      throw err;
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     if (res.status === 401) return { __status: 401 };
 

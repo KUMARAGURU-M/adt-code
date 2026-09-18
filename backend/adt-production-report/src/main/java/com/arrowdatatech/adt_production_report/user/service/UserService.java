@@ -317,54 +317,57 @@ public class UserService {
         profile.setUpdatedAt(OffsetDateTime.now());
         profileRepository.save(profile);
 
+        boolean roleChanged = false;
+
         // Update role if changed
         if (request.getRoleName() != null) {
-            roleAssignmentRepository.deleteAllByUserId(userId);
-            assignRoleToUser(user, request.getRoleName());
+            List<String> currentRoles = roleAssignmentRepository.findRoleNamesByUserId(userId);
+            boolean alreadyPrimaryRole = currentRoles.size() == 1
+                    && request.getRoleName().equalsIgnoreCase(currentRoles.get(0));
+            if (!alreadyPrimaryRole) {
+                roleAssignmentRepository.deleteAllByUserId(userId);
+                assignRoleToUser(user, request.getRoleName());
+                roleChanged = true;
+            }
         }
 
         // Update shift if changed
-        if (request.getShiftId() != null) {
-            assignShiftToUser(user, request.getShiftId());
+        if (Boolean.TRUE.equals(request.getClearShift())) {
+            if (shiftAssignmentRepository.existsByUserIdAndEffectiveToIsNull(userId)) {
+                shiftAssignmentRepository.closeCurrentShift(userId, LocalDate.now());
+            }
+        } else if (request.getShiftId() != null) {
+            UUID currentShiftId = shiftAssignmentRepository
+                    .findByUserIdAndEffectiveToIsNull(userId)
+                    .map(s -> s.getShift().getId())
+                    .orElse(null);
+            if (!request.getShiftId().equals(currentShiftId)) {
+                assignShiftToUser(user, request.getShiftId());
+            }
         }
 
         // Sync to AttendanceEmployee if exists
         try {
-            String roleToUse = request.getRoleName();
-            if (roleToUse == null) {
-                List<String> roles = roleAssignmentRepository.findRoleNamesByUserId(userId);
-                roleToUse = roles.isEmpty() ? "Executive" : roles.get(0);
-            }
-            final String finalRole = roleToUse;
-            
-            attendanceEmployeeRepository.findByUserId(userId).ifPresentOrElse(
+            attendanceEmployeeRepository.findByUserId(userId).ifPresent(
                 emp -> {
+                    boolean changed = false;
                     if (request.getFullName() != null) {
                         emp.setName(request.getFullName().trim());
+                        changed = true;
                     }
                     if (request.getIsActive() != null) {
                         emp.setIsActive(request.getIsActive());
+                        changed = true;
                     }
-                    if (request.getRoleName() != null) {
+                    if (roleChanged) {
                         emp.setCategory(mapRoleToCategory(request.getRoleName()));
+                        changed = true;
                     }
-                    emp.setUpdatedAt(OffsetDateTime.now());
-                    attendanceEmployeeRepository.save(emp);
-                    log.info("Synchronized AttendanceEmployee updates for userId {}", userId);
-                },
-                () -> {
-                    int sortOrder = (int) attendanceEmployeeRepository.count() + 1;
-                    AttendanceEmployee newEmp = AttendanceEmployee.builder()
-                            .userId(user.getId())
-                            .name(profile.getFullName().trim())
-                            .category(mapRoleToCategory(finalRole))
-                            .isActive(user.getIsActive())
-                            .sortOrder(sortOrder)
-                            .baseSalary(new java.math.BigDecimal("5000.00"))
-                            .updatedAt(OffsetDateTime.now())
-                            .build();
-                    attendanceEmployeeRepository.save(newEmp);
-                    log.info("Created missing AttendanceEmployee '{}' during user update for userId {}", newEmp.getName(), user.getId());
+                    if (changed) {
+                        emp.setUpdatedAt(OffsetDateTime.now());
+                        attendanceEmployeeRepository.save(emp);
+                        log.info("Synchronized AttendanceEmployee updates for userId {}", userId);
+                    }
                 }
             );
         } catch (Exception e) {
