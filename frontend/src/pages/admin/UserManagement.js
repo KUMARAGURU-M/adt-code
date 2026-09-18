@@ -28,7 +28,7 @@ const AddUserModal = ({ onClose, onAdd, shifts, roles }) => {
     password: '',
     role: roles && roles.length > 0 ? roles[0] : 'Executive',
     shiftId: '',
-    timezone: user.timezone || 'Asia/Kolkata',
+    timezone: 'Asia/Kolkata',
     top: false,
     calendar: false,
     employeeStatus: 'Active',
