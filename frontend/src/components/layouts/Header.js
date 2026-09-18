@@ -1,6 +1,6 @@
 // src/components/layouts/Header.js
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import './Header.css';
@@ -9,7 +9,12 @@ import { getProfilePhotoUrl } from '../../utils/profilePhoto';
 
 const Header = ({ onToggleMobileMenu }) => {
   const navigate = useNavigate();
-  const user = getCurrentUser();
+  const [user, setUser] = useState(getCurrentUser);
+  useEffect(() => {
+    const refreshUser = () => setUser(getCurrentUser());
+    window.addEventListener('user_profile_updated', refreshUser);
+    return () => window.removeEventListener('user_profile_updated', refreshUser);
+  }, []);
   const displayUserName = user?.fullName || 'User';
   const profilePhotoUrl = getProfilePhotoUrl(user?.profilePhotoUrl);
 

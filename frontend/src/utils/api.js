@@ -17,47 +17,20 @@
 export const API_BASE = process.env.REACT_APP_API_URL || 'https://arrowdatatech.com/api';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Impersonation Support
-// ─────────────────────────────────────────────────────────────────────────────
-try {
-  const impToken = localStorage.getItem('impersonateToken');
-  if (impToken) {
-    sessionStorage.setItem('accessToken', impToken);
-
-    const impRefresh = localStorage.getItem('impersonateRefresh');
-    if (impRefresh) {
-      sessionStorage.setItem('refreshToken', impRefresh);
-    }
-
-    const impUser = localStorage.getItem('impersonateUser');
-    if (impUser) {
-      sessionStorage.setItem('user', impUser);
-    }
-
-    sessionStorage.setItem('isImpersonating', 'true');
-
-    // Clear from localStorage immediately to isolate this session to this tab only
-    localStorage.removeItem('impersonateToken');
-    localStorage.removeItem('impersonateRefresh');
-    localStorage.removeItem('impersonateUser');
-  }
-} catch (e) {
-  console.warn('Failed to migrate impersonation session:', e);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Session Storage Helpers (per-tab isolation)
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function saveSession(loginResp) {
-  sessionStorage.setItem('accessToken', loginResp.accessToken);
-  sessionStorage.setItem('refreshToken', loginResp.refreshToken);
-  sessionStorage.setItem('user', JSON.stringify({
+export function saveSession(loginResp, storage = sessionStorage) {
+  storage.setItem('accessToken', loginResp.accessToken);
+  storage.setItem('refreshToken', loginResp.refreshToken);
+  storage.setItem('user', JSON.stringify({
     userId: loginResp.userId,
     fullName: loginResp.fullName,
     email: loginResp.email,
     roles: loginResp.roles,
     permissions: loginResp.permissions,
+    profilePhotoUrl: loginResp.profilePhotoUrl || null,
+    userCode: loginResp.userCode,
   }));
 }
 
@@ -79,6 +52,7 @@ export function clearSession() {
   sessionStorage.removeItem('accessToken');
   sessionStorage.removeItem('refreshToken');
   sessionStorage.removeItem('user');
+  sessionStorage.removeItem('isImpersonating');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -141,16 +115,17 @@ export const apiCall = async (endpoint, method = 'GET', body = null) => {
     const res = await fetch(`${API_BASE}${endpoint}`, {
       method,
       headers: {
-        'Content-Type': 'application/json',
+        ...(!(body instanceof FormData) && { 'Content-Type': 'application/json' }),
         ...(tok && { Authorization: `Bearer ${tok}` }),
       },
-      ...(body && { body: JSON.stringify(body) }),
+      ...(body && { body: body instanceof FormData ? body : JSON.stringify(body) }),
     });
+
+    if (res.status === 401) return { __status: 401 };
 
     // Handle empty / non-JSON responses (e.g. 401/403 HTML error pages)
     const text = await res.text();
     if (!text || !text.trim()) {
-      if (res.status === 401) return { __status: 401 };
       throw new Error(`Server returned empty response (HTTP ${res.status})`);
     }
 
@@ -161,8 +136,7 @@ export const apiCall = async (endpoint, method = 'GET', body = null) => {
       throw new Error(`Invalid JSON from server (HTTP ${res.status})`);
     }
 
-    if (res.status === 401) return { __status: 401 };
-    if (!data.success) throw new Error(data.error || 'Request failed');
+    if (!res.ok || !data.success) throw new Error(data.error || 'Request failed');
     return data.data;
   };
 
@@ -225,7 +199,10 @@ export async function refreshCurrentUser() {
         email: data.email,
         roles: data.roles,
         permissions: data.permissions,
+        profilePhotoUrl: data.profilePhotoUrl || null,
+        userCode: data.userCode,
       }));
+      window.dispatchEvent(new Event('user_profile_updated'));
       return data;
     }
   } catch (err) {

@@ -54,6 +54,7 @@ public class JwtTokenProvider {
         return Jwts.builder()
                 .setSubject(userId.toString())
                 .claim("type", "REFRESH")
+                .setId(UUID.randomUUID().toString())
                 .setIssuedAt(now)
                 .setExpiration(expiry)
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)

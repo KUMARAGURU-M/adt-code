@@ -18,8 +18,9 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.AccountStatusException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -54,7 +55,7 @@ public class AuthService {
             log.info("STEP 1 - Authenticating user");
 
             User user = authenticateUser(
-                    request.getIdentifier(),
+                    request.getIdentifier().trim(),
                     request.getPassword());
 
             log.info("STEP 1 SUCCESS - User: {}", user.getEmail());
@@ -217,6 +218,7 @@ public class AuthService {
                         jwtTokenProvider.getRefreshTokenExpiry() / 1000))
                 .ipAddress(session.getIpAddress())
                 .deviceInfo(session.getDeviceInfo())
+                .impersonatedBy(session.getImpersonatedBy())
                 .isActive(true)
                 .build();
         sessionRepository.save(newSession);
@@ -354,10 +356,10 @@ public class AuthService {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             identifier, password));
-        } catch (DisabledException e) {
+        } catch (AccountStatusException e) {
             throw new UnauthorizedException(
                     "Account is deactivated. Contact your administrator.");
-        } catch (BadCredentialsException e) {
+        } catch (AuthenticationException e) {
             throw new UnauthorizedException(
                     "Invalid credentials. Please check your email/ID and password.");
         }

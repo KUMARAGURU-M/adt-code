@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import './UserManagement.css';
-import { apiCall, getRolePrefix, getCurrentUser, API_BASE, getAccessToken } from '../../utils/api';
+import { apiCall, getRolePrefix, getCurrentUser, saveSession } from '../../utils/api';
 
 const mapRoleName = (roleVal) => roleVal || 'Executive';
 
@@ -495,7 +495,7 @@ const EditUserModal = ({ user, onClose, onUpdate, shifts, roles }) => {
     phone: user.phone === '-' ? '' : user.phone,
     role: user.role,
     shiftId: user.shiftId || '',
-    timezone: 'Asia/Kolkata',
+    timezone: user.timezone || 'Asia/Kolkata',
     top: user.top,
     calendar: user.calendar ?? true,
     employeeStatus: user.employeeStatus || (user.status === 'Active' ? 'Active' : 'Inactive'),
@@ -514,16 +514,8 @@ const EditUserModal = ({ user, onClose, onUpdate, shifts, roles }) => {
         uploadData.append('entityType', 'profile');
         uploadData.append('entityId', user.id);
 
-        const response = await fetch(`${API_BASE}/media/upload`, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${getAccessToken()}` },
-          body: uploadData,
-        });
-        const result = await response.json();
-        if (!response.ok || !result.success || !result.data?.url) {
-          throw new Error(result.message || 'Profile photo upload failed');
-        }
-        profilePhotoUrl = result.data.url;
+        const uploaded = await apiCall('/media/upload', 'POST', uploadData);
+        profilePhotoUrl = uploaded.url;
       }
 
       await onUpdate({
@@ -534,6 +526,8 @@ const EditUserModal = ({ user, onClose, onUpdate, shifts, roles }) => {
         role: form.role,
         shiftId: form.shiftId || null,
         top: form.top,
+        calendar: form.calendar,
+        timezone: form.timezone,
         employeeStatus: form.employeeStatus,
         status: form.employeeStatus,
         initial: form.name.charAt(0).toUpperCase(),
@@ -803,7 +797,7 @@ const UserManagement = () => {
 
   const handleUpdate = async (updatedUser) => {
     try {
-      await apiCall(`/users/${updatedUser.id}`, 'PUT', {
+      const savedUser = await apiCall(`/users/${updatedUser.id}`, 'PUT', {
         fullName: updatedUser.name,
         email: updatedUser.email,
         phone: updatedUser.phone !== '-' ? updatedUser.phone : null,
@@ -815,6 +809,15 @@ const UserManagement = () => {
         isActive: updatedUser.employeeStatus === 'Active',
         employeeStatus: updatedUser.employeeStatus,
       });
+      if (getCurrentUser()?.userId === updatedUser.id) {
+        sessionStorage.setItem('user', JSON.stringify({
+          ...getCurrentUser(),
+          fullName: savedUser.fullName,
+          email: savedUser.email,
+          profilePhotoUrl: savedUser.profilePhotoUrl || null,
+        }));
+        window.dispatchEvent(new Event('user_profile_updated'));
+      }
       await loadUsers();
       close();
     } catch (err) {
@@ -871,24 +874,17 @@ const UserManagement = () => {
 
   const handleImpersonate = async (userId) => {
     const impersonationWindow = window.open('', '_blank');
+    if (!impersonationWindow) {
+      alert('Please allow pop-ups to impersonate a user.');
+      return;
+    }
     try {
       const data = await apiCall(`/auth/impersonate/${userId}`, 'POST');
-      localStorage.setItem('impersonateToken', data.accessToken);
-      localStorage.setItem('impersonateRefresh', data.refreshToken);
-      localStorage.setItem('impersonateUser', JSON.stringify({
-        userId: data.userId,
-        fullName: data.fullName,
-        email: data.email,
-        roles: data.roles,
-        permissions: data.permissions,
-        profilePhotoUrl: data.profilePhotoUrl || null
-      }));
+      if (impersonationWindow.closed) throw new Error('The impersonation window was closed.');
+      saveSession(data, impersonationWindow.sessionStorage);
+      impersonationWindow.sessionStorage.setItem('isImpersonating', 'true');
       const prefix = getRolePrefix(data.roles);
-      if (impersonationWindow) {
-        impersonationWindow.location.href = `/workwise/${prefix}/dashboard`;
-      } else {
-        throw new Error('The browser blocked the impersonation window. Please allow pop-ups and try again.');
-      }
+      impersonationWindow.location.replace(`/workwise/${prefix}/dashboard`);
       close();
     } catch (err) {
       if (impersonationWindow && !impersonationWindow.closed) impersonationWindow.close();

@@ -287,7 +287,7 @@ function Login() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          identifier: identifier,
+          identifier: identifier.trim(),
           password: password,
         }),
       });
@@ -302,6 +302,7 @@ function Login() {
 
       // Store tokens in sessionStorage (per-tab, so multiple users
       // can be logged in simultaneously in different browser tabs)
+      sessionStorage.removeItem('isImpersonating');
       saveSession(data.data);
 
       // Navigate based on user roles
