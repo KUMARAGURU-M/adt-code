@@ -26,6 +26,40 @@ function checkGatewayError(res) {
   }
 }
 
+export async function loginUser(identifier, password) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    const response = await fetch(`${API_BASE}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identifier: identifier.trim(), password }),
+      signal: controller.signal,
+    });
+    checkGatewayError(response);
+    let result;
+    try {
+      result = await response.json();
+    } catch {
+      throw new Error(`Login server returned an invalid response (HTTP ${response.status}). Please try again or contact your administrator.`);
+    }
+    if (!response.ok || !result?.success) {
+      throw new Error(result?.error || `Login failed (HTTP ${response.status}).`);
+    }
+    return result.data;
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      throw new Error('The login server did not respond within 45 seconds. Please try again.');
+    }
+    if (error instanceof TypeError) {
+      throw new Error('Cannot reach the login server. Please check your connection and try again.');
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Session Storage Helpers (per-tab isolation)
 // ─────────────────────────────────────────────────────────────────────────────

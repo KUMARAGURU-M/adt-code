@@ -1,7 +1,5 @@
 package com.arrowdatatech.adt_production_report.auth.service;
 
-import com.arrowdatatech.adt_production_report.attendance.entity.AttendanceEmployee;
-import com.arrowdatatech.adt_production_report.attendance.repository.AttendanceEmployeeRepository;
 import com.arrowdatatech.adt_production_report.auth.dto.*;
 import com.arrowdatatech.adt_production_report.auth.entity.ImpersonationLog;
 import com.arrowdatatech.adt_production_report.auth.entity.UserSession;
@@ -21,7 +19,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.AccountStatusException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Service;
@@ -43,7 +40,7 @@ public class AuthService {
     private final UserSessionRepository sessionRepository;
     private final UserRoleAssignmentRepository roleAssignmentRepository;
     private final PermissionRepository permissionRepository;
-    private final AttendanceEmployeeRepository attendanceEmployeeRepository;
+    private final LoginAttendanceService loginAttendanceService;
     private final ActivityLogService activityLogService;
     private final ImpersonationLogRepository impersonationLogRepository;
     private final MediaService mediaService;
@@ -165,6 +162,9 @@ public class AuthService {
                     .dashboardType(dashboardType)
                     .build();
 
+        } catch (UnauthorizedException ex) {
+            log.warn("LOGIN REJECTED - {}", ex.getMessage());
+            throw ex;
         } catch (Exception ex) {
 
             log.error("LOGIN FAILED", ex);
@@ -343,6 +343,8 @@ public class AuthService {
     // ──────────────────────────────────────────────
 
     private User authenticateUser(String identifier, String password) {
+        User user = findUserByIdentifier(identifier);
+        synchronizeActiveStatusFromProfile(user);
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
@@ -355,67 +357,59 @@ public class AuthService {
                     "Invalid credentials. Please check your email/ID and password.");
         }
 
+        return user;
+    }
+
+    private User findUserByIdentifier(String identifier) {
         if (identifier.contains("@")) {
             return userRepository.findByEmailAndDeletedAtIsNull(identifier)
                     .orElseThrow(() -> new UnauthorizedException(
-                            "User not found"));
+                            "Invalid credentials. Please check your email/ID and password."));
         }
         return userRepository.findByUserCodeAndDeletedAtIsNull(identifier)
-                .orElseThrow(() -> new UnauthorizedException("User not found"));
+                .orElseThrow(() -> new UnauthorizedException(
+                        "Invalid credentials. Please check your email/ID and password."));
+    }
+
+    private void synchronizeActiveStatusFromProfile(User user) {
+        EmployeeProfile profile = user.getEmployeeProfile();
+        if (profile == null || profile.getEmployeeStatus() == null) {
+            return;
+        }
+
+        boolean profileAllowsLogin = "Active".equalsIgnoreCase(profile.getEmployeeStatus());
+        if (!profileAllowsLogin) {
+            if (Boolean.TRUE.equals(user.getIsActive())) {
+                user.setIsActive(false);
+                user.setUpdatedAt(OffsetDateTime.now());
+                userRepository.saveAndFlush(user);
+            }
+            throw new UnauthorizedException(
+                    "Account is " + profile.getEmployeeStatus() + ". Contact your administrator.");
+        }
+
+        if (!Boolean.TRUE.equals(user.getIsActive())) {
+            user.setIsActive(true);
+            user.setUpdatedAt(OffsetDateTime.now());
+            userRepository.saveAndFlush(user);
+            log.info("Reactivated login for active profile user {}", user.getId());
+        }
     }
 
 
 
     private void ensureAttendanceEmployeeExists(User user) {
         try {
-            AttendanceEmployee emp = attendanceEmployeeRepository.findByUserId(user.getId())
-                    .orElseGet(() -> {
-                        String fullName = user.getEmployeeProfile() != null
-                                ? user.getEmployeeProfile().getFullName()
-                                : null;
-                        if (fullName != null) {
-                            List<AttendanceEmployee> employees =
-                                    attendanceEmployeeRepository.searchEmployees(null, fullName.trim());
-                            if (!employees.isEmpty()) {
-                                AttendanceEmployee existing = employees.get(0);
-                                existing.setUserId(user.getId());
-                                existing.setUpdatedAt(OffsetDateTime.now());
-                                return attendanceEmployeeRepository.save(existing);
-                            }
-                        }
-                        return null;
-                    });
-
-            if (emp == null) {
-                String fullName = user.getEmployeeProfile() != null
-                        ? user.getEmployeeProfile().getFullName()
-                        : user.getEmail();
-                
-                String category = "Executive";
-                List<String> roles = roleAssignmentRepository.findRoleNamesByUserId(user.getId());
-                if (!roles.isEmpty()) {
-                    String primaryRole = roles.get(0);
-                    if (List.of("Admin", "Executive", "Team Leader", "Manager", "Senior Operator", "Operator", "Coordinator")
-                            .contains(primaryRole)) {
-                        category = primaryRole;
-                    }
-                }
-
-                int sortOrder = (int) attendanceEmployeeRepository.count() + 1;
-                emp = AttendanceEmployee.builder()
-                        .userId(user.getId())
-                        .name(fullName.trim())
-                        .category(category)
-                        .isActive(true)
-                        .sortOrder(sortOrder)
-                        .baseSalary(new java.math.BigDecimal("5000.00"))
-                        .updatedAt(OffsetDateTime.now())
-                        .build();
-                attendanceEmployeeRepository.save(emp);
-                log.info("Auto-created AttendanceEmployee '{}' for user during login", emp.getName());
+            String fullName = user.getEmployeeProfile() != null
+                    ? user.getEmployeeProfile().getFullName() : user.getEmail();
+            if (fullName == null || fullName.isBlank()) {
+                fullName = user.getUserCode();
             }
+            loginAttendanceService.ensureEmployee(user.getId(), fullName,
+                    roleAssignmentRepository.findRoleNamesByUserId(user.getId()));
         } catch (Exception e) {
-            log.warn("Could not auto-create attendance employee profile for user {}: {}",
+            // Catch outside the independent transaction, including commit failures.
+            log.warn("Could not initialize attendance for user {}: {}",
                     user.getId(), e.getMessage());
         }
     }

@@ -317,18 +317,20 @@ public class UserService {
         profile.setUpdatedAt(OffsetDateTime.now());
         profileRepository.save(profile);
 
-        boolean roleChanged = false;
+        final boolean roleChanged;
 
         // Update role if changed
         if (request.getRoleName() != null) {
             List<String> currentRoles = roleAssignmentRepository.findRoleNamesByUserId(userId);
             boolean alreadyPrimaryRole = currentRoles.size() == 1
                     && request.getRoleName().equalsIgnoreCase(currentRoles.get(0));
+            roleChanged = !alreadyPrimaryRole;
             if (!alreadyPrimaryRole) {
                 roleAssignmentRepository.deleteAllByUserId(userId);
                 assignRoleToUser(user, request.getRoleName());
-                roleChanged = true;
             }
+        } else {
+            roleChanged = false;
         }
 
         // Update shift if changed

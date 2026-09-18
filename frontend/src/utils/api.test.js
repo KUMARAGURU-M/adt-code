@@ -1,9 +1,28 @@
-import { apiCall, saveSession, getCurrentUser, clearSession, refreshCurrentUser } from './api';
+import { apiCall, saveSession, getCurrentUser, clearSession, refreshCurrentUser, loginUser } from './api';
 
 const login = { userId: 'u1', accessToken: 'access', refreshToken: 'refresh', roles: ['Admin'], profilePhotoUrl: '/media/photo' };
 const response = (data) => ({ ok: true, status: 200, text: async () => JSON.stringify({ success: true, data }), json: async () => ({ success: true, data }) });
 beforeEach(() => { sessionStorage.clear(); global.fetch = jest.fn(); });
 afterEach(() => jest.restoreAllMocks());
+
+test('login preserves credential errors without refreshing an existing admin session', async () => {
+  saveSession(login);
+  fetch.mockResolvedValue({ ok: false, status: 401, json: async () => ({ success: false, error: 'Invalid credentials' }) });
+  await expect(loginUser(' EMP1 ', 'password')).rejects.toThrow('Invalid credentials');
+  expect(fetch).toHaveBeenCalledTimes(1);
+  expect(getCurrentUser().userId).toBe('u1');
+});
+
+test('login identifies HTML server failures by HTTP status', async () => {
+  fetch.mockResolvedValue({ ok: false, status: 500, json: async () => { throw new SyntaxError('HTML'); } });
+  await expect(loginUser('EMP1', 'password')).rejects.toThrow('HTTP 500');
+});
+
+test('login returns the profile and tokens with the password unchanged', async () => {
+  fetch.mockResolvedValue(response(login));
+  await expect(loginUser(' EMP1 ', ' password ')).resolves.toEqual(login);
+  expect(JSON.parse(fetch.mock.calls[0][1].body)).toEqual({ identifier: 'EMP1', password: ' password ' });
+});
 
 test.each([524, 504])('reports gateway timeout %s without trying to parse HTML or retrying a mutation', async (status) => {
   const text = jest.fn().mockResolvedValue('<html>Gateway timeout</html>');
