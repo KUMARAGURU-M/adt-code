@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { apiCall, API_BASE } from '../../utils/api';
 import EmpWorkwise from './EmpWorkwise';
 import './EmpDashboard.css';
+import TopPerformerCarousel from '../../components/dashboard/TopPerformerCarousel';
 
 const STATS = [
   { key: 'totalHours', label: 'Total Hours' },
@@ -32,10 +33,14 @@ export default function EmpDashboard() {
     photoUrl: '',
     gifUrl: ''
   });
+  const [topPerformers, setTopPerformers] = useState([]);
 
   const fetchPublicSettings = async () => {
     try {
-      const data = await apiCall('/settings/public');
+      const [data, performersData] = await Promise.all([
+        apiCall('/settings/public'),
+        apiCall('/users/top-performers').catch(() => [])
+      ]);
       if (data) {
         if (data.announcement) setAnnouncement(data.announcement);
         setCelebration({
@@ -49,9 +54,11 @@ export default function EmpDashboard() {
           criteria: data.topPerformerCriteria || 'Monthly',
           purpose: data.topPerformerPurpose || '',
           photoUrl: data.topPerformerPhotoUrl || '',
-          gifUrl: data.topPerformerGifUrl || ''
+          gifUrl: data.topPerformerGifUrl || '',
+          entries: data.topPerformerEntries || []
         });
       }
+      setTopPerformers(Array.isArray(performersData) ? performersData : []);
     } catch (e) {
       console.warn('Failed to load public settings:', e);
     }
@@ -205,7 +212,13 @@ export default function EmpDashboard() {
 
         {/* CELEBRATION, TOP PERFORMER & ANNOUNCEMENTS ROW */}
         <div className="dashboard-flex-row" style={{ marginBottom: '24px' }}>
-          {topPerformer.enableTopPerformerBanner && topPerformer.name && (
+          <TopPerformerCarousel
+            settings={topPerformer}
+            performers={topPerformers}
+            onPhotoClick={(url) => window.open(url, '_blank')}
+          />
+
+          {false && topPerformer.enableTopPerformerBanner && topPerformer.name && (
             <div className="top-performer-card">
               <div className="top-performer-header">
                 <div className="top-performer-tag">

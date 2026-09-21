@@ -41,5 +41,7 @@ public class CompanySettingsResponse {
     private String topPerformerPhotoUrl;
     private String topPerformerGifUrl;
     private java.util.List<String> topPerformerCriteriaOptions;
+    private java.util.List<String> topPerformerPurposeOptions;
+    private java.util.List<java.util.Map<String, Object>> topPerformerEntries;
     private java.util.List<String> loginQuotes;
 }

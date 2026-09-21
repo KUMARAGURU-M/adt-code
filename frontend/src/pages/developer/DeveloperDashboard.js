@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { getCurrentUser, getRolePrefix, apiCall, API_BASE } from '../../utils/api';
 import './DeveloperDashboard.css';
 import '../user/EmpDashboard.css';
+import TopPerformerCarousel from '../../components/dashboard/TopPerformerCarousel';
 import ProjectsPage from './ProjectsPage';
 import MyWorkPage from './MyWorkPage';
 import MeetingsPage from './MeetingsPage';
@@ -160,6 +161,7 @@ const DeveloperDashboard = ({ hideToggle }) => {
     photoUrl: '',
     gifUrl: ''
   });
+  const [topPerformers, setTopPerformers] = useState([]);
 
   // Modals state
   const [showWorkLogModal, setShowWorkLogModal] = useState(false);
@@ -206,7 +208,7 @@ const DeveloperDashboard = ({ hideToggle }) => {
   }, [isCheckedIn, isOvertimeActive]);
   const loadDeveloperData = useCallback(async () => {
     try {
-      const [projList, taskList, corrList, meetList, , attendanceRes, publicSettings, otToday] = await Promise.all([
+      const [projList, taskList, corrList, meetList, , attendanceRes, publicSettings, otToday, topPerformersData] = await Promise.all([
         apiCall('/developer/projects'),
         apiCall('/developer/tasks'),
         apiCall('/developer/corrections'),
@@ -214,7 +216,8 @@ const DeveloperDashboard = ({ hideToggle }) => {
         apiCall('/developer/overtime'),
         apiCall('/attendance/today').catch(() => null),
         apiCall('/settings/public').catch(() => null),
-        apiCall('/developer/overtime/today').catch(() => null)
+        apiCall('/developer/overtime/today').catch(() => null),
+        apiCall('/users/top-performers').catch(() => [])
       ]);
       const mappedTasks = taskList ? taskList.map(t => ({ ...t, completed: t.status === 'Completed' })) : [];
       if (projList) setProjects(augmentProjects(projList, mappedTasks));
@@ -289,9 +292,11 @@ const DeveloperDashboard = ({ hideToggle }) => {
           criteria: publicSettings.topPerformerCriteria || 'Monthly',
           purpose: publicSettings.topPerformerPurpose || '',
           photoUrl: publicSettings.topPerformerPhotoUrl || '',
-          gifUrl: publicSettings.topPerformerGifUrl || ''
+          gifUrl: publicSettings.topPerformerGifUrl || '',
+          entries: publicSettings.topPerformerEntries || []
         });
       }
+      setTopPerformers(Array.isArray(topPerformersData) ? topPerformersData : []);
     } catch (e) {
       console.warn('Failed to load developer data from backend:', e);
     }
@@ -579,7 +584,13 @@ const DeveloperDashboard = ({ hideToggle }) => {
 
           {/* CELEBRATION & ANNOUNCEMENTS ROW (LIKE ADMIN DASHBOARD) */}
           <div className="dashboard-flex-row">
-            {topPerformer.enableTopPerformerBanner && topPerformer.name && (
+            <TopPerformerCarousel
+              settings={topPerformer}
+              performers={topPerformers}
+              onPhotoClick={(url) => window.open(url, '_blank')}
+            />
+
+            {false && topPerformer.enableTopPerformerBanner && topPerformer.name && (
               <div className="top-performer-card">
                 <div className="top-performer-header">
                   <div className="top-performer-tag">

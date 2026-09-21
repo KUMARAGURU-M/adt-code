@@ -146,6 +146,12 @@ public class CompanySettings {
     @Builder.Default
     private String topPerformerCriteriaOptions = "Monthly,Weekly,Hardworker";
 
+    @Column(name = "top_performer_purpose_options", columnDefinition = "TEXT")
+    private String topPerformerPurposeOptions;
+
+    @Column(name = "top_performer_entries", columnDefinition = "TEXT")
+    private String topPerformerEntries;
+
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
 }

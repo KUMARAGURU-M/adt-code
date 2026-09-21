@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { apiCall, getCurrentUser, API_BASE, getRolePrefix } from '../../utils/api';
 import './AdminDashboard.css';
 import DeveloperDashboard from '../developer/DeveloperDashboard';
+import TopPerformerCarousel from '../../components/dashboard/TopPerformerCarousel';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -45,6 +46,7 @@ const AdminDashboard = () => {
     photoUrl: '',
     gifUrl: ''
   });
+  const [topPerformers, setTopPerformers] = useState([]);
 
   // Lightbox States
   const [lightboxImg, setLightboxImg] = useState(null);
@@ -172,7 +174,10 @@ const AdminDashboard = () => {
 
   const fetchAnnouncement = async () => {
     try {
-      const data = await apiCall('/settings/public');
+      const [data, performersData] = await Promise.all([
+        apiCall('/settings/public'),
+        apiCall('/users/top-performers').catch(() => [])
+      ]);
       if (data) {
         if (data.announcement) {
           setAnnouncement(data.announcement);
@@ -188,9 +193,11 @@ const AdminDashboard = () => {
           criteria: data.topPerformerCriteria || 'Monthly',
           purpose: data.topPerformerPurpose || '',
           photoUrl: data.topPerformerPhotoUrl || '',
-          gifUrl: data.topPerformerGifUrl || ''
+          gifUrl: data.topPerformerGifUrl || '',
+          entries: data.topPerformerEntries || []
         });
       }
+      setTopPerformers(Array.isArray(performersData) ? performersData : []);
     } catch (err) {
       console.warn('Failed to fetch public settings/announcement:', err.message);
     }
@@ -326,7 +333,13 @@ const AdminDashboard = () => {
           </div>
 
           <div className="dashboard-flex-row">
-            {topPerformer.enableTopPerformerBanner && topPerformer.name && (
+            <TopPerformerCarousel
+              settings={topPerformer}
+              performers={topPerformers}
+              onPhotoClick={openLightbox}
+            />
+
+            {false && topPerformer.enableTopPerformerBanner && topPerformer.name && (
               <div className="top-performer-card">
                 <div className="top-performer-header">
                   <div className="top-performer-tag">

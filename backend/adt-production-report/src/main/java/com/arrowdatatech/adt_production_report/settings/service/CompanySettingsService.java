@@ -1,5 +1,7 @@
 package com.arrowdatatech.adt_production_report.settings.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.arrowdatatech.adt_production_report.common.exception.ResourceNotFoundException;
 import com.arrowdatatech.adt_production_report.media.entity.MediaFile;
 import com.arrowdatatech.adt_production_report.media.repository.MediaFileRepository;
@@ -25,6 +27,7 @@ public class CompanySettingsService {
     private final CompanySettingsRepository companySettingsRepository;
     private final MediaFileRepository mediaFileRepository;
     private final MotivationalQuoteRepository motivationalQuoteRepository;
+    private final ObjectMapper objectMapper;
 
     @Transactional(readOnly = true)
     public CompanySettingsResponse getSettings() {
@@ -71,6 +74,20 @@ public class CompanySettingsService {
         if (request.getTopPerformerCriteriaOptions() != null) {
             String optionsStr = String.join(",", request.getTopPerformerCriteriaOptions());
             settings.setTopPerformerCriteriaOptions(optionsStr);
+        }
+        if (request.getTopPerformerPurposeOptions() != null) {
+            try {
+                settings.setTopPerformerPurposeOptions(objectMapper.writeValueAsString(request.getTopPerformerPurposeOptions()));
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Invalid top performer purpose options");
+            }
+        }
+        if (request.getTopPerformerEntries() != null) {
+            try {
+                settings.setTopPerformerEntries(objectMapper.writeValueAsString(request.getTopPerformerEntries()));
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Invalid top performer entries");
+            }
         }
 
         if (request.getLetterPadImageId() != null) {
@@ -160,6 +177,30 @@ public class CompanySettingsService {
                     .collect(Collectors.toList());
         }
 
+        java.util.List<java.util.Map<String, Object>> topPerformerEntries = java.util.List.of();
+        if (s.getTopPerformerEntries() != null && !s.getTopPerformerEntries().trim().isEmpty()) {
+            try {
+                topPerformerEntries = objectMapper.readValue(
+                        s.getTopPerformerEntries(),
+                        new TypeReference<java.util.List<java.util.Map<String, Object>>>() {}
+                );
+            } catch (Exception e) {
+                log.warn("Failed to parse top performer entries", e);
+            }
+        }
+
+        java.util.List<String> purposeOptsList = java.util.List.of();
+        if (s.getTopPerformerPurposeOptions() != null && !s.getTopPerformerPurposeOptions().trim().isEmpty()) {
+            try {
+                purposeOptsList = objectMapper.readValue(
+                        s.getTopPerformerPurposeOptions(),
+                        new TypeReference<java.util.List<String>>() {}
+                );
+            } catch (Exception e) {
+                log.warn("Failed to parse top performer purpose options", e);
+            }
+        }
+
         return CompanySettingsResponse.builder()
                 .companyName(s.getCompanyName())
                 .streetAddress(s.getStreetAddress())
@@ -195,6 +236,8 @@ public class CompanySettingsService {
                 .topPerformerPhotoUrl(s.getTopPerformerPhotoUrl())
                 .topPerformerGifUrl(s.getTopPerformerGifUrl())
                 .topPerformerCriteriaOptions(criteriaOptsList)
+                .topPerformerPurposeOptions(purposeOptsList)
+                .topPerformerEntries(topPerformerEntries)
                 .loginQuotes(quotes)
                 .build();
     }

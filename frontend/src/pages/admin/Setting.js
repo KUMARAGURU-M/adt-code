@@ -5,6 +5,9 @@ import './Setting.css';
 import { apiCall, API_BASE, getAccessToken } from '../../utils/api';
 import congratulationsGif from '../../assets/images/congratulations.gif';
 import performerImage from '../../assets/images/performer.jpg';
+import TopPerformerCarousel from '../../components/dashboard/TopPerformerCarousel';
+import '../../components/dashboard/TopPerformerCarousel.css';
+import { Award, ImagePlus, Plus, Trash2, UserRound } from 'lucide-react';
 
 /* ─── Default state ─────────────────────── */
 const DEFAULT = {
@@ -43,6 +46,8 @@ const DEFAULT = {
   topPerformerPhotoUrl: '',
   topPerformerGifUrl: 'https://media.giphy.com/media/26tOZbfHHHJB92VU4/giphy.gif',
   topPerformerCriteriaOptions: ['Monthly', 'Weekly', 'Hardworker'],
+  topPerformerPurposeOptions: [],
+  topPerformerEntries: [],
 
   /* System */
   sessionTimeout: 479,
@@ -53,6 +58,19 @@ const DEFAULT = {
   celebrationText: '',
   celebrationPhotoUrl: '',
 };
+
+const createTopPerformerEntry = (values = {}) => ({
+  id: values.id || `performer-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  userId: values.userId || '',
+  userCode: values.userCode || '',
+  role: values.role || '',
+  name: values.name || '',
+  criteria: values.criteria || 'Monthly',
+  purpose: (values.purpose || '').startsWith('Thank you for your perfect attendance today!') ? '' : (values.purpose || ''),
+  photoUrl: values.photoUrl || '',
+  gifUrl: values.gifUrl || '',
+  emoji: values.emoji || '⭐',
+});
 
 /* ─── Modal ──────────────────────────────── */
 const Modal = ({ onClose, children }) => (
@@ -171,8 +189,14 @@ const Setting = () => {
   const [loading, setLoading] = useState(true);
   const [thirukkuralPreview, setThirukkuralPreview] = useState(null);
   const [usersList, setUsersList] = useState([]);
+  const [topPerformerUserIds, setTopPerformerUserIds] = useState([]);
+  const [originalTopPerformerUserIds, setOriginalTopPerformerUserIds] = useState([]);
   const [showAddCriteriaModal, setShowAddCriteriaModal] = useState(false);
   const [newCriteriaInput, setNewCriteriaInput] = useState('');
+  const [criteriaTargetEntryId, setCriteriaTargetEntryId] = useState(null);
+  const [showAddPurposeModal, setShowAddPurposeModal] = useState(false);
+  const [purposeTargetEntryId, setPurposeTargetEntryId] = useState(null);
+  const [newPurposeInput, setNewPurposeInput] = useState('');
 
   // Lightbox States
   const [lightboxImg, setLightboxImg] = useState(null);
@@ -226,6 +250,11 @@ const Setting = () => {
         ]);
         if (usersData && Array.isArray(usersData)) {
           setUsersList(usersData);
+          const performerIds = usersData
+            .filter(u => u.isTopPerformer)
+            .map(u => String(u.id));
+          setTopPerformerUserIds(performerIds);
+          setOriginalTopPerformerUserIds(performerIds);
         }
         if (data) {
           setForm({
@@ -260,6 +289,26 @@ const Setting = () => {
             topPerformerPhotoUrl: data.topPerformerPhotoUrl || '',
             topPerformerGifUrl: data.topPerformerGifUrl || '',
             topPerformerCriteriaOptions: data.topPerformerCriteriaOptions || ['Monthly', 'Weekly', 'Hardworker'],
+            topPerformerPurposeOptions: Array.isArray(data.topPerformerPurposeOptions) && data.topPerformerPurposeOptions.length > 0
+              ? data.topPerformerPurposeOptions
+              : [...new Set((data.topPerformerEntries || []).map(entry => entry.purpose).filter(Boolean))],
+            topPerformerEntries: Array.isArray(data.topPerformerEntries) && data.topPerformerEntries.length > 0
+              ? data.topPerformerEntries.map(entry => {
+                const employee = (usersData || []).find(user => String(user.id) === String(entry.userId));
+                return createTopPerformerEntry({
+                  ...entry,
+                  userCode: entry.userCode || employee?.userCode || '',
+                });
+              })
+              : [createTopPerformerEntry({
+                userId: data.topPerformerUserId || '',
+                userCode: (usersData || []).find(user => String(user.id) === String(data.topPerformerUserId))?.userCode || '',
+                name: data.topPerformerName || '',
+                criteria: data.topPerformerCriteria || 'Monthly',
+                purpose: data.topPerformerPurpose || '',
+                photoUrl: data.topPerformerPhotoUrl || '',
+                gifUrl: data.topPerformerGifUrl || '',
+              })],
           });
         }
       } catch (err) {
@@ -302,6 +351,10 @@ const Setting = () => {
 
   const handleSave = async () => {
     try {
+      const validTopPerformerEntries = (form.topPerformerEntries || [])
+        .filter(entry => entry.userId)
+        .map(entry => ({ ...entry }));
+      const primaryPerformer = validTopPerformerEntries[0] || {};
       const payload = {
         portalName: form.portalName,
         welcomeMessage: form.welcomeMessage,
@@ -327,21 +380,113 @@ const Setting = () => {
         isCelebration: form.isCelebration ?? false,
         celebrationText: form.celebrationText || '',
         celebrationPhotoUrl: form.celebrationPhotoUrl || '',
-        topPerformerUserId: form.topPerformerUserId || null,
-        topPerformerName: form.topPerformerName || '',
-        topPerformerCriteria: form.topPerformerCriteria || 'Monthly',
-        topPerformerPurpose: form.topPerformerPurpose || '',
-        topPerformerPhotoUrl: form.topPerformerPhotoUrl || '',
-        topPerformerGifUrl: form.topPerformerGifUrl || '',
+        topPerformerUserId: primaryPerformer.userId || null,
+        topPerformerName: primaryPerformer.name || '',
+        topPerformerCriteria: primaryPerformer.criteria || 'Monthly',
+        topPerformerPurpose: primaryPerformer.purpose || '',
+        topPerformerPhotoUrl: primaryPerformer.photoUrl || '',
+        topPerformerGifUrl: primaryPerformer.gifUrl || '',
         topPerformerCriteriaOptions: form.topPerformerCriteriaOptions || ['Monthly', 'Weekly', 'Hardworker'],
+        topPerformerPurposeOptions: form.topPerformerPurposeOptions || [],
+        topPerformerEntries: validTopPerformerEntries,
       };
 
       await apiCall('/settings', 'PUT', payload);
+
+      const selectedIds = new Set(validTopPerformerEntries.map(entry => String(entry.userId)));
+      const originalIds = new Set(originalTopPerformerUserIds.map(String));
+      const changedUsers = usersList.filter(user => {
+        const id = String(user.id);
+        return selectedIds.has(id) !== originalIds.has(id);
+      });
+
+      if (changedUsers.length > 0) {
+        await Promise.all(changedUsers.map(user => apiCall(`/users/${user.id}`, 'PUT', {
+          isTopPerformer: selectedIds.has(String(user.id)),
+        })));
+        setOriginalTopPerformerUserIds([...selectedIds]);
+        setUsersList(prev => prev.map(user => ({
+          ...user,
+          isTopPerformer: selectedIds.has(String(user.id)),
+        })));
+      }
+
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (err) {
       console.error('Failed to save settings:', err);
       alert('Failed to save settings: ' + err.message);
+    }
+  };
+
+  const toggleTopPerformerUser = (userId) => {
+    const id = String(userId);
+    setTopPerformerUserIds(prev => (
+      prev.includes(id)
+        ? prev.filter(existingId => existingId !== id)
+        : [...prev, id]
+    ));
+  };
+
+  const addTopPerformerEntry = () => {
+    set('topPerformerEntries', [
+      ...(form.topPerformerEntries || []),
+      createTopPerformerEntry({
+        criteria: (form.topPerformerCriteriaOptions || [])[0] || 'Monthly',
+        gifUrl: performerImage,
+      }),
+    ]);
+  };
+
+  const removeTopPerformerEntry = (entryId) => {
+    set('topPerformerEntries', (form.topPerformerEntries || []).filter(entry => entry.id !== entryId));
+  };
+
+  const updateTopPerformerEntry = (entryId, key, value) => {
+    set('topPerformerEntries', (form.topPerformerEntries || []).map(entry => (
+      entry.id === entryId ? { ...entry, [key]: value } : entry
+    )));
+  };
+
+  const selectTopPerformerEmployee = (entryId, userId) => {
+    const employee = usersList.find(user => String(user.id) === String(userId));
+    setForm(previous => ({
+      ...previous,
+      topPerformerEntries: (previous.topPerformerEntries || []).map(entry => (
+        entry.id === entryId
+          ? {
+            ...entry,
+            userId,
+            userCode: employee?.userCode || '',
+            role: employee?.role || '',
+            name: employee ? (employee.fullName || employee.userCode || '') : '',
+            photoUrl: employee ? (employee.profilePhotoUrl || '') : '',
+          }
+          : entry
+      )),
+    }));
+  };
+
+  const uploadTopPerformerPhoto = async (entryId, file) => {
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('entityType', 'TopPerformer');
+    try {
+      const token = getAccessToken();
+      const response = await fetch(`${API_BASE}/media/upload`, {
+        method: 'POST',
+        headers: { Authorization: token ? `Bearer ${token}` : '' },
+        body: formData,
+      });
+      const result = await response.json();
+      if (result.success && result.data?.url) {
+        updateTopPerformerEntry(entryId, 'photoUrl', result.data.url);
+      } else {
+        alert('Upload failed: ' + (result.message || 'Unknown error'));
+      }
+    } catch (err) {
+      alert('Upload failed: ' + err.message);
     }
   };
 
@@ -706,7 +851,299 @@ const Setting = () => {
             </div>
 
             {/* ── Top Performer Banner Settings ── */}
-            <div className="st-form-group" style={{ marginTop: '16px', background: 'linear-gradient(135deg, #fffbebf5 0%, #fef3c7f5 100%)', padding: '18px', borderRadius: '12px', border: '1.5px solid #f59e0b', boxShadow: '0 4px 14px rgba(245, 158, 11, 0.12)' }}>
+            <section className="performer-builder">
+              <div className="performer-builder__header">
+                <label className="performer-builder__toggle">
+                  <input type="checkbox" checked={form.topPerformerBanner ?? true} onChange={e => set('topPerformerBanner', e.target.checked)} />
+                  <Award size={19} aria-hidden="true" />
+                  <span>Enable Top Performer Banner</span>
+                </label>
+                <button type="button" className="performer-builder__add" onClick={addTopPerformerEntry}>
+                  <Plus size={16} aria-hidden="true" />
+                  Add New Card
+                </button>
+              </div>
+              <p className="performer-builder__description">Create one separate recognition form for every employee and achievement.</p>
+
+              {form.topPerformerBanner && (
+                <div className="performer-builder__forms">
+                  {(form.topPerformerEntries || []).length === 0 ? (
+                    <div className="performer-builder__empty">
+                      <Award size={30} aria-hidden="true" />
+                      <strong>No performer cards configured</strong>
+                      <span>Add a card, then choose the employee and recognition details.</span>
+                      <button type="button" className="performer-builder__add" onClick={addTopPerformerEntry}>
+                        <Plus size={16} aria-hidden="true" /> Add First Card
+                      </button>
+                    </div>
+                  ) : (
+                    (form.topPerformerEntries || []).map((entry, index) => (
+                      <article className="performer-form" key={entry.id}>
+                        <div className="performer-form__header">
+                          <div className="performer-form__title">
+                            <span className="performer-form__number">{index + 1}</span>
+                            <div>
+                              <h4>Top Performer Card {index + 1}</h4>
+                              <p>{entry.name || 'Choose an employee to configure this card'}</p>
+                            </div>
+                          </div>
+                          <button type="button" className="performer-form__delete" onClick={() => removeTopPerformerEntry(entry.id)} title="Delete this performer card" aria-label={`Delete performer card ${index + 1}`}>
+                            <Trash2 size={17} aria-hidden="true" />
+                          </button>
+                        </div>
+
+                        <div className="performer-form__grid">
+                          <div className="performer-form__field performer-form__field--wide">
+                            <div className="performer-form__label-row">
+                              <label htmlFor={`performer-criteria-${entry.id}`}>Recognition Criteria / Category</label>
+                              <button type="button" className="performer-form__criteria-add" onClick={() => { setCriteriaTargetEntryId(entry.id); setShowAddCriteriaModal(true); }}>
+                                <Plus size={14} aria-hidden="true" /> Add Criteria
+                              </button>
+                            </div>
+                            <select id={`performer-criteria-${entry.id}`} value={entry.criteria || 'Monthly'} onChange={e => updateTopPerformerEntry(entry.id, 'criteria', e.target.value)}>
+                              {(form.topPerformerCriteriaOptions || ['Monthly', 'Weekly', 'Hardworker']).map(option => <option key={option} value={option}>{option}</option>)}
+                            </select>
+                          </div>
+
+                          <div className="performer-form__field performer-form__field--wide">
+                            <label htmlFor={`performer-user-${entry.id}`}>Select Employee / User</label>
+                            <select id={`performer-user-${entry.id}`} value={entry.userId || ''} onChange={e => selectTopPerformerEmployee(entry.id, e.target.value)}>
+                              <option value="">Choose employee...</option>
+                              {usersList.map(user => (
+                                <option key={user.id} value={user.id}>{user.fullName || user.userCode || 'Unnamed User'}{user.userCode ? ` (${user.userCode})` : ''}</option>
+                              ))}
+                            </select>
+                            <div className="performer-form__identity">
+                              <UserRound size={14} aria-hidden="true" />
+                              <span>Emp ID: <strong>{entry.userCode || 'Not available'}</strong></span>
+                            </div>
+                          </div>
+
+                          <div className="performer-form__field performer-form__field--wide">
+                            <label htmlFor={`performer-name-${entry.id}`}>Top Performer Display Name</label>
+                            <input id={`performer-name-${entry.id}`} value={entry.name || ''} onChange={e => updateTopPerformerEntry(entry.id, 'name', e.target.value)} placeholder="Employee display name" />
+                          </div>
+
+                          <div className="performer-form__field performer-form__field--wide">
+                            <div className="performer-form__label-row">
+                              <label htmlFor={`performer-purpose-${entry.id}`}>Purpose / Achievement Dedication</label>
+                              <button
+                                type="button"
+                                className="performer-form__criteria-add"
+                                onClick={() => {
+                                  setPurposeTargetEntryId(entry.id);
+                                  setNewPurposeInput('');
+                                  setShowAddPurposeModal(true);
+                                }}
+                              >
+                                <Plus size={14} aria-hidden="true" /> Add New
+                              </button>
+                            </div>
+                            <select
+                              id={`performer-purpose-${entry.id}`}
+                              value={entry.purpose || ''}
+                              onChange={e => updateTopPerformerEntry(entry.id, 'purpose', e.target.value)}
+                            >
+                              <option value="">Choose a dedication...</option>
+                              {entry.purpose && !(form.topPerformerPurposeOptions || []).includes(entry.purpose) && (
+                                <option value={entry.purpose}>{entry.purpose}</option>
+                              )}
+                              {(form.topPerformerPurposeOptions || []).map(option => (
+                                <option key={option} value={option}>{option}</option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div className="performer-form__field">
+                            <label htmlFor={`performer-photo-${entry.id}`}>Employee Photo</label>
+                            <label className="performer-form__upload" htmlFor={`performer-photo-${entry.id}`}>
+                              <ImagePlus size={18} aria-hidden="true" />
+                              <span>{entry.photoUrl ? 'Change photo' : 'Choose photo'}</span>
+                            </label>
+                            <input id={`performer-photo-${entry.id}`} className="performer-form__file-input" type="file" accept="image/*" onChange={e => uploadTopPerformerPhoto(entry.id, e.target.files?.[0])} />
+                            <span className="performer-form__hint">Employee profile photo is used automatically. Without one, the 👤 placeholder is shown.</span>
+                          </div>
+
+                          <div className="performer-form__field">
+                            <label htmlFor={`performer-emoji-${entry.id}`}>Default Badge Emoji</label>
+                            <select id={`performer-emoji-${entry.id}`} value={entry.emoji || '⭐'} onChange={e => updateTopPerformerEntry(entry.id, 'emoji', e.target.value)}>
+                              <option value="⭐">⭐ Star</option>
+                              <option value="🏆">🏆 Trophy</option>
+                              <option value="🎖️">🎖️ Medal</option>
+                              <option value="👏">👏 Appreciation</option>
+                              <option value="💎">💎 Excellence</option>
+                            </select>
+                          </div>
+
+                          <div className="performer-form__field">
+                            <label htmlFor={`performer-award-${entry.id}`}>Professional Award Animation</label>
+                            <select
+                              id={`performer-award-${entry.id}`}
+                              value={[
+                                '',
+                                performerImage,
+                                congratulationsGif,
+                                'https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExd2dsbW12YWczbWV1cTR0YnR3Zjc5b3J6eWZ4N3k4bWo5bXNrMzNlbSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/KY5niCDWQnZg7cD1oK/giphy.gif',
+                                'https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExaDdrZTZwNmFsZWk2b3E4aGFjNXM0OXZjM2k2ZTBvNDY3bGwzYTRyaCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/SSELvbsJ8ok34MSTYq/giphy.gif',
+                              ].includes(entry.gifUrl || '') ? (entry.gifUrl || '') : 'custom'}
+                              onChange={e => e.target.value !== 'custom' && updateTopPerformerEntry(entry.id, 'gifUrl', e.target.value)}
+                            >
+                              <option value="">No animation</option>
+                              <option value={performerImage}>Professional Top Performer Award</option>
+                              <option value={congratulationsGif}>Congratulations Award Animation</option>
+                              <option value="https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExd2dsbW12YWczbWV1cTR0YnR3Zjc5b3J6eWZ4N3k4bWo5bXNrMzNlbSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/KY5niCDWQnZg7cD1oK/giphy.gif">Achievement Celebration</option>
+                              <option value="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExaDdrZTZwNmFsZWk2b3E4aGFjNXM0OXZjM2k2ZTBvNDY3bGwzYTRyaCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/SSELvbsJ8ok34MSTYq/giphy.gif">Recognition Award</option>
+                              <option value="custom">Custom URL</option>
+                            </select>
+                          </div>
+
+                          <div className="performer-form__field">
+                            <label htmlFor={`performer-gif-url-${entry.id}`}>Award Image / GIF URL</label>
+                            <input
+                              id={`performer-gif-url-${entry.id}`}
+                              value={entry.gifUrl || ''}
+                              onChange={e => updateTopPerformerEntry(entry.id, 'gifUrl', e.target.value)}
+                              placeholder="https://example.com/award.gif"
+                            />
+                            <span className="performer-form__hint">Paste a direct image or GIF URL.</span>
+                          </div>
+                        </div>
+
+                      </article>
+                    ))
+                  )}
+
+                  <div className="performer-builder__preview">
+                    <span className="performer-form__preview-label">Live Preview</span>
+                    {(form.topPerformerEntries || []).some(entry => entry.userId) ? (
+                      <TopPerformerCarousel
+                        settings={{
+                          enableTopPerformerBanner: true,
+                          entries: (form.topPerformerEntries || []).filter(entry => entry.userId),
+                        }}
+                        performers={[]}
+                      />
+                    ) : (
+                      <div className="performer-form__preview-empty">Select an employee to see the Top Performer preview.</div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </section>
+
+            <div className="st-form-group" style={{ display: 'none', marginTop: '16px', background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)', padding: '18px', borderRadius: '12px', border: '1.5px solid #f59e0b', boxShadow: '0 4px 14px rgba(245, 158, 11, 0.12)' }}>
+              <label className="st-label" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 800, color: '#92400e', fontSize: '1rem' }}>
+                <input type="checkbox" checked={form.topPerformerBanner ?? true} onChange={e => set('topPerformerBanner', e.target.checked)} style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#d97706' }} />
+                🏆 Enable Top Performer Banner
+              </label>
+              <p style={{ fontSize: '0.8rem', color: '#b45309', margin: '4px 0 14px 26px', lineHeight: '1.4' }}>
+                Add one performer card at a time. Choose criteria, choose employee, add purpose, image and animation, then preview and add the card.
+              </p>
+              {form.topPerformerBanner && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
+                      <label className="st-label" style={{ margin: 0, fontSize: '0.82rem', color: '#78350f', fontWeight: 800 }}>Recognition Criteria / Category</label>
+                      <button type="button" onClick={() => setShowAddCriteriaModal(true)} style={{ background: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', padding: '5px 10px', fontSize: '0.76rem', fontWeight: 800, cursor: 'pointer' }}>+ Add New Field</button>
+                    </div>
+                    <select className="st-input" value={form.topPerformerCriteria || 'Monthly'} onChange={e => set('topPerformerCriteria', e.target.value)} style={{ borderColor: '#f59e0b', fontWeight: 700 }}>
+                      {(form.topPerformerCriteriaOptions || ['Monthly', 'Weekly', 'Hardworker']).map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="st-label" style={{ fontSize: '0.82rem', color: '#78350f', marginBottom: '6px', fontWeight: 800 }}>Select Employee / User</label>
+                    <select className="st-input" value={form.topPerformerUserId || ''} onChange={e => {
+                      const uid = e.target.value;
+                      const found = usersList.find(u => String(u.id) === String(uid));
+                      set('topPerformerUserId', uid);
+                      set('topPerformerName', found ? (found.fullName || found.userCode || '') : '');
+                      set('topPerformerPhotoUrl', found ? (found.profilePhotoUrl || '') : '');
+                    }} style={{ borderColor: '#f59e0b', fontWeight: 700 }}>
+                      <option value="">Choose employee...</option>
+                      {usersList.map(u => <option key={u.id} value={u.id}>{u.fullName || u.userCode || 'Unnamed User'} {u.userCode ? `(${u.userCode})` : ''}</option>)}
+                    </select>
+                    <div style={{ marginTop: '5px', fontSize: '0.72rem', color: '#92400e' }}>Employee ID: {form.topPerformerUserId || 'Not selected'}</div>
+                  </div>
+                  <div>
+                    <label className="st-label" style={{ fontSize: '0.82rem', color: '#78350f', marginBottom: '6px', fontWeight: 800 }}>Top Performer Display Name</label>
+                    <input className="st-input" value={form.topPerformerName || ''} onChange={e => set('topPerformerName', e.target.value)} placeholder="Employee display name" style={{ borderColor: '#f59e0b' }} />
+                  </div>
+                  <div>
+                    <label className="st-label" style={{ fontSize: '0.82rem', color: '#78350f', marginBottom: '6px', fontWeight: 800 }}>Purpose / Achievement Dedication</label>
+                    <textarea className="st-input" value={form.topPerformerPurpose || ''} onChange={e => set('topPerformerPurpose', e.target.value)} rows={3} placeholder="Write the appreciation or achievement message..." style={{ borderColor: '#f59e0b', resize: 'vertical', fontFamily: 'inherit' }} />
+                  </div>
+                  <div>
+                    <label className="st-label" style={{ fontSize: '0.82rem', color: '#78350f', marginBottom: '6px', fontWeight: 800 }}>Upload Photo Option</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={async e => {
+                          const file = e.target.files[0];
+                          if (!file) return;
+                          const formData = new FormData();
+                          formData.append('file', file);
+                          formData.append('entityType', 'TopPerformer');
+                          try {
+                            setLoading(true);
+                            const token = getAccessToken();
+                            const response = await fetch(`${API_BASE}/media/upload`, { method: 'POST', headers: { Authorization: token ? `Bearer ${token}` : '' }, body: formData });
+                            const result = await response.json();
+                            if (result.success && result.data && result.data.url) set('topPerformerPhotoUrl', result.data.url);
+                            else alert('Upload failed: ' + (result.message || 'Unknown error'));
+                          } catch (err) {
+                            alert('Upload failed: ' + err.message);
+                          } finally {
+                            setLoading(false);
+                          }
+                        }}
+                        style={{ fontSize: '0.8rem' }}
+                      />
+                      {form.topPerformerPhotoUrl && (
+                        <button type="button" onClick={() => set('topPerformerPhotoUrl', '')} style={{ background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '5px', padding: '6px 10px', fontSize: '0.76rem', fontWeight: 800, cursor: 'pointer' }}>
+                          Remove Photo
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="st-label" style={{ fontSize: '0.82rem', color: '#78350f', marginBottom: '6px', fontWeight: 800 }}>Professional Award Animation</label>
+                    <select className="st-input" value={form.topPerformerGifUrl || ''} onChange={e => set('topPerformerGifUrl', e.target.value)} style={{ borderColor: '#f59e0b', fontWeight: 700 }}>
+                      <option value="">No Animation</option>
+                      <option value="https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExd2dsbW12YWczbWV1cTR0YnR3Zjc5b3J6eWZ4N3k4bWo5bXNrMzNlbSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/KY5niCDWQnZg7cD1oK/giphy.gif">Professional Achievement Celebration</option>
+                      <option value="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExaDdrZTZwNmFsZWk2b3E4aGFjNXM0OXZjM2k2ZTBvNDY3bGwzYTRyaCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/SSELvbsJ8ok34MSTYq/giphy.gif">Professional Recognition Award</option>
+                      <option value={congratulationsGif}>Congratulations Award Animation</option>
+                      <option value={performerImage}>Professional Top Performer Award</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="st-label" style={{ fontSize: '0.82rem', color: '#78350f', marginBottom: '6px', fontWeight: 800 }}>Live Card Preview</label>
+                    <TopPerformerCarousel settings={{ enableTopPerformerBanner: form.topPerformerBanner, userId: form.topPerformerUserId, name: form.topPerformerName, criteria: form.topPerformerCriteria, purpose: form.topPerformerPurpose, photoUrl: form.topPerformerPhotoUrl, gifUrl: form.topPerformerGifUrl, entries: [] }} performers={[]} />
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <button type="button" onClick={addTopPerformerEntry} style={{ background: '#2563eb', color: 'white', border: 'none', borderRadius: '7px', padding: '9px 16px', fontSize: '0.82rem', fontWeight: 900, cursor: 'pointer' }}>+ Add This Employee Card</button>
+                  </div>
+                  {(form.topPerformerEntries || []).length > 0 && (
+                    <div style={{ background: '#fff7ed', border: '1px solid #fdba74', borderRadius: '8px', padding: '10px' }}>
+                      <div style={{ fontSize: '0.82rem', fontWeight: 900, color: '#7c2d12', marginBottom: '8px' }}>Added Performer Cards ({(form.topPerformerEntries || []).length})</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {(form.topPerformerEntries || []).map(entry => (
+                          <div key={entry.id} style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '10px', alignItems: 'center', background: '#ffffff', border: '1px solid #fed7aa', borderRadius: '7px', padding: '8px' }}>
+                            <div style={{ minWidth: 0 }}>
+                              <div style={{ fontSize: '0.8rem', fontWeight: 900, color: '#1f2937' }}>{entry.name || 'Employee Name'} - {entry.criteria || 'Monthly'}</div>
+                              <div style={{ fontSize: '0.7rem', color: '#64748b', overflowWrap: 'anywhere' }}>ID: {entry.userId || 'No employee selected'}</div>
+                            </div>
+                            <button type="button" onClick={() => removeTopPerformerEntry(entry.id)} style={{ background: '#fee2e2', color: '#b91c1c', border: '1px solid #fecaca', borderRadius: '6px', padding: '5px 9px', fontSize: '0.72rem', fontWeight: 900, cursor: 'pointer' }}>Delete</button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="st-form-group" style={{ display: 'none', marginTop: '16px', background: 'linear-gradient(135deg, #fffbebf5 0%, #fef3c7f5 100%)', padding: '18px', borderRadius: '12px', border: '1.5px solid #f59e0b', boxShadow: '0 4px 14px rgba(245, 158, 11, 0.12)' }}>
               <label className="st-label" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 700, color: '#92400e', fontSize: '1rem' }}>
                 <input
                   type="checkbox"
@@ -722,6 +1159,14 @@ const Setting = () => {
 
               {form.topPerformerBanner && (
                 <div style={{ paddingLeft: '8px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div style={{ display: 'none', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '12px' }}>
+                    <div style={{ fontWeight: 900, color: '#0f172a', fontSize: '0.92rem', marginBottom: '4px' }}>
+                      Create OP Performer Card
+                    </div>
+                    <div style={{ color: '#64748b', fontSize: '0.76rem', lineHeight: 1.45 }}>
+                      Select an employee, choose the recognition criteria, write the purpose, choose media, then add it as a dashboard card.
+                    </div>
+                  </div>
 
                   {/* Recognition Criteria Dropdown with + button */}
                   <div className="st-sub-group">
@@ -749,7 +1194,7 @@ const Setting = () => {
                   </div>
 
                   {/* Select Employee Dropdown */}
-                  <div className="st-sub-group">
+                  <div className="st-sub-group" style={{ display: 'none' }}>
                     <label className="st-label" style={{ fontSize: '0.85rem', color: '#78350f', marginBottom: '6px', fontWeight: '600' }}>Select Employee / User</label>
                     <select
                       className="st-input"
@@ -775,6 +1220,62 @@ const Setting = () => {
                         </option>
                       ))}
                     </select>
+                    <p style={{ margin: '6px 0 0', fontSize: '0.72rem', color: '#92400e' }}>
+                      Selected employee ID: {form.topPerformerUserId || 'Choose an employee to attach the card to a real user.'}
+                    </p>
+                  </div>
+
+                  {/* Multiple Top Performer Slideshow Employees */}
+                  <div className="st-sub-group">
+                    <label className="st-label" style={{ fontSize: '0.85rem', color: '#78350f', marginBottom: '6px', fontWeight: '600' }}>
+                      Slideshow Employees
+                    </label>
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+                      gap: '8px',
+                      maxHeight: '210px',
+                      overflowY: 'auto',
+                      padding: '10px',
+                      background: '#fff7ed',
+                      border: '1px solid #fcd34d',
+                      borderRadius: '8px'
+                    }}>
+                      {usersList.map(u => {
+                        const id = String(u.id);
+                        return (
+                          <label
+                            key={u.id}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              padding: '8px',
+                              background: topPerformerUserIds.includes(id) ? '#fef3c7' : '#ffffff',
+                              border: `1px solid ${topPerformerUserIds.includes(id) ? '#f59e0b' : '#fed7aa'}`,
+                              borderRadius: '7px',
+                              cursor: 'pointer',
+                              fontSize: '0.8rem',
+                              color: '#78350f',
+                              fontWeight: topPerformerUserIds.includes(id) ? 700 : 500
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={topPerformerUserIds.includes(id)}
+                              onChange={() => toggleTopPerformerUser(id)}
+                              style={{ accentColor: '#d97706' }}
+                            />
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {u.fullName || u.userCode || 'Unnamed User'}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                    <p style={{ margin: '6px 0 0', fontSize: '0.72rem', color: '#92400e' }}>
+                      Selected employees will rotate on dashboards every 2 seconds with forward and backward buttons.
+                    </p>
                   </div>
 
                   {/* Top Performer Name Input */}
@@ -801,6 +1302,128 @@ const Setting = () => {
                       style={{ fontSize: '0.85rem', resize: 'vertical', fontFamily: 'inherit', borderColor: '#fcd34d' }}
                     />
                   </div>
+
+                  <div className="st-sub-group" style={{ display: 'none', justifyContent: 'space-between', alignItems: 'center', gap: '12px', background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '8px', padding: '10px' }}>
+                    <div style={{ color: '#065f46', fontSize: '0.78rem', lineHeight: '1.45' }}>
+                      Build one recognition card per employee and criteria. You can edit each card below after adding it.
+                    </div>
+                    <button
+                      type="button"
+                      onClick={addTopPerformerEntry}
+                      style={{ background: '#047857', color: 'white', border: 'none', borderRadius: '6px', padding: '8px 14px', fontSize: '0.82rem', fontWeight: '800', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                    >
+                      Add Recognition Card
+                    </button>
+                  </div>
+
+                  {false && (form.topPerformerEntries || []).length > 0 && (
+                    <div className="st-sub-group">
+                      <label className="st-label" style={{ fontSize: '0.9rem', color: '#0f172a', marginBottom: '8px', fontWeight: '800' }}>Configured OP Performer Cards</label>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {(form.topPerformerEntries || []).map(entry => (
+                          <div key={entry.id} style={{ background: '#ffffff', border: '1px solid #dbe3ef', borderRadius: '10px', padding: '14px', boxShadow: '0 6px 18px rgba(15, 23, 42, 0.06)' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '64px 1fr auto', gap: '12px', alignItems: 'center', marginBottom: '12px' }}>
+                              <img
+                                src={entry.photoUrl ? (entry.photoUrl.startsWith('http') ? entry.photoUrl : `${API_BASE}${entry.photoUrl.split('#')[0]}`) : 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'}
+                                alt={entry.name || 'OP Performer'}
+                                style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #38bdf8', background: '#f8fafc' }}
+                              />
+                              <div style={{ minWidth: 0 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                  <span style={{ fontWeight: 900, color: '#0f172a', fontSize: '0.95rem' }}>
+                                    {entry.name || 'Employee Name'}
+                                  </span>
+                                  <span style={{ background: '#e0f2fe', color: '#075985', border: '1px solid #7dd3fc', borderRadius: '999px', padding: '2px 8px', fontSize: '0.7rem', fontWeight: 900 }}>
+                                    {entry.criteria || 'Monthly'}
+                                  </span>
+                                </div>
+                                <div style={{ color: '#64748b', fontSize: '0.72rem', overflowWrap: 'anywhere', marginTop: '3px' }}>
+                                  Employee ID: {entry.userId || 'No employee ID'}
+                                  {entry.userCode ? ` | Code: ${entry.userCode}` : ''}
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => removeTopPerformerEntry(entry.id)}
+                                style={{ background: '#fff1f2', color: '#be123c', border: '1px solid #fecdd3', borderRadius: '6px', padding: '6px 10px', fontSize: '0.78rem', fontWeight: '800', cursor: 'pointer' }}
+                              >
+                                Delete
+                              </button>
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', marginBottom: '10px' }}>
+                              <div>
+                                <label className="st-label" style={{ fontSize: '0.76rem', color: '#334155' }}>Criteria for this employee</label>
+                                <select
+                                  className="st-input"
+                                  value={entry.criteria || 'Monthly'}
+                                  onChange={e => updateTopPerformerEntry(entry.id, 'criteria', e.target.value)}
+                                  style={{ fontSize: '0.82rem', borderColor: '#cbd5e1' }}
+                                >
+                                  {(form.topPerformerCriteriaOptions || ['Monthly', 'Weekly', 'Hardworker']).map(opt => (
+                                    <option key={opt} value={opt}>{opt}</option>
+                                  ))}
+                                </select>
+                              </div>
+                              <div>
+                                <label className="st-label" style={{ fontSize: '0.76rem', color: '#334155' }}>Display name</label>
+                                <input
+                                  className="st-input"
+                                  value={entry.name || ''}
+                                  onChange={e => updateTopPerformerEntry(entry.id, 'name', e.target.value)}
+                                  style={{ fontSize: '0.82rem', borderColor: '#cbd5e1' }}
+                                />
+                              </div>
+                            </div>
+
+                            <div style={{ marginBottom: '10px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '6px' }}>
+                                <label className="st-label" style={{ fontSize: '0.76rem', color: '#334155', margin: 0 }}>Purpose / Achievement Dedication</label>
+                                <button
+                                  type="button"
+                                  onClick={() => updateTopPerformerEntry(entry.id, 'purpose', '')}
+                                  style={{ background: '#e0f2fe', color: '#0369a1', border: '1px solid #7dd3fc', borderRadius: '6px', padding: '4px 8px', fontSize: '0.72rem', fontWeight: '800', cursor: 'pointer' }}
+                                >
+                                  Use Attendance Message
+                                </button>
+                              </div>
+                              <textarea
+                                className="st-input"
+                                value={entry.purpose || ''}
+                                onChange={e => updateTopPerformerEntry(entry.id, 'purpose', e.target.value)}
+                                rows={3}
+                                placeholder="Write the exact recognition message for this employee."
+                                style={{ fontSize: '0.82rem', resize: 'vertical', fontFamily: 'inherit', borderColor: '#cbd5e1' }}
+                              />
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
+                              <div>
+                                <label className="st-label" style={{ fontSize: '0.76rem', color: '#334155' }}>Profile photo URL</label>
+                                <input
+                                  className="st-input"
+                                  value={entry.photoUrl || ''}
+                                  onChange={e => updateTopPerformerEntry(entry.id, 'photoUrl', e.target.value)}
+                                  placeholder="Blank uses default avatar"
+                                  style={{ fontSize: '0.82rem', borderColor: '#cbd5e1' }}
+                                />
+                              </div>
+                              <div>
+                                <label className="st-label" style={{ fontSize: '0.76rem', color: '#334155' }}>Professional GIF / award URL</label>
+                                <input
+                                  className="st-input"
+                                  value={entry.gifUrl || ''}
+                                  onChange={e => updateTopPerformerEntry(entry.id, 'gifUrl', e.target.value)}
+                                  placeholder="Blank uses no animation"
+                                  style={{ fontSize: '0.82rem', borderColor: '#cbd5e1' }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Upload Photo */}
                   <div className="st-sub-group">
@@ -886,10 +1509,158 @@ const Setting = () => {
                     </div>
                   </div>
 
+                  <div className="st-sub-group" style={{ display: 'none', justifyContent: 'space-between', alignItems: 'center', gap: '12px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '10px', padding: '12px' }}>
+                    <div style={{ color: '#166534', fontSize: '0.78rem', lineHeight: '1.45' }}>
+                      Finished this employee configuration? Add it as a new OP Performer card. Each add creates one separate performer card.
+                    </div>
+                    <button
+                      type="button"
+                      onClick={addTopPerformerEntry}
+                      style={{ background: '#047857', color: 'white', border: 'none', borderRadius: '7px', padding: '9px 16px', fontSize: '0.82rem', fontWeight: '900', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                    >
+                      Add This Employee Card
+                    </button>
+                  </div>
+
+                  <div className="st-sub-group" style={{ display: 'none', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '12px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
+                      <div>
+                        <div style={{ fontSize: '0.92rem', fontWeight: 900, color: '#0f172a' }}>Added OP Performer Cards</div>
+                        <div style={{ fontSize: '0.74rem', color: '#64748b' }}>Each card is one employee recognition. Edit or delete saved cards here.</div>
+                      </div>
+                      <div style={{ fontSize: '0.74rem', color: '#475569', fontWeight: 800 }}>
+                        {(form.topPerformerEntries || []).length} cards
+                      </div>
+                    </div>
+
+                    {(form.topPerformerEntries || []).length === 0 ? (
+                      <div style={{ border: '1px dashed #cbd5e1', borderRadius: '8px', padding: '14px', textAlign: 'center', color: '#64748b', fontSize: '0.82rem', background: '#ffffff' }}>
+                        No OP Performer cards yet. Fill the employee details above and click Add New OP Card.
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {(form.topPerformerEntries || []).map(entry => (
+                          <div key={entry.id} style={{ background: '#ffffff', border: '1px solid #dbe3ef', borderRadius: '10px', padding: '14px', boxShadow: '0 6px 18px rgba(15, 23, 42, 0.06)' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '64px 1fr auto', gap: '12px', alignItems: 'center', marginBottom: '12px' }}>
+                              <img
+                                src={entry.photoUrl ? (entry.photoUrl.startsWith('http') ? entry.photoUrl : `${API_BASE}${entry.photoUrl.split('#')[0]}`) : 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'}
+                                alt={entry.name || 'OP Performer'}
+                                style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #38bdf8', background: '#f8fafc' }}
+                              />
+                              <div style={{ minWidth: 0 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                  <span style={{ fontWeight: 900, color: '#0f172a', fontSize: '0.95rem' }}>{entry.name || 'Employee Name'}</span>
+                                  <span style={{ background: '#e0f2fe', color: '#075985', border: '1px solid #7dd3fc', borderRadius: '999px', padding: '2px 8px', fontSize: '0.7rem', fontWeight: 900 }}>{entry.criteria || 'Monthly'}</span>
+                                </div>
+                                <div style={{ color: '#64748b', fontSize: '0.72rem', overflowWrap: 'anywhere', marginTop: '3px' }}>
+                                  Employee ID: {entry.userId || 'No employee ID'}{entry.userCode ? ` | Code: ${entry.userCode}` : ''}
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => removeTopPerformerEntry(entry.id)}
+                                style={{ background: '#fff1f2', color: '#be123c', border: '1px solid #fecdd3', borderRadius: '6px', padding: '6px 10px', fontSize: '0.78rem', fontWeight: '800', cursor: 'pointer' }}
+                              >
+                                Delete
+                              </button>
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', marginBottom: '10px' }}>
+                              <div>
+                                <label className="st-label" style={{ fontSize: '0.76rem', color: '#334155' }}>Criteria</label>
+                                <select className="st-input" value={entry.criteria || 'Monthly'} onChange={e => updateTopPerformerEntry(entry.id, 'criteria', e.target.value)} style={{ fontSize: '0.82rem', borderColor: '#cbd5e1' }}>
+                                  {(form.topPerformerCriteriaOptions || ['Monthly', 'Weekly', 'Hardworker']).map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                </select>
+                              </div>
+                              <div>
+                                <label className="st-label" style={{ fontSize: '0.76rem', color: '#334155' }}>Display name</label>
+                                <input className="st-input" value={entry.name || ''} onChange={e => updateTopPerformerEntry(entry.id, 'name', e.target.value)} style={{ fontSize: '0.82rem', borderColor: '#cbd5e1' }} />
+                              </div>
+                            </div>
+
+                            <div style={{ marginBottom: '10px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '6px' }}>
+                                <label className="st-label" style={{ fontSize: '0.76rem', color: '#334155', margin: 0 }}>Purpose / Achievement Dedication</label>
+                                <button type="button" onClick={() => updateTopPerformerEntry(entry.id, 'purpose', '')} style={{ background: '#e0f2fe', color: '#0369a1', border: '1px solid #7dd3fc', borderRadius: '6px', padding: '4px 8px', fontSize: '0.72rem', fontWeight: '800', cursor: 'pointer' }}>
+                                  Use Attendance Message
+                                </button>
+                              </div>
+                              <textarea className="st-input" value={entry.purpose || ''} onChange={e => updateTopPerformerEntry(entry.id, 'purpose', e.target.value)} rows={3} placeholder="Write the recognition message for this employee." style={{ fontSize: '0.82rem', resize: 'vertical', fontFamily: 'inherit', borderColor: '#cbd5e1' }} />
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
+                              <div>
+                                <label className="st-label" style={{ fontSize: '0.76rem', color: '#334155' }}>Profile photo URL</label>
+                                <input className="st-input" value={entry.photoUrl || ''} onChange={e => updateTopPerformerEntry(entry.id, 'photoUrl', e.target.value)} placeholder="Blank uses default avatar" style={{ fontSize: '0.82rem', borderColor: '#cbd5e1' }} />
+                              </div>
+                              <div>
+                                <label className="st-label" style={{ fontSize: '0.76rem', color: '#334155' }}>Professional GIF / award URL</label>
+                                <input className="st-input" value={entry.gifUrl || ''} onChange={e => updateTopPerformerEntry(entry.id, 'gifUrl', e.target.value)} placeholder="Blank uses no animation" style={{ fontSize: '0.82rem', borderColor: '#cbd5e1' }} />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
                   {/* Live Top Performer Preview Box */}
                   <div style={{ marginTop: '10px' }}>
                     <label className="st-label" style={{ fontSize: '0.82rem', marginBottom: '6px', color: '#78350f' }}>Live Card Preview</label>
+                    <div style={{ maxWidth: '100%' }}>
+                      <TopPerformerCarousel
+                        settings={{
+                          enableTopPerformerBanner: form.topPerformerBanner,
+                          userId: form.topPerformerUserId,
+                          name: form.topPerformerName,
+                          criteria: form.topPerformerCriteria,
+                          purpose: form.topPerformerPurpose,
+                          photoUrl: form.topPerformerPhotoUrl,
+                          gifUrl: form.topPerformerGifUrl,
+                          entries: [],
+                        }}
+                        performers={[]}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '12px' }}>
+                      <button
+                        type="button"
+                        onClick={addTopPerformerEntry}
+                        style={{ background: '#2563eb', color: 'white', border: 'none', borderRadius: '7px', padding: '9px 16px', fontSize: '0.82rem', fontWeight: '900', cursor: 'pointer', boxShadow: '0 4px 10px rgba(37, 99, 235, 0.25)' }}
+                      >
+                        + Add This Employee Card
+                      </button>
+                    </div>
+                    {(form.topPerformerEntries || []).length > 0 && (
+                      <div style={{ marginTop: '12px', background: '#fff7ed', border: '1px solid #fdba74', borderRadius: '8px', padding: '10px' }}>
+                        <div style={{ fontSize: '0.82rem', fontWeight: 900, color: '#7c2d12', marginBottom: '8px' }}>
+                          Added Performer Cards ({(form.topPerformerEntries || []).length})
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {(form.topPerformerEntries || []).map(entry => (
+                            <div key={entry.id} style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '10px', alignItems: 'center', background: '#ffffff', border: '1px solid #fed7aa', borderRadius: '7px', padding: '8px' }}>
+                              <div style={{ minWidth: 0 }}>
+                                <div style={{ fontSize: '0.8rem', fontWeight: 900, color: '#1f2937' }}>
+                                  {entry.name || 'Employee Name'} - {entry.criteria || 'Monthly'}
+                                </div>
+                                <div style={{ fontSize: '0.7rem', color: '#64748b', overflowWrap: 'anywhere' }}>
+                                  ID: {entry.userId || 'No employee selected'}
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => removeTopPerformerEntry(entry.id)}
+                                style={{ background: '#fee2e2', color: '#b91c1c', border: '1px solid #fecaca', borderRadius: '6px', padding: '5px 9px', fontSize: '0.72rem', fontWeight: 900, cursor: 'pointer' }}
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     <div className="top-performer-card-preview" style={{
+                      display: 'none',
                       background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)',
                       borderRadius: '14px',
                       padding: '16px',
@@ -1179,13 +1950,78 @@ const Setting = () => {
                     const updatedOpts = [...currentOpts, newOpt];
                     set('topPerformerCriteriaOptions', updatedOpts);
                   }
-                  set('topPerformerCriteria', newOpt);
+                  if (criteriaTargetEntryId) {
+                    updateTopPerformerEntry(criteriaTargetEntryId, 'criteria', newOpt);
+                  } else {
+                    set('topPerformerCriteria', newOpt);
+                  }
                   setNewCriteriaInput('');
+                  setCriteriaTargetEntryId(null);
                   setShowAddCriteriaModal(false);
                 }
               }}
             >
               Save & Select Field
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {showAddPurposeModal && (
+        <Modal onClose={() => {
+          setShowAddPurposeModal(false);
+          setPurposeTargetEntryId(null);
+          setNewPurposeInput('');
+        }}>
+          <h2 className="st-modal-title">Add Achievement Dedication</h2>
+          <p className="st-modal-sub">Write the recognition message for this employee card.</p>
+
+          <div className="st-form-group" style={{ marginTop: '14px' }}>
+            <label className="st-label" htmlFor="new-performer-purpose">Purpose / Achievement Dedication</label>
+            <textarea
+              id="new-performer-purpose"
+              className="st-input"
+              rows={5}
+              placeholder="Describe the employee's achievement, contribution, or dedication..."
+              value={newPurposeInput}
+              onChange={e => setNewPurposeInput(e.target.value)}
+              autoFocus
+              style={{ resize: 'vertical', fontFamily: 'inherit' }}
+            />
+          </div>
+
+          <div className="st-modal-actions" style={{ marginTop: '20px' }}>
+            <button
+              className="st-btn-cancel"
+              onClick={() => {
+                setShowAddPurposeModal(false);
+                setPurposeTargetEntryId(null);
+                setNewPurposeInput('');
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              className="st-btn-primary"
+              disabled={!newPurposeInput.trim()}
+              onClick={() => {
+                if (!newPurposeInput.trim() || !purposeTargetEntryId) return;
+                const purpose = newPurposeInput.trim();
+                setForm(previous => ({
+                  ...previous,
+                  topPerformerPurposeOptions: (previous.topPerformerPurposeOptions || []).includes(purpose)
+                    ? previous.topPerformerPurposeOptions
+                    : [...(previous.topPerformerPurposeOptions || []), purpose],
+                  topPerformerEntries: (previous.topPerformerEntries || []).map(entry => (
+                    entry.id === purposeTargetEntryId ? { ...entry, purpose } : entry
+                  )),
+                }));
+                setShowAddPurposeModal(false);
+                setPurposeTargetEntryId(null);
+                setNewPurposeInput('');
+              }}
+            >
+              Save Dedication
             </button>
           </div>
         </Modal>
