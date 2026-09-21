@@ -8,6 +8,7 @@ import com.arrowdatatech.adt_production_report.user.entity.User;
 import com.arrowdatatech.adt_production_report.user.entity.EmployeeProfile;
 import com.arrowdatatech.adt_production_report.media.entity.MediaFile;
 import com.arrowdatatech.adt_production_report.auth.entity.UserSession;
+import com.arrowdatatech.adt_production_report.user.repository.EmployeeProfileRepository;
 import com.arrowdatatech.adt_production_report.user.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,6 +27,7 @@ class AuthServiceTest {
     @Mock AuthenticationManager authenticationManager;
     @Mock JwtTokenProvider jwtTokenProvider;
     @Mock UserRepository userRepository;
+    @Mock EmployeeProfileRepository profileRepository;
     @Mock UserSessionRepository sessionRepository;
     @Mock UserRoleAssignmentRepository roleAssignmentRepository;
     @Mock PermissionRepository permissionRepository;
@@ -38,13 +40,15 @@ class AuthServiceTest {
     void impersonationUsesTargetProfileAndKeepsAdminAsSessionOwnerReference() {
         UUID adminId = UUID.randomUUID();
         UUID targetId = UUID.randomUUID();
+        UUID profileId = UUID.randomUUID();
         User admin = User.builder().id(adminId).build();
         MediaFile photo = MediaFile.builder().id(UUID.randomUUID()).isActive(true).build();
         User target = User.builder().id(targetId).userCode("EMP2")
-                .employeeProfile(EmployeeProfile.builder().fullName("Target User").profilePhoto(photo).build())
+                .employeeProfile(EmployeeProfile.builder().id(profileId).fullName("Target User").profilePhoto(photo).build())
                 .build();
         when(userRepository.findByIdWithProfile(adminId)).thenReturn(Optional.of(admin));
         when(userRepository.findByIdWithProfile(targetId)).thenReturn(Optional.of(target));
+        when(profileRepository.findActiveProfilePhotoIdByProfileId(profileId)).thenReturn(Optional.of(photo.getId()));
         when(roleAssignmentRepository.findRoleNamesByUserId(targetId)).thenReturn(List.of("Executive"));
         when(jwtTokenProvider.generateAccessToken(eq(targetId), anyList(), anyList())).thenReturn("target-access");
         when(jwtTokenProvider.generateRefreshToken(targetId)).thenReturn("target-refresh");

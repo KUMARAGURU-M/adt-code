@@ -848,6 +848,24 @@ const UserManagement = () => {
     }
 
     const savedUser = await apiCall(`/users/${updatedUser.id}`, 'PUT', payload);
+    const mappedSavedUser = {
+      id: savedUser.id,
+      userCode: savedUser.userCode,
+      initial: savedUser.fullName ? savedUser.fullName.charAt(0).toUpperCase() : '?',
+      name: savedUser.fullName,
+      profilePhotoUrl: savedUser.profilePhotoUrl || updatedUser.profilePhotoUrl || null,
+      email: savedUser.email,
+      phone: savedUser.phone || '-',
+      timezone: savedUser.timezone || 'Asia/Kolkata',
+      calendar: savedUser.showCalendarStats ?? true,
+      role: savedUser.roles?.[0] || updatedUser.role || 'Executive',
+      shiftId: savedUser.currentShiftId || updatedUser.shiftId || null,
+      shift: savedUser.currentShift || updatedUser.shift || '-',
+      top: savedUser.isTopPerformer,
+      status: savedUser.employeeStatus || (savedUser.isActive ? 'Active' : 'Inactive'),
+      employeeStatus: savedUser.employeeStatus || (savedUser.isActive ? 'Active' : 'Inactive'),
+    };
+    setUsers(prev => prev.map(u => u.id === updatedUser.id ? mappedSavedUser : u));
     if (getCurrentUser()?.userId === updatedUser.id) {
       sessionStorage.setItem('user', JSON.stringify({
         ...getCurrentUser(),
@@ -857,8 +875,10 @@ const UserManagement = () => {
       }));
       window.dispatchEvent(new Event('user_profile_updated'));
     }
-    await loadUsers();
     close();
+    loadUsers().catch(err => {
+      console.warn('User saved, but refreshing the user list failed:', err.message);
+    });
   };
 
   const handleDelete = async (userId) => {

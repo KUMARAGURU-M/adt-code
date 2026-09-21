@@ -65,6 +65,7 @@ public class UserService {
     private final AttendanceEmployeeRepository attendanceEmployeeRepository;
     private final ActivityLogService activityLogService;
     private final PasswordEncoder passwordEncoder;
+    private final UserUpdateSideEffectService userUpdateSideEffectService;
 
     // ─────────────────────────────────────────────
     // GET ALL USERS - User Management page table
@@ -274,14 +275,14 @@ public class UserService {
             boolean derivedActive = "Active".equalsIgnoreCase(request.getEmployeeStatus());
             user.setIsActive(derivedActive);
             if (!derivedActive) {
-                sessionRepository.revokeAllByUserId(userId);
+                safelyRevokeSessions(userId);
                 log.info("Revoked all sessions for non-active user (status={}): {}",
                         request.getEmployeeStatus(), userId);
             }
         } else if (request.getIsActive() != null) {
             user.setIsActive(request.getIsActive());
             if (!request.getIsActive()) {
-                sessionRepository.revokeAllByUserId(userId);
+                safelyRevokeSessions(userId);
                 log.info("Revoked all sessions for deactivated user: {}",
                         userId);
             }
@@ -346,33 +347,7 @@ public class UserService {
             }
         }
 
-        // Sync to AttendanceEmployee if exists
-        try {
-            attendanceEmployeeRepository.findByUserId(userId).ifPresent(
-                emp -> {
-                    boolean changed = false;
-                    if (request.getFullName() != null) {
-                        emp.setName(request.getFullName().trim());
-                        changed = true;
-                    }
-                    if (request.getIsActive() != null) {
-                        emp.setIsActive(request.getIsActive());
-                        changed = true;
-                    }
-                    if (roleChanged) {
-                        emp.setCategory(mapRoleToCategory(request.getRoleName()));
-                        changed = true;
-                    }
-                    if (changed) {
-                        emp.setUpdatedAt(OffsetDateTime.now());
-                        attendanceEmployeeRepository.save(emp);
-                        log.info("Synchronized AttendanceEmployee updates for userId {}", userId);
-                    }
-                }
-            );
-        } catch (Exception e) {
-            log.error("Failed to sync AttendanceEmployee on user update", e);
-        }
+        safelySyncAttendanceEmployee(userId, request, roleChanged);
 
         // Log activity
         User currentUser = getCurrentUser();
@@ -381,6 +356,34 @@ public class UserService {
 
         return toUserResponse(
                 userRepository.findByIdWithProfile(userId).orElseThrow());
+    }
+
+    private void safelyRevokeSessions(UUID userId) {
+        try {
+            userUpdateSideEffectService.revokeSessions(userId);
+        } catch (Exception e) {
+            log.warn("Could not revoke sessions during user update for {}: {}",
+                    userId, e.getMessage());
+        }
+    }
+
+    private void safelySyncAttendanceEmployee(UUID userId,
+                                              UpdateUserRequest request,
+                                              boolean roleChanged) {
+        try {
+            Boolean attendanceActive = request.getEmployeeStatus() != null
+                    ? "Active".equalsIgnoreCase(request.getEmployeeStatus())
+                    : request.getIsActive();
+            userUpdateSideEffectService.syncAttendanceEmployee(
+                    userId,
+                    request.getFullName(),
+                    attendanceActive,
+                    roleChanged,
+                    request.getRoleName());
+        } catch (Exception e) {
+            log.warn("Could not sync AttendanceEmployee during user update for {}: {}",
+                    userId, e.getMessage());
+        }
     }
 
     // ─────────────────────────────────────────────
@@ -854,12 +857,12 @@ public class UserService {
     }
 
     private String resolveProfilePhotoUrl(EmployeeProfile profile) {
-        if (profile == null
-                || profile.getProfilePhoto() == null
-                || !Boolean.TRUE.equals(profile.getProfilePhoto().getIsActive())) {
+        if (profile == null || profile.getId() == null) {
             return null;
         }
-        return "/media/" + profile.getProfilePhoto().getId();
+        return profileRepository.findActiveProfilePhotoIdByProfileId(profile.getId())
+                .map(id -> "/media/" + id)
+                .orElse(null);
     }
 
     // ─────────────────────────────────────────────

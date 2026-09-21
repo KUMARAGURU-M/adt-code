@@ -106,6 +106,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     @Query("""
             SELECT u FROM User u
             LEFT JOIN FETCH u.employeeProfile ep
+            LEFT JOIN FETCH ep.profilePhoto
             LEFT JOIN FETCH u.roleAssignments ura
             LEFT JOIN FETCH ura.role r
             WHERE u.id = :userId

@@ -10,6 +10,7 @@ import com.arrowdatatech.adt_production_report.role.repository.PermissionReposit
 import com.arrowdatatech.adt_production_report.role.repository.UserRoleAssignmentRepository;
 import com.arrowdatatech.adt_production_report.user.entity.EmployeeProfile;
 import com.arrowdatatech.adt_production_report.user.entity.User;
+import com.arrowdatatech.adt_production_report.user.repository.EmployeeProfileRepository;
 import com.arrowdatatech.adt_production_report.user.repository.UserRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +35,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;
+    private final EmployeeProfileRepository profileRepository;
     private final UserSessionRepository sessionRepository;
     private final UserRoleAssignmentRepository roleAssignmentRepository;
     private final PermissionRepository permissionRepository;
@@ -422,11 +424,11 @@ public class AuthService {
     }
 
     private String resolveProfilePhotoUrl(EmployeeProfile profile) {
-        if (profile == null
-                || profile.getProfilePhoto() == null
-                || !Boolean.TRUE.equals(profile.getProfilePhoto().getIsActive())) {
+        if (profile == null || profile.getId() == null) {
             return null;
         }
-        return "/media/" + profile.getProfilePhoto().getId();
+        return profileRepository.findActiveProfilePhotoIdByProfileId(profile.getId())
+                .map(id -> "/media/" + id)
+                .orElse(null);
     }
 }
