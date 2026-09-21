@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { API_BASE } from '../../utils/api';
 import './TopPerformerCarousel.css';
 
@@ -79,7 +79,7 @@ const TopPerformerCarousel = ({ settings, performers = [], onPhotoClick }) => {
     if (!hasMultiple) return undefined;
     const timer = setInterval(() => {
       setActiveIndex(index => (index + 1) % totalSlides);
-    }, 4000);
+    }, 10000);
     return () => clearInterval(timer);
   }, [hasMultiple, totalSlides]);
 
@@ -113,6 +113,7 @@ const TopPerformerCarousel = ({ settings, performers = [], onPhotoClick }) => {
             <span className="top-performer-tag-title">Top Performer</span>
             <span className="top-performer-tag-criteria">{activeSlide.criteria || 'Monthly'}</span>
           </span>
+          <span className="trophy-icon medal-icon-right" aria-hidden="true">🎖️</span>
         </div>
         {hasMultiple && (
           <div className="top-performer-slide-count">
@@ -130,7 +131,7 @@ const TopPerformerCarousel = ({ settings, performers = [], onPhotoClick }) => {
             aria-label="Previous top performer"
             title="Previous"
           >
-            <ChevronLeft size={18} />
+            <ArrowLeft size={18} />
           </button>
         )}
 
@@ -152,9 +153,8 @@ const TopPerformerCarousel = ({ settings, performers = [], onPhotoClick }) => {
             <span className="star-badge" aria-hidden="true">{activeSlide.emoji || '⭐'}</span>
           </div>
           <h4 className="top-performer-name">{activeSlide.name}</h4>
-          {activeSlide.role && <p className="top-performer-role">{activeSlide.role}</p>}
-          {activeSlide.userCode && (
-            <p className="top-performer-employee-id">Emp ID: {activeSlide.userCode}</p>
+          {(activeSlide.userCode || activeSlide.userId) && (
+            <p className="top-performer-employee-id">{activeSlide.userCode || activeSlide.userId}</p>
           )}
         </div>
 
@@ -182,7 +182,7 @@ const TopPerformerCarousel = ({ settings, performers = [], onPhotoClick }) => {
             aria-label="Next top performer"
             title="Next"
           >
-            <ChevronRight size={18} />
+            <ArrowRight size={18} />
           </button>
         )}
       </div>
@@ -191,3 +191,16 @@ const TopPerformerCarousel = ({ settings, performers = [], onPhotoClick }) => {
 };
 
 export default TopPerformerCarousel;
+
+
+
+
+
+
+
+
+
+
+
+
+
