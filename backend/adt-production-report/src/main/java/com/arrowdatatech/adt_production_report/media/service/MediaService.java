@@ -83,7 +83,7 @@ public class MediaService {
                     .storedName(storedName)
                     .mimeType(file.getContentType())
                     .fileSize(file.getSize())
-                    .storagePath(destinationFile.toString())
+                    .storagePath(storedName)
                     .storageType("local")
                     .entityType(entityType)
                     .entityId(entityId)
@@ -130,9 +130,9 @@ public class MediaService {
     public Resource loadFileAsResource(UUID id) {
         MediaFile mediaFile = getMetadata(id);
         try {
-            Path filePath = Paths.get(mediaFile.getStoragePath()).normalize();
+            Path filePath = resolveStoragePath(mediaFile.getStoragePath());
             Resource resource = new UrlResource(filePath.toUri());
-            if (resource.exists() || resource.isReadable()) {
+            if (resource.exists() && resource.isReadable()) {
                 return resource;
             } else {
                 mediaFile.setIsActive(false);
@@ -150,11 +150,19 @@ public class MediaService {
             return false;
         }
         try {
-            Path filePath = Paths.get(mediaFile.getStoragePath()).normalize();
+            Path filePath = resolveStoragePath(mediaFile.getStoragePath());
             return Files.isRegularFile(filePath) && Files.isReadable(filePath);
         } catch (Exception e) {
             return false;
         }
+    }
+
+    private Path resolveStoragePath(String storagePath) {
+        Path path = Paths.get(storagePath).normalize();
+        if (path.isAbsolute()) {
+            return path;
+        }
+        return rootDir.resolve(path).normalize();
     }
 
     private boolean isProfilePhotoEntity(String entityType) {

@@ -3,7 +3,6 @@ package com.arrowdatatech.adt_production_report.auth.service;
 import com.arrowdatatech.adt_production_report.auth.dto.LoginRequest;
 import com.arrowdatatech.adt_production_report.auth.repository.*;
 import com.arrowdatatech.adt_production_report.common.audit.service.ActivityLogService;
-import com.arrowdatatech.adt_production_report.media.service.MediaService;
 import com.arrowdatatech.adt_production_report.role.repository.*;
 import com.arrowdatatech.adt_production_report.user.entity.User;
 import com.arrowdatatech.adt_production_report.user.entity.EmployeeProfile;
@@ -33,7 +32,6 @@ class AuthServiceTest {
     @Mock LoginAttendanceService loginAttendanceService;
     @Mock ActivityLogService activityLogService;
     @Mock ImpersonationLogRepository impersonationLogRepository;
-    @Mock MediaService mediaService;
     @InjectMocks AuthService service;
 
     @Test
@@ -41,7 +39,7 @@ class AuthServiceTest {
         UUID adminId = UUID.randomUUID();
         UUID targetId = UUID.randomUUID();
         User admin = User.builder().id(adminId).build();
-        MediaFile photo = MediaFile.builder().id(UUID.randomUUID()).build();
+        MediaFile photo = MediaFile.builder().id(UUID.randomUUID()).isActive(true).build();
         User target = User.builder().id(targetId).userCode("EMP2")
                 .employeeProfile(EmployeeProfile.builder().fullName("Target User").profilePhoto(photo).build())
                 .build();
@@ -50,14 +48,12 @@ class AuthServiceTest {
         when(roleAssignmentRepository.findRoleNamesByUserId(targetId)).thenReturn(List.of("Executive"));
         when(jwtTokenProvider.generateAccessToken(eq(targetId), anyList(), anyList())).thenReturn("target-access");
         when(jwtTokenProvider.generateRefreshToken(targetId)).thenReturn("target-refresh");
-        // A production upload may be absent from disk after a redeploy.
-        when(mediaService.isAvailable(photo)).thenReturn(false);
         var response = service.impersonateUser(adminId, targetId);
         assertEquals(targetId, response.getUserId());
         assertEquals("Target User", response.getFullName());
         assertEquals(List.of("Executive"), response.getRoles());
         assertEquals("target-access", response.getAccessToken());
-        assertNull(response.getProfilePhotoUrl());
+        assertEquals("/media/" + photo.getId(), response.getProfilePhotoUrl());
         ArgumentCaptor<UserSession> session = ArgumentCaptor.forClass(UserSession.class);
         verify(sessionRepository).save(session.capture());
         assertSame(admin, session.getValue().getImpersonatedBy());

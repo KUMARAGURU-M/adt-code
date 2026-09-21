@@ -8,7 +8,6 @@ import com.arrowdatatech.adt_production_report.auth.repository.UserSessionReposi
 import com.arrowdatatech.adt_production_report.common.audit.service.ActivityLogService;
 import com.arrowdatatech.adt_production_report.common.exception.ResourceNotFoundException;
 import com.arrowdatatech.adt_production_report.common.exception.UnauthorizedException;
-import com.arrowdatatech.adt_production_report.media.service.MediaService;
 import com.arrowdatatech.adt_production_report.role.repository.PermissionRepository;
 import com.arrowdatatech.adt_production_report.role.repository.UserRoleAssignmentRepository;
 import com.arrowdatatech.adt_production_report.user.entity.EmployeeProfile;
@@ -43,7 +42,6 @@ public class AuthService {
     private final LoginAttendanceService loginAttendanceService;
     private final ActivityLogService activityLogService;
     private final ImpersonationLogRepository impersonationLogRepository;
-    private final MediaService mediaService;
 
     @Transactional
     public LoginResponse login(LoginRequest request,
@@ -426,7 +424,9 @@ public class AuthService {
     }
 
     private String resolveProfilePhotoUrl(EmployeeProfile profile) {
-        if (profile == null || !mediaService.isAvailable(profile.getProfilePhoto())) {
+        if (profile == null
+                || profile.getProfilePhoto() == null
+                || !Boolean.TRUE.equals(profile.getProfilePhoto().getIsActive())) {
             return null;
         }
         return "/media/" + profile.getProfilePhoto().getId();

@@ -7,7 +7,6 @@ import com.arrowdatatech.adt_production_report.common.audit.service.ActivityLogS
 import com.arrowdatatech.adt_production_report.common.exception.BadRequestException;
 import com.arrowdatatech.adt_production_report.common.exception.ResourceNotFoundException;
 import com.arrowdatatech.adt_production_report.common.util.SecurityUtils;
-import com.arrowdatatech.adt_production_report.media.service.MediaService;
 import com.arrowdatatech.adt_production_report.process.entity.Process;
 import com.arrowdatatech.adt_production_report.process.entity.UserProcessAssignment;
 import com.arrowdatatech.adt_production_report.process.repository.ProcessRepository;
@@ -66,7 +65,6 @@ public class UserService {
     private final AttendanceEmployeeRepository attendanceEmployeeRepository;
     private final ActivityLogService activityLogService;
     private final PasswordEncoder passwordEncoder;
-    private final MediaService mediaService;
 
     // ─────────────────────────────────────────────
     // GET ALL USERS - User Management page table
@@ -856,7 +854,9 @@ public class UserService {
     }
 
     private String resolveProfilePhotoUrl(EmployeeProfile profile) {
-        if (profile == null || !mediaService.isAvailable(profile.getProfilePhoto())) {
+        if (profile == null
+                || profile.getProfilePhoto() == null
+                || !Boolean.TRUE.equals(profile.getProfilePhoto().getIsActive())) {
             return null;
         }
         return "/media/" + profile.getProfilePhoto().getId();

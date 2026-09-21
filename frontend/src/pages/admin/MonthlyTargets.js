@@ -1545,12 +1545,12 @@ const MonthlyTargets = () => {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto', flexWrap: 'wrap' }}>
                           <span className="incomplete-metric incomplete-books-metric">
                             <span className="incomplete-metric-icon" aria-hidden="true"><BookOpen size={28} strokeWidth={2.8} /></span>
-                            <span>Incomplete Book:</span>
+                            <span>INCOMPLETE BOOK:</span>
                             <strong className="incomplete-metric-count">{selectedProjectDetail.actualIncompleteBooks || 0}</strong>
                           </span>
                           <span className="incomplete-metric incomplete-pages-metric">
                             <span className="incomplete-metric-icon" aria-hidden="true"><FileText size={28} strokeWidth={2.8} /></span>
-                            <span>Incomplete Page:</span>
+                            <span>INCOMPLETE PAGE:</span>
                             <strong className="incomplete-metric-count">{selectedProjectDetail.actualIncompletePages || 0}</strong>
                           </span>
                         </div>
