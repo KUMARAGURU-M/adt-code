@@ -20,6 +20,7 @@ FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 COPY --from=backend-build /app/backend/target/*.jar app.jar
 COPY --from=frontend-build /app/frontend/build ./static
+ENV APP_FILE_UPLOAD_DIR=/app/uploads
 RUN mkdir -p /app/uploads
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]

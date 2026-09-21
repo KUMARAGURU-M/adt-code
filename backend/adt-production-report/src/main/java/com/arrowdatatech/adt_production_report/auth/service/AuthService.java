@@ -1,9 +1,7 @@
 package com.arrowdatatech.adt_production_report.auth.service;
 
 import com.arrowdatatech.adt_production_report.auth.dto.*;
-import com.arrowdatatech.adt_production_report.auth.entity.ImpersonationLog;
 import com.arrowdatatech.adt_production_report.auth.entity.UserSession;
-import com.arrowdatatech.adt_production_report.auth.repository.ImpersonationLogRepository;
 import com.arrowdatatech.adt_production_report.auth.repository.UserSessionRepository;
 import com.arrowdatatech.adt_production_report.common.audit.service.ActivityLogService;
 import com.arrowdatatech.adt_production_report.common.exception.ResourceNotFoundException;
@@ -41,7 +39,7 @@ public class AuthService {
     private final PermissionRepository permissionRepository;
     private final LoginAttendanceService loginAttendanceService;
     private final ActivityLogService activityLogService;
-    private final ImpersonationLogRepository impersonationLogRepository;
+    private final ImpersonationAuditService impersonationAuditService;
 
     @Transactional
     public LoginResponse login(LoginRequest request,
@@ -249,13 +247,6 @@ public class AuthService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Target user not found"));
 
-        ImpersonationLog impLog = ImpersonationLog.builder()
-                .admin(admin)
-                .targetUser(targetUser)
-                .startedAt(OffsetDateTime.now())
-                .build();
-        impersonationLogRepository.save(impLog);
-
         List<String> roles = roleAssignmentRepository
                 .findRoleNamesByUserId(targetUser.getId());
         List<String> permissions = permissionRepository
@@ -276,6 +267,13 @@ public class AuthService {
                 .impersonatedBy(admin)
                 .build();
         sessionRepository.save(session);
+
+        try {
+            impersonationAuditService.logStarted(admin, targetUser);
+        } catch (Exception e) {
+            log.warn("Could not write impersonation audit for admin {} target {}: {}",
+                    adminId, targetUserId, e.getMessage());
+        }
 
         String fullName = targetUser.getEmployeeProfile() != null
                 ? targetUser.getEmployeeProfile().getFullName()

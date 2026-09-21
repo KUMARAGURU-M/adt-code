@@ -11,6 +11,7 @@ import com.arrowdatatech.adt_production_report.user.repository.EmployeeProfileRe
 import com.arrowdatatech.adt_production_report.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
@@ -27,11 +28,14 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class MediaService {
 
+    private static final long MAX_PROFILE_PHOTO_BYTES = 5L * 1024L * 1024L;
+
     private final MediaFileRepository mediaFileRepository;
     private final UserRepository userRepository;
     private final EmployeeProfileRepository employeeProfileRepository;
 
-    private final Path rootDir = Paths.get("uploads").toAbsolutePath().normalize();
+    @Value("${app.file.upload-dir:uploads}")
+    private String uploadDir;
 
     @Transactional
     public MediaFile uploadFile(MultipartFile file, String entityType, UUID entityId) {
@@ -43,8 +47,18 @@ public class MediaService {
         if ("chat".equalsIgnoreCase(entityType) && file.getSize() > 10 * 1024 * 1024) {
             throw new BadRequestException("Attachment exceeds the maximum size limit of 10 MB.");
         }
+        if (isProfilePhotoEntity(entityType)) {
+            String contentType = file.getContentType();
+            if (contentType == null || !contentType.toLowerCase().startsWith("image/")) {
+                throw new BadRequestException("Profile photo must be an image file.");
+            }
+            if (file.getSize() > MAX_PROFILE_PHOTO_BYTES) {
+                throw new BadRequestException("Profile photo must be 5 MB or smaller.");
+            }
+        }
 
         try {
+            Path rootDir = rootDir();
             // Ensure uploads directory exists
             if (!Files.exists(rootDir)) {
                 Files.createDirectories(rootDir);
@@ -64,10 +78,10 @@ public class MediaService {
             }
 
             String storedName = UUID.randomUUID().toString() + extension;
-            Path destinationFile = this.rootDir.resolve(Paths.get(storedName))
+            Path destinationFile = rootDir.resolve(Paths.get(storedName))
                     .normalize().toAbsolutePath();
 
-            if (!destinationFile.getParent().equals(this.rootDir.toAbsolutePath())) {
+            if (!destinationFile.getParent().equals(rootDir.toAbsolutePath())) {
                 // Security check
                 throw new BadRequestException("Cannot store file outside current directory.");
             }
@@ -93,7 +107,7 @@ public class MediaService {
 
             MediaFile savedMediaFile = mediaFileRepository.save(mediaFile);
 
-                if (currentUser != null && isProfilePhotoEntity(entityType)) {
+            if (currentUser != null && isProfilePhotoEntity(entityType)) {
                 User profileOwner = entityId != null
                     ? userRepository.findById(entityId).orElseThrow(() -> new ResourceNotFoundException("User", "id", entityId))
                     : currentUser;
@@ -162,7 +176,11 @@ public class MediaService {
         if (path.isAbsolute()) {
             return path;
         }
-        return rootDir.resolve(path).normalize();
+        return rootDir().resolve(path).normalize();
+    }
+
+    private Path rootDir() {
+        return Paths.get(uploadDir).toAbsolutePath().normalize();
     }
 
     private boolean isProfilePhotoEntity(String entityType) {

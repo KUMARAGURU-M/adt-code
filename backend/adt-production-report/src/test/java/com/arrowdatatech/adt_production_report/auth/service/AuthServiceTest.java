@@ -31,7 +31,7 @@ class AuthServiceTest {
     @Mock PermissionRepository permissionRepository;
     @Mock LoginAttendanceService loginAttendanceService;
     @Mock ActivityLogService activityLogService;
-    @Mock ImpersonationLogRepository impersonationLogRepository;
+    @Mock ImpersonationAuditService impersonationAuditService;
     @InjectMocks AuthService service;
 
     @Test

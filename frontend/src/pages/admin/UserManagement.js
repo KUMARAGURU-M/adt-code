@@ -6,6 +6,7 @@ import './UserManagement.css';
 import { apiCall, getRolePrefix, getCurrentUser, saveSession } from '../../utils/api';
 
 const mapRoleName = (roleVal) => roleVal || 'Executive';
+const MAX_PROFILE_PHOTO_BYTES = 5 * 1024 * 1024;
 
 /* ─── Overlay wrapper ───────────────────────────────────────────── */
 const Modal = ({ onClose, children }) => (
@@ -514,11 +515,19 @@ const EditUserModal = ({ user, onClose, onUpdate, shifts, roles }) => {
   const handleUpdate = async () => {
     if (saving) return;
     setSaving(true);
+    let currentStage = 'updating user';
     setSaveStage('Updating user...');
     try {
       let profilePhotoUrl = user.profilePhotoUrl || null;
 
       if (profilePhoto) {
+        if (!profilePhoto.type || !profilePhoto.type.startsWith('image/')) {
+          throw new Error('Choose a valid image file for the profile photo.');
+        }
+        if (profilePhoto.size > MAX_PROFILE_PHOTO_BYTES) {
+          throw new Error('Profile photo must be 5 MB or smaller. Please choose a smaller image.');
+        }
+        currentStage = 'uploading photo';
         setSaveStage('Uploading photo...');
         const uploadData = new FormData();
         uploadData.append('file', profilePhoto);
@@ -529,6 +538,7 @@ const EditUserModal = ({ user, onClose, onUpdate, shifts, roles }) => {
         profilePhotoUrl = uploaded.url;
       }
 
+      currentStage = 'updating user';
       setSaveStage('Updating user...');
       await onUpdate({
         ...user,
@@ -548,7 +558,7 @@ const EditUserModal = ({ user, onClose, onUpdate, shifts, roles }) => {
         profilePhotoUrl,
       });
     } catch (err) {
-      alert('Error updating user: ' + err.message);
+      alert(`Error ${currentStage}: ${err.message}`);
     } finally {
       setSaving(false);
       setSaveStage('');
@@ -587,6 +597,7 @@ const EditUserModal = ({ user, onClose, onUpdate, shifts, roles }) => {
           accept="image/*"
           onChange={e => setProfilePhoto(e.target.files[0] || null)}
         />
+        <p className="form-hint">Use JPG or PNG up to 5 MB.</p>
         {user.profilePhotoUrl && <p className="form-hint">A photo is already uploaded. Choose a new image to replace it.</p>}
       </div>
 
