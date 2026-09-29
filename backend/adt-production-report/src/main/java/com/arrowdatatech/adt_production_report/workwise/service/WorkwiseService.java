@@ -25,6 +25,7 @@ import com.arrowdatatech.adt_production_report.workwise.entity.BreakLog;
 import com.arrowdatatech.adt_production_report.workwise.entity.TimeLog;
 import com.arrowdatatech.adt_production_report.workwise.repository.BreakLogRepository;
 import com.arrowdatatech.adt_production_report.workwise.repository.TimeLogRepository;
+import com.arrowdatatech.adt_production_report.job.repository.JobRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -55,6 +56,7 @@ public class WorkwiseService {
         private final AttendanceEmployeeRepository attendanceEmployeeRepository;
         private final AttendanceRecordRepository attendanceRecordRepository;
         private final DevTaskRepository devTaskRepository;
+        private final JobRepository jobRepository;
 
         // ─────────────────────────────────────────────
         // GET CURRENT RUNNING TASK
@@ -397,6 +399,15 @@ public class WorkwiseService {
                         task.setStatus("WIP");
                         task.setUpdatedAt(OffsetDateTime.now());
                         taskRepository.save(task);
+
+                        // Update associated jobs to WIP
+                        for (TaskJobAssignment tja : jobLinks) {
+                                if (tja.getJob() != null) {
+                                        tja.getJob().setStatus("WIP");
+                                        tja.getJob().setProcessStatus("WIP");
+                                        jobRepository.save(tja.getJob());
+                                }
+                        }
 
                         log.info("Task '{}' started for user {}",
                                         task.getTaskTitle(), userId);

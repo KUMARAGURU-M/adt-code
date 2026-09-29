@@ -54,6 +54,10 @@ public class JobService {
     private final TaskRepository taskRepository;
     private final WorkflowRepository workflowRepository;
 
+    private List<String> toSafeList(List<String> list) {
+        return (list == null || list.isEmpty()) ? List.of("__ALL__") : list;
+    }
+
     // ─────────────────────────────────────────────
     // SEARCH JOBS
     // ─────────────────────────────────────────────
@@ -67,10 +71,10 @@ public class JobService {
             LocalDate startMonthTo,
             LocalDate uploadDateFrom,
             LocalDate uploadDateTo,
-            String status,
-            String billingStatus,
-            String complexity,
-            String fileStatus,
+            List<String> status,
+            List<String> billingStatus,
+            List<String> complexity,
+            List<String> fileStatus,
             int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Job> jobs = jobRepository.searchJobs(
@@ -83,10 +87,10 @@ public class JobService {
                 startMonthTo,
                 uploadDateFrom,
                 uploadDateTo,
-                emptyToNull(status),
-                emptyToNull(billingStatus),
-                emptyToNull(complexity),
-                emptyToNull(fileStatus),
+                toSafeList(status),
+                toSafeList(billingStatus),
+                toSafeList(complexity),
+                toSafeList(fileStatus),
                 pageable);
 
         if (jobs.isEmpty()) {
@@ -667,9 +671,9 @@ public class JobService {
             UUID clientId,
             UUID workflowId,
             String jobIdCode,
-            String complexity,
-            String processStatus,
-            String qcStatus,
+            List<String> complexity,
+            List<String> processStatus,
+            List<String> qcStatus,
             LocalDate startDate,
             LocalDate endDate,
             int page, int size) {
@@ -679,9 +683,9 @@ public class JobService {
                 clientId,
                 workflowId,
                 emptyToNull(jobIdCode),
-                emptyToNull(complexity),
-                emptyToNull(processStatus),
-                emptyToNull(qcStatus),
+                toSafeList(complexity),
+                toSafeList(processStatus),
+                toSafeList(qcStatus),
                 startDate,
                 endDate,
                 pageable);
@@ -769,9 +773,15 @@ public class JobService {
         job.setEndDate(request.getEndDate());
         // Always copy, since startMonth can be set to null or cleared
         job.setStartMonth(request.getStartMonth());
+        
+        if (request.getRefType() != null) {
+            job.setReferenceType(emptyToNull(request.getRefType()));
+        }
 
         if ("UPLOADED".equalsIgnoreCase(job.getQcStatus())) {
             job.setFileStatus("UPLOADED");
+            job.setProcessStatus("FINISH");
+            job.setStatus("FINISH");
             if (job.getEndDate() != null) {
                 job.setUploadDate(job.getEndDate());
             } else if (job.getUploadDate() == null) {

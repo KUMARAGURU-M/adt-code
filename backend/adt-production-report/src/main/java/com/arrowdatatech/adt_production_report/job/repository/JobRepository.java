@@ -36,10 +36,10 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
                         AND (CAST(:startMonthTo AS date) IS NULL OR j.receiveDate <= :startMonthTo)
                         AND (CAST(:uploadDateFrom AS date) IS NULL OR j.uploadDate >= :uploadDateFrom)
                         AND (CAST(:uploadDateTo AS date) IS NULL OR j.uploadDate <= :uploadDateTo)
-                        AND (:status IS NULL OR j.status = :status)
-                        AND (:billingStatus IS NULL OR j.billingStatus = :billingStatus)
-                        AND (:complexity IS NULL OR j.complexity = :complexity)
-                        AND (:fileStatus IS NULL OR j.fileStatus = :fileStatus)
+                        AND ('__ALL__' IN :status OR j.status IN :status)
+                        AND ('__ALL__' IN :billingStatus OR j.billingStatus IN :billingStatus)
+                        AND ('__ALL__' IN :complexity OR j.complexity IN :complexity)
+                        AND ('__ALL__' IN :fileStatus OR j.fileStatus IN :fileStatus)
                         ORDER BY j.jobIdCode ASC
                         """)
         Page<Job> searchJobs(
@@ -52,10 +52,10 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
                         @Param("startMonthTo") LocalDate startMonthTo,
                         @Param("uploadDateFrom") LocalDate uploadDateFrom,
                         @Param("uploadDateTo") LocalDate uploadDateTo,
-                        @Param("status") String status,
-                        @Param("billingStatus") String billingStatus,
-                        @Param("complexity") String complexity,
-                        @Param("fileStatus") String fileStatus,
+                        @Param("status") List<String> status,
+                        @Param("billingStatus") List<String> billingStatus,
+                        @Param("complexity") List<String> complexity,
+                        @Param("fileStatus") List<String> fileStatus,
                         Pageable pageable);
 
         // Available for task assignment
@@ -73,9 +73,9 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
                         AND (:clientId IS NULL OR j.project.client.id = :clientId)
                         AND (:workflowId IS NULL OR j.workflow.id = :workflowId)
                         AND (:jobIdCode IS NULL OR LOWER(j.jobIdCode) LIKE LOWER(CONCAT('%', CAST(:jobIdCode AS string), '%')))
-                        AND (:complexity IS NULL OR j.complexity = :complexity)
-                        AND (:processStatus IS NULL OR j.processStatus = :processStatus)
-                        AND (:qcStatus IS NULL OR j.qcStatus = :qcStatus)
+                        AND ('__ALL__' IN :complexity OR j.complexity IN :complexity)
+                        AND ('__ALL__' IN :processStatus OR j.processStatus IN :processStatus)
+                        AND ('__ALL__' IN :qcStatus OR j.qcStatus IN :qcStatus)
                         AND (CAST(:startDate AS date) IS NULL OR j.endDate >= :startDate)
                         AND (CAST(:endDate AS date) IS NULL OR j.endDate <= :endDate)
                         ORDER BY j.jobIdCode ASC
@@ -85,9 +85,9 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
                         @Param("clientId") UUID clientId,
                         @Param("workflowId") UUID workflowId,
                         @Param("jobIdCode") String jobIdCode,
-                        @Param("complexity") String complexity,
-                        @Param("processStatus") String processStatus,
-                        @Param("qcStatus") String qcStatus,
+                        @Param("complexity") List<String> complexity,
+                        @Param("processStatus") List<String> processStatus,
+                        @Param("qcStatus") List<String> qcStatus,
                         @Param("startDate") LocalDate startDate,
                         @Param("endDate") LocalDate endDate,
                         Pageable pageable);

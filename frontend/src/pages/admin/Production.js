@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import './Production.css';
 import { apiCall, getCurrentUser } from '../../utils/api';
 import productionIcon from '../../img/production.png';
+import MultiSelectDropdown from '../../components/MultiSelectDropdown';
 const STATUS_OPTIONS = [
   'FINISH', 'WIP', 'YTS', 'RTU', 'PENDING', 'HOLD', 'QUERY', 'REVERT'
 ];
@@ -275,9 +276,9 @@ const Production = () => {
     projectId: '',
     workflowId: '',
     jobId: '',
-    complexity: '',
-    processStatus: '',
-    qcStatus: '',
+    complexity: [],
+    processStatus: [],
+    qcStatus: [],
     startDate: '',
     endDate: '',
   });
@@ -344,9 +345,9 @@ const Production = () => {
         ...(filters.projectId && { projectId: filters.projectId }),
         ...(filters.workflowId && { workflowId: filters.workflowId }),
         ...(filters.jobId && { jobIdCode: filters.jobId }),
-        ...(filters.complexity && { complexity: filters.complexity }),
-        ...(filters.processStatus && { processStatus: filters.processStatus }),
-        ...(filters.qcStatus && { qcStatus: filters.qcStatus }),
+        ...(filters.complexity.length > 0 && { complexity: filters.complexity.join(',') }),
+        ...(filters.processStatus.length > 0 && { processStatus: filters.processStatus.join(',') }),
+        ...(filters.qcStatus.length > 0 && { qcStatus: filters.qcStatus.join(',') }),
         ...(filters.startDate && { startDate: filters.startDate }),
         ...(filters.endDate && { endDate: filters.endDate }),
       });
@@ -416,9 +417,9 @@ const Production = () => {
       projectId: '',
       workflowId: '',
       jobId: '',
-      complexity: '',
-      processStatus: '',
-      qcStatus: '',
+      complexity: [],
+      processStatus: [],
+      qcStatus: [],
       startDate: '',
       endDate: '',
     });
@@ -656,50 +657,31 @@ const Production = () => {
           </div>
 
           {/* Complexity Select */}
-          <div className="filter-group">
-            <label htmlFor="complexity">Complexity</label>
-            <select
-              id="complexity"
-              value={filters.complexity}
-              onChange={e => setFilters(prev => ({ ...prev, complexity: e.target.value }))}
-            >
-              <option value="">All Complexities</option>
-              <option value="Simple">Simple</option>
-              <option value="Medium">Medium</option>
-              <option value="Complex">Complex</option>
-              <option value="Heavy Complex">Heavy Complex</option>
-            </select>
-          </div>
+          <MultiSelectDropdown
+            label="⚡ Complexity"
+            options={['Simple', 'Medium', 'Complex', 'Heavy Complex']}
+            value={filters.complexity}
+            onChange={val => setFilters(prev => ({ ...prev, complexity: val }))}
+            placeholder="All Complexities"
+          />
 
           {/* Process Status Select */}
-          <div className="filter-group">
-            <label htmlFor="processStatus">Process Status</label>
-            <select
-              id="processStatus"
-              value={filters.processStatus}
-              onChange={e => setFilters(prev => ({ ...prev, processStatus: e.target.value }))}
-            >
-              <option value="">All Process Status</option>
-              {STATUS_OPTIONS.map(opt => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-            </select>
-          </div>
+          <MultiSelectDropdown
+            label="⚙️ Process Status"
+            options={STATUS_OPTIONS}
+            value={filters.processStatus}
+            onChange={val => setFilters(prev => ({ ...prev, processStatus: val }))}
+            placeholder="All Process Status"
+          />
 
           {/* QC Status Select */}
-          <div className="filter-group">
-            <label htmlFor="qcStatus">QC Status</label>
-            <select
-              id="qcStatus"
-              value={filters.qcStatus}
-              onChange={e => setFilters(prev => ({ ...prev, qcStatus: e.target.value }))}
-            >
-              <option value="">All QC Status</option>
-              {QC_STATUS_OPTIONS.map(opt => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-            </select>
-          </div>
+          <MultiSelectDropdown
+            label="🧪 QC Status"
+            options={QC_STATUS_OPTIONS}
+            value={filters.qcStatus}
+            onChange={val => setFilters(prev => ({ ...prev, qcStatus: val }))}
+            placeholder="All QC Status"
+          />
 
           {/* Start Date */}
           <div className="filter-group">

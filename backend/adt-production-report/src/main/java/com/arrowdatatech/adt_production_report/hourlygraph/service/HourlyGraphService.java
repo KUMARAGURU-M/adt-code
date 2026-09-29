@@ -158,6 +158,9 @@ public class HourlyGraphService {
                         .shift(savedLog.getShiftName())
                         .project(savedLog.getProjectName() != null ? savedLog.getProjectName() : "")
                         .process(savedLog.getProcessName() != null ? savedLog.getProcessName() : "");
+                if (savedLog.getOutTime() != null && !savedLog.getOutTime().isBlank()) {
+                    builder.outTime(savedLog.getOutTime());
+                }
                 try {
                     builder.hours(objectMapper.readValue(savedLog.getHours(), Object.class));
                 } catch (Exception e) {

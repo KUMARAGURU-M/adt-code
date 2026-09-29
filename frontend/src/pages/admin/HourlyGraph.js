@@ -1207,8 +1207,9 @@ export default function HourlyGraph() {
                                                 <input
                                                     type="time"
                                                     className="hg-cell-input td-checkout"
-                                                    value={row.outTime}
-                                                    disabled
+                                                    value={row.outTime || ""}
+                                                    onChange={(e) => updateRow(row.id, "outTime", e.target.value)}
+                                                    disabled={!isAdmin}
                                                 />
                                             </td>
 

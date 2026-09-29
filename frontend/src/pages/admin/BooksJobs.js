@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import './BooksJobs.css';
 import { apiCall, getCurrentUser } from '../../utils/api';
+import MultiSelectDropdown from '../../components/MultiSelectDropdown';
 
 
 // ── Constants ─────────────────────────────────────────────────────
@@ -1264,8 +1265,8 @@ const BooksJobs = () => {
     receiveDateTo: '',
     uploadDateFrom: '',
     uploadDateTo: '',
-    status: '', billing: '',
-    jobId: '', complexity: '', fileStatus: '',
+    status: [], billing: [],
+    jobId: '', complexity: [], fileStatus: [],
   });
   const setF = (k, v) => setFilters(p => ({ ...p, [k]: v }));
 
@@ -1328,10 +1329,10 @@ const BooksJobs = () => {
         ...(filters.receiveDateTo && { startMonthTo: filters.receiveDateTo }),
         ...(filters.uploadDateFrom && { uploadDateFrom: filters.uploadDateFrom }),
         ...(filters.uploadDateTo && { uploadDateTo: filters.uploadDateTo }),
-        ...(filters.status && { status: filters.status }),
-        ...(filters.billing && { billingStatus: filters.billing }),
-        ...(filters.complexity && { complexity: filters.complexity }),
-        ...(filters.fileStatus && { fileStatus: filters.fileStatus }),
+        ...(filters.status.length > 0 && { status: filters.status.join(',') }),
+        ...(filters.billing.length > 0 && { billingStatus: filters.billing.join(',') }),
+        ...(filters.complexity.length > 0 && { complexity: filters.complexity.join(',') }),
+        ...(filters.fileStatus.length > 0 && { fileStatus: filters.fileStatus.join(',') }),
       });
 
       const data = await apiCall(`/jobs/search?${params}`);
@@ -1502,11 +1503,11 @@ const BooksJobs = () => {
       receiveDateTo: '',
       uploadDateFrom: '',
       uploadDateTo: '',
-      status: '',
-      billing: '',
+      status: [],
+      billing: [],
       jobId: '',
-      complexity: '',
-      fileStatus: '',
+      complexity: [],
+      fileStatus: [],
     });
   };
 
@@ -1717,22 +1718,14 @@ const BooksJobs = () => {
               onChange={e => setF('isbn', e.target.value)} />
           </div>
 
-          <div className="bj-filter-group">
-            <label><span className="flt-icon">⚡</span> Complexity</label>
-            <select
-              className={getComplexityClass(filters.complexity)}
-              value={filters.complexity}
-              onChange={e => setF('complexity', e.target.value)}
-            >
-              <option value="">All Complexity</option>
-              {COMPLEXITY_OPTIONS.map(c => (
-                <option key={c.label} value={c.label}
-                  className={getComplexityClass(c.label)}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
-          </div>
+          <MultiSelectDropdown
+            className="bj-filter-group"
+            label={<><span className="flt-icon">⚡</span> Complexity</>}
+            options={COMPLEXITY_OPTIONS.map(c => c.label)}
+            value={filters.complexity}
+            onChange={val => setF('complexity', val)}
+            placeholder="All Complexity"
+          />
 
           {/* Remain filters */}
           <div className="bj-filter-group">
@@ -1759,38 +1752,32 @@ const BooksJobs = () => {
               onChange={e => setF('uploadDateTo', e.target.value)} />
           </div>
 
-          <div className="bj-filter-group">
-            <label><span className="flt-icon">🏷️</span> Status</label>
-            <select value={filters.status}
-              onChange={e => setF('status', e.target.value)}>
-              <option value="">All Status</option>
-              {STATUS_OPTIONS.map(s => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
-          </div>
+          <MultiSelectDropdown
+            className="bj-filter-group"
+            label={<><span className="flt-icon">🏷️</span> Status</>}
+            options={STATUS_OPTIONS}
+            value={filters.status}
+            onChange={val => setF('status', val)}
+            placeholder="All Status"
+          />
 
-          <div className="bj-filter-group">
-            <label><span className="flt-icon">💳</span> Billing Status</label>
-            <select value={filters.billing}
-              onChange={e => setF('billing', e.target.value)}>
-              <option value="">All Billing Status</option>
-              {BILLING_STATUS_OPTIONS.map(b => (
-                <option key={b} value={b}>{b}</option>
-              ))}
-            </select>
-          </div>
+          <MultiSelectDropdown
+            className="bj-filter-group"
+            label={<><span className="flt-icon">💳</span> Billing Status</>}
+            options={BILLING_STATUS_OPTIONS}
+            value={filters.billing}
+            onChange={val => setF('billing', val)}
+            placeholder="All Billing Status"
+          />
 
-          <div className="bj-filter-group">
-            <label><span className="flt-icon">📂</span> File Status</label>
-            <select value={filters.fileStatus}
-              onChange={e => setF('fileStatus', e.target.value)}>
-              <option value="">All File Status</option>
-              {FILE_STATUS_OPTIONS.map(f => (
-                <option key={f} value={f}>{f}</option>
-              ))}
-            </select>
-          </div>
+          <MultiSelectDropdown
+            className="bj-filter-group"
+            label={<><span className="flt-icon">📂</span> File Status</>}
+            options={FILE_STATUS_OPTIONS}
+            value={filters.fileStatus}
+            onChange={val => setF('fileStatus', val)}
+            placeholder="All File Status"
+          />
 
           <div className="bj-filter-actions-group">
             <div className="bj-filter-results-left">
