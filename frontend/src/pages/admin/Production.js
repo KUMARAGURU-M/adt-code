@@ -271,6 +271,7 @@ const Production = () => {
   const [error, setError] = useState('');
 
   // Filters State
+  const [isFilterOpen, setIsFilterOpen] = useState(true);
   const [filters, setFilters] = useState({
     clientId: '',
     projectId: '',
@@ -439,6 +440,9 @@ const Production = () => {
       if (field === 'qcStatus' && value !== 'UPLOADED') {
         newEdits.endDate = '';
       }
+      if (field === 'qcStatus' && value === 'UPLOADED') {
+        newEdits.processStatus = 'FINISH';
+      }
 
       // If the edited values match the original values, remove the edit key
       const currentProcessStatus = newEdits.hasOwnProperty('processStatus') ? newEdits.processStatus : (job.processStatus || 'PENDING');
@@ -571,159 +575,242 @@ const Production = () => {
     await loadProductionJobs(page);
   };
 
+  const handleScreenshot = async () => {
+    try {
+      const { default: html2canvas } = await import('html2canvas');
+      const wrapper = document.querySelector('.table-wrapper');
+
+      if (wrapper) {
+        const origOverflowX = wrapper.style.overflowX;
+        const origWidth = wrapper.style.width;
+
+        const origPosition = wrapper.style.position;
+        const origTop = wrapper.style.top;
+        const origLeft = wrapper.style.left;
+        const origZIndex = wrapper.style.zIndex;
+
+        // Force it out of the document flow so parents can't squeeze it
+        wrapper.style.position = 'absolute';
+        wrapper.style.top = '0';
+        wrapper.style.left = '0';
+        wrapper.style.zIndex = '9999';
+
+        const fullWidth = wrapper.scrollWidth;
+        wrapper.style.overflowX = 'visible';
+        wrapper.style.width = `${fullWidth}px`;
+
+        const canvas = await html2canvas(wrapper, {
+          scale: 2,
+          useCORS: true,
+          windowWidth: fullWidth,
+          scrollX: 0
+        });
+
+        wrapper.style.overflowX = origOverflowX;
+        wrapper.style.width = origWidth;
+        wrapper.style.position = origPosition;
+        wrapper.style.top = origTop;
+        wrapper.style.left = origLeft;
+        wrapper.style.zIndex = origZIndex;
+
+        const imgData = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.href = imgData;
+        link.download = `Production_Screenshot_${new Date().toISOString().slice(0, 10)}.png`;
+        link.click();
+      }
+    } catch (err) {
+      console.error('Screenshot failed', err);
+    }
+  };
+
   return (
     <div className="production-container">
-      <div className="bj-page-title">
-        <span className="bj-page-icon">
-          <img src={productionIcon} alt="Production" className="bj-page-title-img-icon" />
-        </span>
-        <h2>Production Details</h2>
+      <div className="bj-page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="bj-page-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span className="bj-page-icon">
+            <img src={productionIcon} alt="Production" className="bj-page-title-img-icon" />
+          </span>
+          <h2>Production Details</h2>
+          <span
+            onClick={() => setIsFilterOpen(!isFilterOpen)}
+            style={{
+              cursor: 'pointer',
+              fontSize: '1.2rem',
+              color: '#64748b',
+              marginLeft: '8px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '28px',
+              height: '28px',
+              borderRadius: '50%',
+              transition: 'background-color 0.2s',
+              userSelect: 'none'
+            }}
+            onMouseOver={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}
+            onMouseOut={e => e.currentTarget.style.backgroundColor = 'transparent'}
+            title={isFilterOpen ? 'Close Filter' : 'Open Filter'}
+          >
+            {isFilterOpen ? '▲' : '▼'}
+          </span>
+        </div>
+
+        <div className="bj-header-btns" style={{ display: 'flex', gap: '10px' }}>
+          <button className="bj-screenshot-btn" onClick={handleScreenshot}>
+            📸 Screenshot
+          </button>
+        </div>
       </div>
 
       {/* Filter panel */}
-      <form onSubmit={handleSearch} className="production-filter-card">
-        <div className="filter-grid">
-          {/* Client Select */}
-          <div className="filter-group">
-            <label htmlFor="clientId">💼 Client</label>
-            <select
-              id="clientId"
-              value={filters.clientId}
-              onChange={e => setFilters(prev => ({
-                ...prev,
-                clientId: e.target.value,
-                projectId: '',
-                workflowId: '',
-              }))}
-            >
-              <option value="">All Client</option>
-              {clients.map(c => (
-                <option key={c.id} value={c.id}>{c.companyName}</option>
-              ))}
-            </select>
-          </div>
+      {isFilterOpen && (
+        <div className="production-filter-card">
+          <form onSubmit={handleSearch}>
+            <div className="filter-grid">
+              {/* Client Select */}
+              <div className="filter-group">
+                <label htmlFor="clientId">💼 Client</label>
+                <select
+                  id="clientId"
+                  value={filters.clientId}
+                  onChange={e => setFilters(prev => ({
+                    ...prev,
+                    clientId: e.target.value,
+                    projectId: '',
+                    workflowId: '',
+                  }))}
+                >
+                  <option value="">All Client</option>
+                  {clients.map(c => (
+                    <option key={c.id} value={c.id}>{c.companyName}</option>
+                  ))}
+                </select>
+              </div>
 
-          {/* Project Select */}
-          <div className="filter-group">
-            <label htmlFor="projectId">📦 Project</label>
-            <select
-              id="projectId"
-              value={filters.projectId}
-              onChange={e => {
-                const proj = projects.find(p => p.id === e.target.value);
-                setFilters(prev => ({
-                  ...prev,
-                  projectId: e.target.value,
-                  clientId: proj && proj.clientId ? proj.clientId : prev.clientId,
-                  workflowId: proj && proj.workflowId ? proj.workflowId : prev.workflowId,
-                }));
-              }}
-            >
-              <option value="">All Projects</option>
-              {(filters.clientId
-                ? projects.filter(p => p.clientId === filters.clientId)
-                : projects
-              ).map(p => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
-          </div>
+              {/* Project Select */}
+              <div className="filter-group">
+                <label htmlFor="projectId">📦 Project</label>
+                <select
+                  id="projectId"
+                  value={filters.projectId}
+                  onChange={e => {
+                    const proj = projects.find(p => p.id === e.target.value);
+                    setFilters(prev => ({
+                      ...prev,
+                      projectId: e.target.value,
+                      clientId: proj && proj.clientId ? proj.clientId : prev.clientId,
+                      workflowId: proj && proj.workflowId ? proj.workflowId : prev.workflowId,
+                    }));
+                  }}
+                >
+                  <option value="">All Projects</option>
+                  {(filters.clientId
+                    ? projects.filter(p => p.clientId === filters.clientId)
+                    : projects
+                  ).map(p => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
 
-          {/* Workflow Select */}
-          <div className="filter-group">
-            <label htmlFor="workflowId">⚙️ Task Name</label>
-            <select
-              id="workflowId"
-              value={filters.workflowId}
-              onChange={e => setFilters(prev => ({ ...prev, workflowId: e.target.value }))}
-            >
-              <option value="">All Task Names</option>
-              {workflows.map(w => (
-                <option key={w.id} value={w.id}>{w.name}</option>
-              ))}
-            </select>
-          </div>
+              {/* Workflow Select */}
+              <div className="filter-group">
+                <label htmlFor="workflowId">⚙️ Task Name</label>
+                <select
+                  id="workflowId"
+                  value={filters.workflowId}
+                  onChange={e => setFilters(prev => ({ ...prev, workflowId: e.target.value }))}
+                >
+                  <option value="">All Task Names</option>
+                  {workflows.map(w => (
+                    <option key={w.id} value={w.id}>{w.name}</option>
+                  ))}
+                </select>
+              </div>
 
-          {/* Job ID Input */}
-          <div className="filter-group">
-            <label htmlFor="jobId">🆔 Job ID</label>
-            <input
-              type="text"
-              id="jobId"
-              placeholder="e.g. BM0748"
-              value={filters.jobId}
-              onChange={e => setFilters(prev => ({ ...prev, jobId: e.target.value }))}
-            />
-          </div>
+              {/* Job ID Input */}
+              <div className="filter-group">
+                <label htmlFor="jobId">🆔 Job ID</label>
+                <input
+                  type="text"
+                  id="jobId"
+                  placeholder="e.g. BM0748"
+                  value={filters.jobId}
+                  onChange={e => setFilters(prev => ({ ...prev, jobId: e.target.value }))}
+                />
+              </div>
 
-          {/* Complexity Select */}
-          <MultiSelectDropdown
-            label="⚡ Complexity"
-            options={['Simple', 'Medium', 'Complex', 'Heavy Complex']}
-            value={filters.complexity}
-            onChange={val => setFilters(prev => ({ ...prev, complexity: val }))}
-            placeholder="All Complexities"
-          />
+              {/* Complexity Select */}
+              <MultiSelectDropdown
+                label="⚡ Complexity"
+                options={['Simple', 'Medium', 'Complex', 'Heavy Complex']}
+                value={filters.complexity}
+                onChange={val => setFilters(prev => ({ ...prev, complexity: val }))}
+                placeholder="All Complexities"
+              />
 
-          {/* Process Status Select */}
-          <MultiSelectDropdown
-            label="⚙️ Process Status"
-            options={STATUS_OPTIONS}
-            value={filters.processStatus}
-            onChange={val => setFilters(prev => ({ ...prev, processStatus: val }))}
-            placeholder="All Process Status"
-          />
+              {/* Process Status Select */}
+              <MultiSelectDropdown
+                label="⚙️ Process Status"
+                options={STATUS_OPTIONS}
+                value={filters.processStatus}
+                onChange={val => setFilters(prev => ({ ...prev, processStatus: val }))}
+                placeholder="All Process Status"
+              />
 
-          {/* QC Status Select */}
-          <MultiSelectDropdown
-            label="🧪 QC Status"
-            options={QC_STATUS_OPTIONS}
-            value={filters.qcStatus}
-            onChange={val => setFilters(prev => ({ ...prev, qcStatus: val }))}
-            placeholder="All QC Status"
-          />
+              {/* QC Status Select */}
+              <MultiSelectDropdown
+                label="🧪 QC Status"
+                options={QC_STATUS_OPTIONS}
+                value={filters.qcStatus}
+                onChange={val => setFilters(prev => ({ ...prev, qcStatus: val }))}
+                placeholder="All QC Status"
+              />
 
-          {/* Start Date */}
-          <div className="filter-group">
-            <label htmlFor="startDate">Start Date (From)</label>
-            <input
-              type="date"
-              id="startDate"
-              value={filters.startDate}
-              onChange={e => setFilters(prev => ({ ...prev, startDate: e.target.value }))}
-            />
-          </div>
+              {/* Start Date */}
+              <div className="filter-group">
+                <label htmlFor="startDate">Start Date (From)</label>
+                <input
+                  type="date"
+                  id="startDate"
+                  value={filters.startDate}
+                  onChange={e => setFilters(prev => ({ ...prev, startDate: e.target.value }))}
+                />
+              </div>
 
-          {/* End Date */}
-          <div className="filter-group">
-            <label htmlFor="endDate">End Date (To)</label>
-            <input
-              type="date"
-              id="endDate"
-              value={filters.endDate}
-              onChange={e => setFilters(prev => ({ ...prev, endDate: e.target.value }))}
-            />
-          </div>
+              {/* End Date */}
+              <div className="filter-group">
+                <label htmlFor="endDate">End Date (To)</label>
+                <input
+                  type="date"
+                  id="endDate"
+                  value={filters.endDate}
+                  onChange={e => setFilters(prev => ({ ...prev, endDate: e.target.value }))}
+                />
+              </div>
 
-          <div className="filter-actions-group">
-            <div className="filter-results-left">
-              {hasActiveFilters && (
-                <span className="filter-total-pages" style={{ fontWeight: '700', color: '#475569', fontSize: '0.85rem', background: '#f8fafc', padding: '6px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
-                  Total Filtered Pages: {jobs.reduce((sum, j) => sum + (parseInt(j.pageCount) || 0), 0)}
-                </span>
-              )}
+              <div className="filter-actions-group">
+                <div className="filter-results-left">
+                  {hasActiveFilters && (
+                    <span className="filter-total-pages" style={{ fontWeight: '700', color: '#475569', fontSize: '0.85rem', background: '#f8fafc', padding: '6px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+                      Total Filtered Pages: {jobs.reduce((sum, j) => sum + (parseInt(j.pageCount) || 0), 0)}
+                    </span>
+                  )}
+                </div>
+                <div className="filter-buttons-right">
+                  <button type="button" onClick={handleReset} className="btn-reset">
+                    🔄 Reset
+                  </button>
+                  <button type="submit" className="btn-search">
+                    🔍 Search
+                  </button>
+                </div>
+              </div>
             </div>
-            <div className="filter-buttons-right">
-              <button type="button" onClick={handleReset} className="btn-reset">
-                🔄 Reset
-              </button>
-              <button type="submit" className="btn-search">
-                🔍 Search
-              </button>
-            </div>
-          </div>
+          </form>
         </div>
-      </form>
+      )}
       {/* Pagination header */}
       <div className="table-pagination-footer" style={{ borderBottom: '1px solid #e2e8f0', borderTop: 'none', padding: '10px 14px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

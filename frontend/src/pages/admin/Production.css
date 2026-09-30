@@ -199,7 +199,9 @@
   overflow-x: auto;
   overflow-y: auto;
   width: 100%;
-  height: calc(100vh - 340px);
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: calc(100vh - 260px);
 }
 
 .production-table {
@@ -404,6 +406,8 @@
   outline: none;
   width: 100%;
   box-sizing: border-box;
+  font-variant-ligatures: none;
+  text-rendering: auto;
 }
 
 .inline-select:focus {
@@ -1084,6 +1088,7 @@
   padding: 0 !important;
   white-space: nowrap !important;
 }
+
 .table-pagination-footer select {
   padding: 0 !important;
   margin: 0 !important;

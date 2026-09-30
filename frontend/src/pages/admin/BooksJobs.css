@@ -76,6 +76,22 @@
   opacity: 0.88;
 }
 
+.bj-screenshot-btn {
+  background: #f59e0b;
+  color: white;
+  border: none;
+  padding: 9px 18px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.18s;
+}
+
+.bj-screenshot-btn:hover {
+  opacity: 0.88;
+}
+
 /* ══════════════════════════════════════════════
    FILTER BOX
 ══════════════════════════════════════════════ */
@@ -227,7 +243,7 @@
   overflow-y: auto;
   height: auto !important;
   min-height: 0 !important;
-  max-height: 55vh;
+  max-height: calc(100vh - 260px);
   scrollbar-gutter: stable;
   overscroll-behavior: contain;
 }
@@ -376,6 +392,7 @@
   font-size: 11px;
   font-weight: 700;
   white-space: nowrap;
+  font-variant-ligatures: none;
 }
 
 .sp-finish {

@@ -400,11 +400,18 @@ public class WorkwiseService {
                         task.setUpdatedAt(OffsetDateTime.now());
                         taskRepository.save(task);
 
+                        boolean isQcProcess = process != null && process.getName() != null && 
+                                              process.getName().matches("(?i).*(qc|valid).*");
+
                         // Update associated jobs to WIP
                         for (TaskJobAssignment tja : jobLinks) {
                                 if (tja.getJob() != null) {
                                         tja.getJob().setStatus("WIP");
-                                        tja.getJob().setProcessStatus("WIP");
+                                        if (isQcProcess) {
+                                                tja.getJob().setQcStatus("WIP");
+                                        } else {
+                                                tja.getJob().setProcessStatus("WIP");
+                                        }
                                         jobRepository.save(tja.getJob());
                                 }
                         }

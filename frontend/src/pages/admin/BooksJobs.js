@@ -1254,6 +1254,7 @@ const BooksJobs = () => {
   // ── Bulk selection state ────────────────────────────────────────
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [showBulkEdit, setShowBulkEdit] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(true);
 
   // Filter state (un-applied until Search clicked)
   const [filters, setFilters] = useState({
@@ -1590,17 +1591,95 @@ const BooksJobs = () => {
     document.body.removeChild(link);
   };
 
+  const handleScreenshot = async () => {
+    try {
+      const { default: html2canvas } = await import('html2canvas');
+      const container = document.querySelector('.bj-table-container');
+      const wrapper = document.querySelector('.bj-table-wrapper');
+
+      if (container && wrapper) {
+        const origOverflowX = wrapper.style.overflowX;
+        const origWidth = wrapper.style.width;
+        const origContainerWidth = container.style.width;
+
+        const origPosition = container.style.position;
+        const origTop = container.style.top;
+        const origLeft = container.style.left;
+        const origZIndex = container.style.zIndex;
+
+        // Force it out of the document flow so parents can't squeeze it
+        container.style.position = 'absolute';
+        container.style.top = '0';
+        container.style.left = '0';
+        container.style.zIndex = '9999';
+
+        const fullWidth = wrapper.scrollWidth;
+        wrapper.style.overflowX = 'visible';
+        wrapper.style.width = `${fullWidth}px`;
+        container.style.width = `${fullWidth}px`;
+
+        const canvas = await html2canvas(container, {
+          scale: 2,
+          useCORS: true,
+          windowWidth: fullWidth,
+          scrollX: 0
+        });
+
+        wrapper.style.overflowX = origOverflowX;
+        wrapper.style.width = origWidth;
+        container.style.width = origContainerWidth;
+        container.style.position = origPosition;
+        container.style.top = origTop;
+        container.style.left = origLeft;
+        container.style.zIndex = origZIndex;
+
+        const imgData = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.href = imgData;
+        link.download = `BooksJobs_Screenshot_${new Date().toISOString().slice(0, 10)}.png`;
+        link.click();
+      }
+    } catch (err) {
+      console.error('Screenshot failed', err);
+    }
+  };
+
   // ── Render ──────────────────────────────────────────────────
   return (
     <div className="bj-container">
 
       {/* ── Page Header ── */}
       <div className="bj-page-header">
-        <div className="bj-page-title">
+        <div className="bj-page-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span className="bj-page-icon">📚</span>
           <h2>Job Management</h2>
+          <span
+            onClick={() => setIsFilterOpen(!isFilterOpen)}
+            style={{
+              cursor: 'pointer',
+              fontSize: '1.2rem',
+              color: '#64748b',
+              marginLeft: '8px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '28px',
+              height: '28px',
+              borderRadius: '50%',
+              transition: 'background-color 0.2s',
+              userSelect: 'none'
+            }}
+            onMouseOver={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}
+            onMouseOut={e => e.currentTarget.style.backgroundColor = 'transparent'}
+            title={isFilterOpen ? 'Close Filter' : 'Open Filter'}
+          >
+            {isFilterOpen ? '▲' : '▼'}
+          </span>
         </div>
         <div className="bj-header-btns">
+          <button className="bj-screenshot-btn" onClick={handleScreenshot}>
+            📸 Screenshot
+          </button>
           {canBulkImport && (
             <button className="bj-bulk-btn" onClick={() => open('bulk')}>
               📥 Bulk Import
@@ -1635,169 +1714,167 @@ const BooksJobs = () => {
       </div>
 
       {/* ── Filters ── */}
-      <div className="bj-filter-box">
-        <div className="bj-filter-title">
-          <span>🔍</span>
-          <strong>Filters &amp; Search</strong>
-        </div>
-        <div className="bj-filter-grid">
-          {/* Client filter */}
-          <div className="bj-filter-group">
-            <label><span className="flt-icon">💼</span> Client</label>
-            <select
-              value={filters.clientId}
-              onChange={e => {
-                setF('clientId', e.target.value);
-                setF('projectId', '');
-                setF('project', '');
-                setF('workflowId', '');
-              }}
-            >
-              <option value="">All Clients</option>
-              {clients.map(c => (
-                <option key={c.id} value={c.id}>{c.companyName}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Project filter */}
-          <div className="bj-filter-group">
-            <label><span className="flt-icon">📦</span> Project</label>
-            <select
-              value={filters.projectId}
-              onChange={e => {
-                const proj = projects.find(p => p.id === e.target.value);
-                setF('projectId', e.target.value);
-                setF('project', proj?.name || '');
-                if (proj && proj.clientId && !filters.clientId) {
-                  setF('clientId', proj.clientId);
-                }
-                if (proj && proj.workflowId) {
-                  setF('workflowId', proj.workflowId);
-                } else {
+      {isFilterOpen && (
+        <div className="bj-filter-box">
+          <div className="bj-filter-grid">
+            {/* Client filter */}
+            <div className="bj-filter-group">
+              <label><span className="flt-icon">💼</span> Client</label>
+              <select
+                value={filters.clientId}
+                onChange={e => {
+                  setF('clientId', e.target.value);
+                  setF('projectId', '');
+                  setF('project', '');
                   setF('workflowId', '');
-                }
-              }}
-            >
-              <option value="">All Projects</option>
-              {(filters.clientId
-                ? projects.filter(p => p.clientId === filters.clientId)
-                : projects
-              ).map(p => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Workflow filter */}
-          <div className="bj-filter-group">
-            <label><span className="flt-icon">⚙️</span> Task Name</label>
-            <select
-              value={filters.workflowId}
-              onChange={e => setF('workflowId', e.target.value)}
-            >
-              <option value="">All Task Names</option>
-              {workflows.map(w => (
-                <option key={w.id} value={w.id}>{w.name}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Job ID filter */}
-          <div className="bj-filter-group">
-            <label><span className="flt-icon">🆔</span> Job ID</label>
-            <input placeholder="e.g., BM0748" value={filters.jobId}
-              onChange={e => setF('jobId', e.target.value)} />
-          </div>
-
-          {/* ISBN filter */}
-          <div className="bj-filter-group">
-            <label><span className="flt-icon">📖</span> ISBN</label>
-            <input placeholder="e.g., 9798216386377"
-              value={filters.isbn}
-              onChange={e => setF('isbn', e.target.value)} />
-          </div>
-
-          <MultiSelectDropdown
-            className="bj-filter-group"
-            label={<><span className="flt-icon">⚡</span> Complexity</>}
-            options={COMPLEXITY_OPTIONS.map(c => c.label)}
-            value={filters.complexity}
-            onChange={val => setF('complexity', val)}
-            placeholder="All Complexity"
-          />
-
-          {/* Remain filters */}
-          <div className="bj-filter-group">
-            <label><span className="flt-icon">📅</span> Receive Date From</label>
-            <input type="date" value={filters.receiveDateFrom}
-              onChange={e => setF('receiveDateFrom', e.target.value)} />
-          </div>
-
-          <div className="bj-filter-group">
-            <label><span className="flt-icon">📅</span> Receive Date To</label>
-            <input type="date" value={filters.receiveDateTo}
-              onChange={e => setF('receiveDateTo', e.target.value)} />
-          </div>
-
-          <div className="bj-filter-group">
-            <label><span className="flt-icon">📅</span> Upload Date From</label>
-            <input type="date" value={filters.uploadDateFrom}
-              onChange={e => setF('uploadDateFrom', e.target.value)} />
-          </div>
-
-          <div className="bj-filter-group">
-            <label><span className="flt-icon">📅</span> Upload Date To</label>
-            <input type="date" value={filters.uploadDateTo}
-              onChange={e => setF('uploadDateTo', e.target.value)} />
-          </div>
-
-          <MultiSelectDropdown
-            className="bj-filter-group"
-            label={<><span className="flt-icon">🏷️</span> Status</>}
-            options={STATUS_OPTIONS}
-            value={filters.status}
-            onChange={val => setF('status', val)}
-            placeholder="All Status"
-          />
-
-          <MultiSelectDropdown
-            className="bj-filter-group"
-            label={<><span className="flt-icon">💳</span> Billing Status</>}
-            options={BILLING_STATUS_OPTIONS}
-            value={filters.billing}
-            onChange={val => setF('billing', val)}
-            placeholder="All Billing Status"
-          />
-
-          <MultiSelectDropdown
-            className="bj-filter-group"
-            label={<><span className="flt-icon">📂</span> File Status</>}
-            options={FILE_STATUS_OPTIONS}
-            value={filters.fileStatus}
-            onChange={val => setF('fileStatus', val)}
-            placeholder="All File Status"
-          />
-
-          <div className="bj-filter-actions-group">
-            <div className="bj-filter-results-left">
-              {hasActiveFilters && (
-                <span className="bj-filter-total-pages" style={{ fontWeight: '700', color: '#4a5568', fontSize: '0.85rem', background: '#f1f5f9', padding: '6px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
-                  Filtered : {jobs.reduce((sum, j) => sum + (parseInt(j.pageCount) || 0), 0)}
-                </span>
-              )}
+                }}
+              >
+                <option value="">All Clients</option>
+                {clients.map(c => (
+                  <option key={c.id} value={c.id}>{c.companyName}</option>
+                ))}
+              </select>
             </div>
-            <div className="bj-filter-buttons-right">
-              <button className="bj-search-btn" onClick={handleSearch}>
-                🔍 Search
-              </button>
-              <button className="bj-clear-btn" onClick={handleClear}>
-                ✕ Clear
-              </button>
+
+            {/* Project filter */}
+            <div className="bj-filter-group">
+              <label><span className="flt-icon">📦</span> Project</label>
+              <select
+                value={filters.projectId}
+                onChange={e => {
+                  const proj = projects.find(p => p.id === e.target.value);
+                  setF('projectId', e.target.value);
+                  setF('project', proj?.name || '');
+                  if (proj && proj.clientId && !filters.clientId) {
+                    setF('clientId', proj.clientId);
+                  }
+                  if (proj && proj.workflowId) {
+                    setF('workflowId', proj.workflowId);
+                  } else {
+                    setF('workflowId', '');
+                  }
+                }}
+              >
+                <option value="">All Projects</option>
+                {(filters.clientId
+                  ? projects.filter(p => p.clientId === filters.clientId)
+                  : projects
+                ).map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Workflow filter */}
+            <div className="bj-filter-group">
+              <label><span className="flt-icon">⚙️</span> Task Name</label>
+              <select
+                value={filters.workflowId}
+                onChange={e => setF('workflowId', e.target.value)}
+              >
+                <option value="">All Task Names</option>
+                {workflows.map(w => (
+                  <option key={w.id} value={w.id}>{w.name}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Job ID filter */}
+            <div className="bj-filter-group">
+              <label><span className="flt-icon">🆔</span> Job ID</label>
+              <input placeholder="e.g., BM0748" value={filters.jobId}
+                onChange={e => setF('jobId', e.target.value)} />
+            </div>
+
+            {/* ISBN filter */}
+            <div className="bj-filter-group">
+              <label><span className="flt-icon">📖</span> ISBN</label>
+              <input placeholder="e.g., 9798216386377"
+                value={filters.isbn}
+                onChange={e => setF('isbn', e.target.value)} />
+            </div>
+
+            <MultiSelectDropdown
+              className="bj-filter-group"
+              label={<><span className="flt-icon">⚡</span> Complexity</>}
+              options={COMPLEXITY_OPTIONS.map(c => c.label)}
+              value={filters.complexity}
+              onChange={val => setF('complexity', val)}
+              placeholder="All Complexity"
+            />
+
+            {/* Remain filters */}
+            <div className="bj-filter-group">
+              <label><span className="flt-icon">📅</span> Receive Date From</label>
+              <input type="date" value={filters.receiveDateFrom}
+                onChange={e => setF('receiveDateFrom', e.target.value)} />
+            </div>
+
+            <div className="bj-filter-group">
+              <label><span className="flt-icon">📅</span> Receive Date To</label>
+              <input type="date" value={filters.receiveDateTo}
+                onChange={e => setF('receiveDateTo', e.target.value)} />
+            </div>
+
+            <div className="bj-filter-group">
+              <label><span className="flt-icon">📅</span> Upload Date From</label>
+              <input type="date" value={filters.uploadDateFrom}
+                onChange={e => setF('uploadDateFrom', e.target.value)} />
+            </div>
+
+            <div className="bj-filter-group">
+              <label><span className="flt-icon">📅</span> Upload Date To</label>
+              <input type="date" value={filters.uploadDateTo}
+                onChange={e => setF('uploadDateTo', e.target.value)} />
+            </div>
+
+            <MultiSelectDropdown
+              className="bj-filter-group"
+              label={<><span className="flt-icon">🏷️</span> Status</>}
+              options={STATUS_OPTIONS}
+              value={filters.status}
+              onChange={val => setF('status', val)}
+              placeholder="All Status"
+            />
+
+            <MultiSelectDropdown
+              className="bj-filter-group"
+              label={<><span className="flt-icon">💳</span> Billing Status</>}
+              options={BILLING_STATUS_OPTIONS}
+              value={filters.billing}
+              onChange={val => setF('billing', val)}
+              placeholder="All Billing Status"
+            />
+
+            <MultiSelectDropdown
+              className="bj-filter-group"
+              label={<><span className="flt-icon">📂</span> File Status</>}
+              options={FILE_STATUS_OPTIONS}
+              value={filters.fileStatus}
+              onChange={val => setF('fileStatus', val)}
+              placeholder="All File Status"
+            />
+
+            <div className="bj-filter-actions-group">
+              <div className="bj-filter-results-left">
+                {hasActiveFilters && (
+                  <span className="bj-filter-total-pages" style={{ fontWeight: '700', color: '#4a5568', fontSize: '0.85rem', background: '#f1f5f9', padding: '6px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+                    Filtered : {jobs.reduce((sum, j) => sum + (parseInt(j.pageCount) || 0), 0)}
+                  </span>
+                )}
+              </div>
+              <div className="bj-filter-buttons-right">
+                <button className="bj-search-btn" onClick={handleSearch}>
+                  🔍 Search
+                </button>
+                <button className="bj-clear-btn" onClick={handleClear}>
+                  ✕ Clear
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       <div className="bj-results-section">
         {/* ── Pagination ── */}
@@ -2086,3 +2163,8 @@ const BooksJobs = () => {
 };
 
 export default BooksJobs;
+
+
+
+
+
